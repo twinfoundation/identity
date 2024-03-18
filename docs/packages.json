@@ -1,0 +1,10 @@
+{
+	"category": "identity",
+	"label": "Identity",
+	"packages": [
+		{
+			"name": "identity-models",
+			"description": "Models which define the structure of the service implementations."
+		}
+	]
+}

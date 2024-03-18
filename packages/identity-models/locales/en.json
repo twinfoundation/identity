@@ -1,0 +1,9 @@
+{
+	"error": {
+		"identityProviderFactory": {
+			"noProviderUnregister": "There is no identity provider registered with the type \"{type}\"",
+			"noProviderAlias": "There is no identity provider registered with the name \"{type}\" that can be aliased",
+			"noProviderGet": "The requested identity provider \"{type}\" does not exist in the factory"
+		}
+	}
+}

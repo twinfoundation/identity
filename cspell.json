@@ -1,0 +1,20 @@
+{
+	"language": "en-GB",
+	"ignorePaths": [
+		"**/node_modules/**",
+		"LICENSE",
+		"**/coverage/**",
+		"**/dist/**",
+		"**/docs/reference/**",
+		"**/tests/**",
+		"package.json",
+		"rollup.config.mjs",
+		"vitest.config.ts",
+		"tsconfig.json",
+		"typedoc.json",
+		".eslintrc.cjs",
+		"**/wordlists/**"
+	],
+	"words": ["gtsc", "Multibase", "nameof", "Stiftung"],
+	"ignoreRegExpList": ["/from\\s+(['\"]).*\\1/", "/eslint-disable.*/"]
+}
