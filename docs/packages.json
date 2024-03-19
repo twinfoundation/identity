@@ -3,8 +3,16 @@
 	"label": "Identity",
 	"packages": [
 		{
-			"name": "identity-models",
+			"name": "identity-provider-models",
+			"description": "Models which define the structure of the provider implementations."
+		},
+		{
+			"name": "identity-service-models",
 			"description": "Models which define the structure of the service implementations."
+		},
+		{
+			"name": "identity-provider-iota",
+			"description": "Identity provider implementation using IOTA."
 		}
 	]
 }

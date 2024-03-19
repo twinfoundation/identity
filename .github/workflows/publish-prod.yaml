@@ -8,8 +8,9 @@ on:
         required: true
         type: choice
         options:
-          - identity-models
-
+          - identity-provider-models
+          - identity-service-models
+          - identity-provider-iota
 jobs:
   publish:
     runs-on: ubuntu-latest

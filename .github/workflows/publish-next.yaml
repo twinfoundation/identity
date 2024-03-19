@@ -8,7 +8,9 @@ on:
         required: true
         type: choice
         options:
-          - identity-models
+          - identity-provider-models
+          - identity-service-models
+          - identity-provider-iota
       next:
         description: 'What is the next version e.g. 1 will be appended as -next.1'
         default: 1

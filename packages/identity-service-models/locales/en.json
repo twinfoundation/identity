@@ -1,0 +1,13 @@
+{
+	"verifiableCredentialStates": {
+		"pendingVerification": "Pending Verification",
+		"rejected": "Rejected",
+		"issued": "Issued",
+		"revoked": "Revoked"
+	},
+	"identityRole": {
+		"organization": "Organization",
+		"user": "User",
+		"infrastructure": "Infrastructure"
+	}
+}
