@@ -1,6 +1,6 @@
 # Interface: IIdentityProvider
 
-Interface describing an identify provider.
+Interface describing an identity provider.
 
 ## Hierarchy
 

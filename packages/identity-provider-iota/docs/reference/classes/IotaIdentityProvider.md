@@ -10,7 +10,7 @@ Class for performing identity operations on IOTA.
 
 ### constructor
 
-• **new IotaIdentityProvider**(`config`): [`IotaIdentityProvider`](IotaIdentityProvider.md)
+• **new IotaIdentityProvider**(`config`, `walletProvider`): [`IotaIdentityProvider`](IotaIdentityProvider.md)
 
 Create a new instance of IotaIdentityProvider.
 
@@ -19,6 +19,7 @@ Create a new instance of IotaIdentityProvider.
 | Name | Type | Description |
 | :------ | :------ | :------ |
 | `config` | [`IIotaIdentityProviderConfig`](../interfaces/IIotaIdentityProviderConfig.md) | The configuration to use. |
+| `walletProvider` | `IWalletProvider` | The wallet provider to use for tokenisation. |
 
 #### Returns
 

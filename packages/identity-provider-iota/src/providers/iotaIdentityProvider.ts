@@ -12,7 +12,7 @@ import {
 	type IKeyPair
 } from "@gtsc/identity-provider-models";
 import { nameof } from "@gtsc/nameof";
-import { WalletProviderFactory, type IWalletProvider } from "@gtsc/wallet-provider-models";
+import type { IWalletProvider } from "@gtsc/wallet-provider-models";
 import {
 	Credential,
 	Duration,
@@ -83,8 +83,9 @@ export class IotaIdentityProvider implements IIdentityProvider {
 	/**
 	 * Create a new instance of IotaIdentityProvider.
 	 * @param config The configuration to use.
+	 * @param walletProvider The wallet provider to use for tokenisation.
 	 */
-	constructor(config: IIotaIdentityProviderConfig) {
+	constructor(config: IIotaIdentityProviderConfig, walletProvider: IWalletProvider) {
 		Guards.object<IIotaIdentityProviderConfig>(
 			IotaIdentityProvider._CLASS_NAME,
 			nameof(config),
@@ -92,7 +93,7 @@ export class IotaIdentityProvider implements IIdentityProvider {
 		);
 
 		this._config = config;
-		this._walletProvider = WalletProviderFactory.get("iota");
+		this._walletProvider = walletProvider;
 	}
 
 	/**
@@ -1125,8 +1126,11 @@ export class IotaIdentityProvider implements IIdentityProvider {
 		}
 
 		// Check that the wallet has enough for the storage deposit.
-		const addressBalance = await this._walletProvider.getBalance(walletAddressesBech32[0]);
-		if (addressBalance < requiredBalance) {
+		const hasBalance = await this._walletProvider.ensureBalance(
+			walletAddressesBech32[0],
+			requiredBalance
+		);
+		if (!hasBalance) {
 			throw new GeneralError(IotaIdentityProvider._CLASS_NAME, "walletBalanceInsufficient", {
 				requiredBalance
 			});
