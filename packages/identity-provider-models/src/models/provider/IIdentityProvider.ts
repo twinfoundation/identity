@@ -9,7 +9,7 @@ import type { IDidVerifiablePresentation } from "./IDidVerifiablePresentation";
 import type { IKeyPair } from "../IKeyPair";
 
 /**
- * Interface describing an identify provider.
+ * Interface describing an identity provider.
  */
 export interface IIdentityProvider extends IService {
 	/**
