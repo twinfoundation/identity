@@ -38,11 +38,11 @@ NotFoundError if the id can not be resolved.
 
 ___
 
-### addVerificationMethod
+### addVerificationMethodJwk
 
-▸ **addVerificationMethod**(`documentId`, `documentKeyPair`, `verificationMethodName`, `verificationKeyPair`): `Promise`\<[`IDidDocument`](IDidDocument.md)\>
+▸ **addVerificationMethodJwk**(`documentId`, `documentKeyPair`, `verificationPublicKey`): `Promise`\<[`IDidDocument`](IDidDocument.md)\>
 
-Add a verification method to the document.
+Add a verification method to the document in JSON Web key Format.
 
 #### Parameters
 
@@ -50,8 +50,7 @@ Add a verification method to the document.
 | :------ | :------ | :------ |
 | `documentId` | `string` | The id of the document to add the verification method to. |
 | `documentKeyPair` | [`IKeyPair`](IKeyPair.md) | The key required to sign the updated document. |
-| `verificationMethodName` | `string` | The name of the verification method. |
-| `verificationKeyPair` | [`IKeyPair`](IKeyPair.md) | A key pair to use for the verification method. |
+| `verificationPublicKey` | `string` | The public key for the verification method. |
 
 #### Returns
 

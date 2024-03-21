@@ -28,20 +28,18 @@ export interface IIdentityProvider extends IService {
 	resolveDocument(documentId: string): Promise<IDidDocument>;
 
 	/**
-	 * Add a verification method to the document.
+	 * Add a verification method to the document in JSON Web key Format.
 	 * @param documentId The id of the document to add the verification method to.
 	 * @param documentKeyPair The key required to sign the updated document.
-	 * @param verificationMethodName The name of the verification method.
-	 * @param verificationKeyPair A key pair to use for the verification method.
+	 * @param verificationPublicKey The public key for the verification method.
 	 * @returns The updated document.
 	 * @throws NotFoundError if the id can not be resolved.
 	 * @throws NotSupportedError if the platform does not support multiple keys.
 	 */
-	addVerificationMethod(
+	addVerificationMethodJwk(
 		documentId: string,
 		documentKeyPair: IKeyPair,
-		verificationMethodName: string,
-		verificationKeyPair: IKeyPair
+		verificationPublicKey: string
 	): Promise<IDidDocument>;
 
 	/**

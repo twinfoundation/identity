@@ -15,5 +15,6 @@
 		}
 	},
 	"prettier.configPath": ".prettierrc",
-	"cSpell.autoFormatConfigFile": true
+	"cSpell.autoFormatConfigFile": true,
+	"markdownlint.ignore": ["**/docs/reference/**"]
 }

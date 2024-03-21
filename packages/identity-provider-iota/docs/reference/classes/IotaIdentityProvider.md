@@ -10,7 +10,7 @@ Class for performing identity operations on IOTA.
 
 ### constructor
 
-• **new IotaIdentityProvider**(`config`, `walletProvider`): [`IotaIdentityProvider`](IotaIdentityProvider.md)
+• **new IotaIdentityProvider**(`config`): [`IotaIdentityProvider`](IotaIdentityProvider.md)
 
 Create a new instance of IotaIdentityProvider.
 
@@ -19,21 +19,12 @@ Create a new instance of IotaIdentityProvider.
 | Name | Type | Description |
 | :------ | :------ | :------ |
 | `config` | [`IIotaIdentityProviderConfig`](../interfaces/IIotaIdentityProviderConfig.md) | The configuration to use. |
-| `walletProvider` | `IWalletProvider` | The wallet provider to use for tokenisation. |
 
 #### Returns
 
 [`IotaIdentityProvider`](IotaIdentityProvider.md)
 
 ## Properties
-
-### \_walletProvider
-
-• `Private` `Readonly` **\_walletProvider**: `IWalletProvider`
-
-The wallet provider to use for tokenisation.
-
-___
 
 ### NAMESPACE
 
@@ -75,11 +66,11 @@ IIdentityProvider.addService
 
 ___
 
-### addVerificationMethod
+### addVerificationMethodJwk
 
-▸ **addVerificationMethod**(`documentId`, `documentKeyPair`, `verificationMethodName`, `verificationKeyPair`): `Promise`\<`IDidDocument`\>
+▸ **addVerificationMethodJwk**(`documentId`, `documentKeyPair`, `verificationPublicKey`): `Promise`\<`IDidDocument`\>
 
-Add a verification method to the document.
+Add a verification method to the document in JSON Web key Format.
 
 #### Parameters
 
@@ -87,8 +78,7 @@ Add a verification method to the document.
 | :------ | :------ | :------ |
 | `documentId` | `string` | The id of the document to add the verification method to. |
 | `documentKeyPair` | `IKeyPair` | The key required to sign the updated document. |
-| `verificationMethodName` | `string` | The name of the verification method. |
-| `verificationKeyPair` | `IKeyPair` | A key pair to use for the verification method. |
+| `verificationPublicKey` | `string` | The public key for the verification method. |
 
 #### Returns
 
@@ -106,7 +96,7 @@ NotSupportedError if the platform does not support multiple keys.
 
 #### Implementation of
 
-IIdentityProvider.addVerificationMethod
+IIdentityProvider.addVerificationMethodJwk
 
 ___
 

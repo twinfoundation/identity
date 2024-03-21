@@ -1,6 +1,7 @@
 // Copyright 2024 IOTA Stiftung.
 // SPDX-License-Identifier: Apache-2.0.
 import { Converter, GeneralError, Guards, Is, NotFoundError, NotSupportedError } from "@gtsc/core";
+import { Sha256 } from "@gtsc/crypto";
 import {
 	KeyType,
 	type IDidCredentialVerification,
@@ -12,13 +13,13 @@ import {
 	type IKeyPair
 } from "@gtsc/identity-provider-models";
 import { nameof } from "@gtsc/nameof";
-import type { IWalletProvider } from "@gtsc/wallet-provider-models";
 import {
 	Credential,
 	Duration,
 	EdCurve,
 	EdDSAJwsVerifier,
 	FailFast,
+	type IJwkParams,
 	IotaDID,
 	IotaDocument,
 	IotaIdentityClient,
@@ -46,7 +47,10 @@ import {
 	verifyEd25519
 } from "@iota/identity-wasm/node";
 import { Client, SecretManager, Utils, type PrivateKeySecretManager } from "@iota/sdk-wasm/node";
-import type { IIotaIdentityProviderConfig } from "../models/IIotaIdentityProviderConfig";
+import {
+	DEFAULT_IDENTITY_ADDRESS_INDEX,
+	type IIotaIdentityProviderConfig
+} from "../models/IIotaIdentityProviderConfig";
 
 /**
  * Class for performing identity operations on IOTA.
@@ -76,24 +80,23 @@ export class IotaIdentityProvider implements IIdentityProvider {
 	private _identityClient?: IotaIdentityClient;
 
 	/**
-	 * The wallet provider to use for tokenisation.
-	 */
-	private readonly _walletProvider: IWalletProvider;
-
-	/**
 	 * Create a new instance of IotaIdentityProvider.
 	 * @param config The configuration to use.
-	 * @param walletProvider The wallet provider to use for tokenisation.
 	 */
-	constructor(config: IIotaIdentityProviderConfig, walletProvider: IWalletProvider) {
+	constructor(config: IIotaIdentityProviderConfig) {
 		Guards.object<IIotaIdentityProviderConfig>(
 			IotaIdentityProvider._CLASS_NAME,
 			nameof(config),
 			config
 		);
+		Guards.object<IIotaIdentityProviderConfig>(
+			IotaIdentityProvider._CLASS_NAME,
+			nameof(config.clientOptions),
+			config.clientOptions
+		);
 
 		this._config = config;
-		this._walletProvider = walletProvider;
+		this._config.addressIndex = this._config.addressIndex ?? DEFAULT_IDENTITY_ADDRESS_INDEX;
 	}
 
 	/**
@@ -135,13 +138,22 @@ export class IotaIdentityProvider implements IIdentityProvider {
 
 			const document = new IotaDocument(networkHrp);
 
-			const jwk = new Jwk({
+			const jwkParams: IJwkParams = {
 				kty: JwkType.Okp,
 				crv: EdCurve.Ed25519,
 				x: Converter.bytesToBase64(Converter.hexToBytes(documentKeyPair.publicKey))
+			};
+
+			const fingerPrint = Converter.bytesToBase64Url(
+				Sha256.sum256(Converter.utf8ToBytes(JSON.stringify(jwkParams)))
+			);
+
+			const jwk = new Jwk({
+				...jwkParams,
+				kid: fingerPrint
 			});
 
-			const method = VerificationMethod.newFromJwk(document.id(), jwk, "#key-1");
+			const method = VerificationMethod.newFromJwk(document.id(), jwk, fingerPrint);
 
 			await document.insertMethod(method, MethodScope.VerificationMethod());
 
@@ -188,22 +200,25 @@ export class IotaIdentityProvider implements IIdentityProvider {
 	}
 
 	/**
-	 * Add a verification method to the document.
+	 * Add a verification method to the document in JSON Web key Format.
 	 * @param documentId The id of the document to add the verification method to.
 	 * @param documentKeyPair The key required to sign the updated document.
-	 * @param verificationMethodName The name of the verification method.
-	 * @param verificationKeyPair A key pair to use for the verification method.
+	 * @param verificationPublicKey The public key for the verification method.
 	 * @returns The updated document.
 	 * @throws NotFoundError if the id can not be resolved.
 	 * @throws NotSupportedError if the platform does not support multiple keys.
 	 */
-	public async addVerificationMethod(
+	public async addVerificationMethodJwk(
 		documentId: string,
 		documentKeyPair: IKeyPair,
-		verificationMethodName: string,
-		verificationKeyPair: IKeyPair
+		verificationPublicKey: string
 	): Promise<IDidDocument> {
 		Guards.stringValue(IotaIdentityProvider._CLASS_NAME, nameof(documentId), documentId);
+		Guards.object<IKeyPair>(
+			IotaIdentityProvider._CLASS_NAME,
+			nameof(documentKeyPair),
+			documentKeyPair
+		);
 		Guards.stringValue(
 			IotaIdentityProvider._CLASS_NAME,
 			nameof(documentKeyPair.type),
@@ -221,23 +236,8 @@ export class IotaIdentityProvider implements IIdentityProvider {
 		);
 		Guards.stringValue(
 			IotaIdentityProvider._CLASS_NAME,
-			nameof(verificationMethodName),
-			verificationMethodName
-		);
-		Guards.stringValue(
-			IotaIdentityProvider._CLASS_NAME,
-			nameof(verificationKeyPair.type),
-			verificationKeyPair.type
-		);
-		Guards.stringValue(
-			IotaIdentityProvider._CLASS_NAME,
-			nameof(verificationKeyPair.privateKey),
-			verificationKeyPair.privateKey
-		);
-		Guards.stringValue(
-			IotaIdentityProvider._CLASS_NAME,
-			nameof(verificationKeyPair.publicKey),
-			verificationKeyPair.publicKey
+			nameof(verificationPublicKey),
+			verificationPublicKey
 		);
 
 		try {
@@ -248,13 +248,22 @@ export class IotaIdentityProvider implements IIdentityProvider {
 				throw new NotFoundError(IotaIdentityProvider._CLASS_NAME, "documentNotFound", documentId);
 			}
 
-			const jwk = new Jwk({
+			const jwkParams: IJwkParams = {
 				kty: JwkType.Okp,
 				crv: EdCurve.Ed25519,
-				x: Converter.bytesToBase64(Converter.hexToBytes(verificationKeyPair.publicKey))
+				x: Converter.bytesToBase64(Converter.hexToBytes(verificationPublicKey))
+			};
+
+			const fingerPrint = Converter.bytesToBase64Url(
+				Sha256.sum256(Converter.utf8ToBytes(JSON.stringify(jwkParams)))
+			);
+
+			const jwk = new Jwk({
+				...jwkParams,
+				kid: fingerPrint
 			});
 
-			const method = VerificationMethod.newFromJwk(document.id(), jwk);
+			const method = VerificationMethod.newFromJwk(document.id(), jwk, fingerPrint);
 
 			const methods = document.methods();
 			const existingMethod = methods.find(m => m.id().toString() === method.id().toString());
@@ -291,6 +300,11 @@ export class IotaIdentityProvider implements IIdentityProvider {
 		verificationMethodName: string
 	): Promise<IDidDocument> {
 		Guards.stringValue(IotaIdentityProvider._CLASS_NAME, nameof(documentId), documentId);
+		Guards.object<IKeyPair>(
+			IotaIdentityProvider._CLASS_NAME,
+			nameof(documentKeyPair),
+			documentKeyPair
+		);
 		Guards.stringValue(
 			IotaIdentityProvider._CLASS_NAME,
 			nameof(documentKeyPair.type),
@@ -359,6 +373,11 @@ export class IotaIdentityProvider implements IIdentityProvider {
 		serviceEndpoint: string
 	): Promise<IDidDocument> {
 		Guards.stringValue(IotaIdentityProvider._CLASS_NAME, nameof(documentId), documentId);
+		Guards.object<IKeyPair>(
+			IotaIdentityProvider._CLASS_NAME,
+			nameof(documentKeyPair),
+			documentKeyPair
+		);
 		Guards.stringValue(
 			IotaIdentityProvider._CLASS_NAME,
 			nameof(documentKeyPair.type),
@@ -426,6 +445,11 @@ export class IotaIdentityProvider implements IIdentityProvider {
 		serviceId: string
 	): Promise<IDidDocument> {
 		Guards.stringValue(IotaIdentityProvider._CLASS_NAME, nameof(documentId), documentId);
+		Guards.object<IKeyPair>(
+			IotaIdentityProvider._CLASS_NAME,
+			nameof(documentKeyPair),
+			documentKeyPair
+		);
 		Guards.stringValue(
 			IotaIdentityProvider._CLASS_NAME,
 			nameof(documentKeyPair.type),
@@ -524,9 +548,9 @@ export class IotaIdentityProvider implements IIdentityProvider {
 
 		try {
 			const identityClient = await this.getIotaIdentityClient();
-			const document = await identityClient.resolveDid(IotaDID.parse(documentId));
+			const issuerDocument = await identityClient.resolveDid(IotaDID.parse(documentId));
 
-			if (Is.undefined(document)) {
+			if (Is.undefined(issuerDocument)) {
 				throw new NotFoundError(IotaIdentityProvider._CLASS_NAME, "documentNotFound", documentId);
 			}
 
@@ -536,7 +560,7 @@ export class IotaIdentityProvider implements IIdentityProvider {
 				issuer: documentId,
 				credentialSubject: subject,
 				credentialStatus: {
-					id: `${document.id().toString()}#revocation`,
+					id: `${issuerDocument.id().toString()}#revocation`,
 					type: RevocationBitmap.type(),
 					revocationBitmapIndex: revocationIndex
 				}
@@ -553,7 +577,7 @@ export class IotaIdentityProvider implements IIdentityProvider {
 			);
 
 			const storage = new Storage(jwkMemStore, new KeyIdMemStore());
-			const credentialJwt = await document.createCredentialJwt(
+			const credentialJwt = await issuerDocument.createCredentialJwt(
 				storage,
 				`#${verificationMethod}`,
 				unsignedVc,
@@ -665,6 +689,11 @@ export class IotaIdentityProvider implements IIdentityProvider {
 		credentialIndices: number[]
 	): Promise<IDidDocument> {
 		Guards.stringValue(IotaIdentityProvider._CLASS_NAME, nameof(documentId), documentId);
+		Guards.object<IKeyPair>(
+			IotaIdentityProvider._CLASS_NAME,
+			nameof(documentKeyPair),
+			documentKeyPair
+		);
 		Guards.stringValue(
 			IotaIdentityProvider._CLASS_NAME,
 			nameof(documentKeyPair.type),
@@ -1083,7 +1112,7 @@ export class IotaIdentityProvider implements IIdentityProvider {
 
 		const secretManager = new SecretManager(privateSecretManager);
 		const walletAddressesBech32 = await secretManager.generateEd25519Addresses({
-			accountIndex: 0,
+			accountIndex: this._config.addressIndex,
 			range: {
 				start: 0,
 				end: 1
@@ -1097,15 +1126,9 @@ export class IotaIdentityProvider implements IIdentityProvider {
 		const rentStructure = await identityClient.getRentStructure();
 
 		let aliasOutput;
-		let requiredBalance: bigint;
 		if (isUpdate) {
 			// If this is an update then get the current output and recalculate the
 			// storage deposit from the updated document.
-
-			// Get the current output to see how much storage is being used.
-			const currentOutput = await identityClient.resolveDidOutput(document.id());
-			const currentStorageDeposit = BigInt(currentOutput.amount);
-
 			aliasOutput = await identityClient.updateDidOutput(document);
 			const updatedStorageDeposit = Utils.computeStorageDeposit(aliasOutput, rentStructure);
 
@@ -1116,24 +1139,9 @@ export class IotaIdentityProvider implements IIdentityProvider {
 				aliasId: aliasOutput.getAliasId(),
 				unlockConditions: aliasOutput.getUnlockConditions()
 			});
-
-			// The additional required balance from the wallet is the difference between the updated storage deposit and the current storage deposit.
-			requiredBalance = updatedStorageDeposit - currentStorageDeposit;
 		} else {
 			// This is a new output so the amount for storage is calculated from the document.
 			aliasOutput = await identityClient.newDidOutput(address, document, rentStructure);
-			requiredBalance = BigInt(aliasOutput.amount);
-		}
-
-		// Check that the wallet has enough for the storage deposit.
-		const hasBalance = await this._walletProvider.ensureBalance(
-			walletAddressesBech32[0],
-			requiredBalance
-		);
-		if (!hasBalance) {
-			throw new GeneralError(IotaIdentityProvider._CLASS_NAME, "walletBalanceInsufficient", {
-				requiredBalance
-			});
 		}
 
 		const published = await identityClient.publishDidOutput(privateSecretManager, aliasOutput);

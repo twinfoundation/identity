@@ -3,6 +3,11 @@
 import type { IClientOptions } from "@iota/sdk-wasm/node";
 
 /**
+ * The default index to use for storing identities.
+ */
+export const DEFAULT_IDENTITY_ADDRESS_INDEX = 1000000;
+
+/**
  * Configuration for the IOTA Identity Provider.
  */
 export interface IIotaIdentityProviderConfig {
@@ -10,4 +15,9 @@ export interface IIotaIdentityProviderConfig {
 	 * The configuration for the client.
 	 */
 	clientOptions: IClientOptions;
+
+	/**
+	 * The index of the address to use for storing identities. Defaults to DEFAULT_IDENTITY_ADDRESS_INDEX
+	 */
+	addressIndex?: number;
 }

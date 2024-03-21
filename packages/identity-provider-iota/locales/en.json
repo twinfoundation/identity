@@ -18,8 +18,7 @@
 			"createProofFailed": "Creating the signature for the data failed",
 			"methodMissing": "The verification method specified does not exist",
 			"verifyProofFailed": "Verifying the signature for the data failed",
-			"revokeVerifiableCredentialsFailed": "Revoking verifiable credentials failed",
-			"walletBalanceInsufficient": "The wallet balance is insufficient, required amount os {requiredBalance}"
+			"revokeVerifiableCredentialsFailed": "Revoking verifiable credentials failed"
 		}
 	}
 }
