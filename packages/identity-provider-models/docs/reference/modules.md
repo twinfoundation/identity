@@ -1,13 +1,8 @@
 # @gtsc/identity-provider-models
 
-## Enumerations
-
-- [KeyType](enums/KeyType.md)
-
 ## Classes
 
 - [IdentityProviderFactory](classes/IdentityProviderFactory.md)
-- [KeyPairHelper](classes/KeyPairHelper.md)
 
 ## Interfaces
 
@@ -21,4 +16,3 @@
 - [IDidVerifiableCredential](interfaces/IDidVerifiableCredential.md)
 - [IDidVerifiablePresentation](interfaces/IDidVerifiablePresentation.md)
 - [IIdentityProvider](interfaces/IIdentityProvider.md)
-- [IKeyPair](interfaces/IKeyPair.md)

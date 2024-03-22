@@ -1,7 +1,6 @@
 {
 	"error": {
 		"iotaIdentityProvider": {
-			"unsupportedKeyType": "The key type \"{keyType}\" is not supported by this provider",
 			"createDocumentFailed": "Creating the document failed",
 			"resolveDocumentFailed": "Resolving the document failed",
 			"addVerificationMethodFailed": "Adding the verification method failed",
@@ -9,6 +8,8 @@
 			"addServiceFailed": "Adding the service failed",
 			"removeServiceFailed": "Removing the service failed",
 			"documentNotFound": "The document could not be found",
+			"noVerificationMethod": "There is no verification method with the specified id \"{verificationMethodId}\"",
+			"publicKeyJwkMissing": "The verification method contains no publicKeyJwk",
 			"createVerifiableCredentialFailed": "Creating the verifiable credential failed",
 			"checkingVerifiableCredentialFailed": "Checking the verifiable credential failed",
 			"createVerifiablePresentationFailed": "Creating the verifiable presentation failed",

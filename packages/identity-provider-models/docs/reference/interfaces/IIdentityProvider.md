@@ -12,7 +12,7 @@ Interface describing an identity provider.
 
 ### addService
 
-▸ **addService**(`documentId`, `documentKeyPair`, `serviceId`, `serviceType`, `serviceEndpoint`): `Promise`\<[`IDidDocument`](IDidDocument.md)\>
+▸ **addService**(`documentId`, `documentPrivateKey`, `serviceId`, `serviceType`, `serviceEndpoint`): `Promise`\<[`IDidDocument`](IDidDocument.md)\>
 
 Add a service to the document.
 
@@ -21,7 +21,7 @@ Add a service to the document.
 | Name | Type | Description |
 | :------ | :------ | :------ |
 | `documentId` | `string` | The id of the document to add the service to. |
-| `documentKeyPair` | [`IKeyPair`](IKeyPair.md) | The key required to sign the updated document. |
+| `documentPrivateKey` | `Uint8Array` | The private key required to sign the updated document. |
 | `serviceId` | `string` | The id of the service. |
 | `serviceType` | `string` | The type of the service. |
 | `serviceEndpoint` | `string` | The endpoint for the service. |
@@ -38,9 +38,9 @@ NotFoundError if the id can not be resolved.
 
 ___
 
-### addVerificationMethodJwk
+### addVerificationMethod
 
-▸ **addVerificationMethodJwk**(`documentId`, `documentKeyPair`, `verificationPublicKey`): `Promise`\<[`IDidDocument`](IDidDocument.md)\>
+▸ **addVerificationMethod**(`documentId`, `documentPrivateKey`, `verificationPublicKey`): `Promise`\<[`IDidDocument`](IDidDocument.md)\>
 
 Add a verification method to the document in JSON Web key Format.
 
@@ -49,8 +49,8 @@ Add a verification method to the document in JSON Web key Format.
 | Name | Type | Description |
 | :------ | :------ | :------ |
 | `documentId` | `string` | The id of the document to add the verification method to. |
-| `documentKeyPair` | [`IKeyPair`](IKeyPair.md) | The key required to sign the updated document. |
-| `verificationPublicKey` | `string` | The public key for the verification method. |
+| `documentPrivateKey` | `Uint8Array` | The private key required to sign the updated document. |
+| `verificationPublicKey` | `Uint8Array` | The public key for the verification method. |
 
 #### Returns
 
@@ -140,7 +140,7 @@ ___
 
 ### createDocument
 
-▸ **createDocument**(`documentKeyPair`): `Promise`\<[`IDidDocument`](IDidDocument.md)\>
+▸ **createDocument**(`documentPrivateKey`, `documentPublicKey`): `Promise`\<[`IDidDocument`](IDidDocument.md)\>
 
 Create a new document from the key pair.
 
@@ -148,7 +148,8 @@ Create a new document from the key pair.
 
 | Name | Type | Description |
 | :------ | :------ | :------ |
-| `documentKeyPair` | [`IKeyPair`](IKeyPair.md) | The key pair to generate the document for. |
+| `documentPrivateKey` | `Uint8Array` | The private key to use in generating the document. |
+| `documentPublicKey` | `Uint8Array` | The public key to use in generating the document. |
 
 #### Returns
 
@@ -160,7 +161,7 @@ ___
 
 ### createProof
 
-▸ **createProof**(`documentId`, `bytes`, `verificationMethod`, `verificationKeyPair`): `Promise`\<\{ `type`: `string` ; `value`: `string`  }\>
+▸ **createProof**(`documentId`, `bytes`, `verificationMethodId`, `verificationPrivateKey`): `Promise`\<\{ `type`: `string` ; `value`: `string`  }\>
 
 Create a proof for arbitrary data with the specified verification method.
 
@@ -170,8 +171,8 @@ Create a proof for arbitrary data with the specified verification method.
 | :------ | :------ | :------ |
 | `documentId` | `string` | The id of the document signing the data. |
 | `bytes` | `Uint8Array` | The data bytes to sign. |
-| `verificationMethod` | `string` | The verification method to use. |
-| `verificationKeyPair` | [`IKeyPair`](IKeyPair.md) | The key required to generate the proof. |
+| `verificationMethodId` | `string` | The verification method id to use. |
+| `verificationPrivateKey` | `Uint8Array` | The private key required to generate the proof. |
 
 #### Returns
 
@@ -183,7 +184,7 @@ ___
 
 ### createVerifiableCredential
 
-▸ **createVerifiableCredential**\<`T`\>(`documentId`, `credentialId`, `schemaTypes`, `subject`, `revocationIndex`, `verificationMethod`, `verificationKeyPair`): `Promise`\<[`IDidVerifiableCredential`](IDidVerifiableCredential.md)\<`T`\>\>
+▸ **createVerifiableCredential**\<`T`\>(`documentId`, `credentialId`, `schemaTypes`, `subject`, `revocationIndex`, `verificationMethodId`, `verificationPrivateKey`): `Promise`\<[`IDidVerifiableCredential`](IDidVerifiableCredential.md)\<`T`\>\>
 
 Create a verifiable credential for a verification method.
 
@@ -202,8 +203,8 @@ Create a verifiable credential for a verification method.
 | `schemaTypes` | `string`[] | The type of the schemas for the data stored in the verifiable credential. |
 | `subject` | `T` \| `T`[] | The subject data to store for the credential. |
 | `revocationIndex` | `string` | The bitmap revocation index of the credential. |
-| `verificationMethod` | `string` | The verification method to use. |
-| `verificationKeyPair` | [`IKeyPair`](IKeyPair.md) | The key required to generate the verifiable credential. |
+| `verificationMethodId` | `string` | The verification method fragment to use. |
+| `verificationPrivateKey` | `Uint8Array` | The private key required to generate the verifiable credential. |
 
 #### Returns
 
@@ -219,7 +220,7 @@ ___
 
 ### createVerifiablePresentation
 
-▸ **createVerifiablePresentation**(`documentId`, `verifiableCredentials`, `presentationMethod`, `presentationKeyPair`, `expiresInMinutes?`): `Promise`\<[`IDidVerifiablePresentation`](IDidVerifiablePresentation.md)\>
+▸ **createVerifiablePresentation**(`documentId`, `verifiableCredentials`, `presentationMethodId`, `presentationPrivateKey`, `expiresInMinutes?`): `Promise`\<[`IDidVerifiablePresentation`](IDidVerifiablePresentation.md)\>
 
 Create a verifiable presentation from the supplied verifiable credentials.
 
@@ -229,8 +230,8 @@ Create a verifiable presentation from the supplied verifiable credentials.
 | :------ | :------ | :------ |
 | `documentId` | `string` | The id of the document creating the verifiable presentation. |
 | `verifiableCredentials` | [`IDidVerifiableCredential`](IDidVerifiableCredential.md)\<`unknown`\> \| [`IDidVerifiableCredential`](IDidVerifiableCredential.md)\<`unknown`\>[] | The credentials to use for creating the presentation. |
-| `presentationMethod` | `string` | The method to associate with the presentation. |
-| `presentationKeyPair` | [`IKeyPair`](IKeyPair.md) | The key required to generate the verifiable presentation. |
+| `presentationMethodId` | `string` | The method to associate with the presentation. |
+| `presentationPrivateKey` | `Uint8Array` | The private key required to generate the verifiable presentation. |
 | `expiresInMinutes?` | `number` | The time in minutes for the presentation to expire. |
 
 #### Returns
@@ -247,7 +248,7 @@ ___
 
 ### removeService
 
-▸ **removeService**(`documentId`, `documentKeyPair`, `serviceId`): `Promise`\<[`IDidDocument`](IDidDocument.md)\>
+▸ **removeService**(`documentId`, `documentPrivateKey`, `serviceId`): `Promise`\<[`IDidDocument`](IDidDocument.md)\>
 
 Remove a service from the document.
 
@@ -256,7 +257,7 @@ Remove a service from the document.
 | Name | Type | Description |
 | :------ | :------ | :------ |
 | `documentId` | `string` | The id of the document to remove the service from. |
-| `documentKeyPair` | [`IKeyPair`](IKeyPair.md) | The key required to sign the updated document. |
+| `documentPrivateKey` | `Uint8Array` | The private key required to sign the updated document. |
 | `serviceId` | `string` | The id of the service. |
 
 #### Returns
@@ -273,7 +274,7 @@ ___
 
 ### removeVerificationMethod
 
-▸ **removeVerificationMethod**(`documentId`, `documentKeyPair`, `verificationMethodName`): `Promise`\<[`IDidDocument`](IDidDocument.md)\>
+▸ **removeVerificationMethod**(`documentId`, `documentPrivateKey`, `verificationMethodFragment`): `Promise`\<[`IDidDocument`](IDidDocument.md)\>
 
 Remove a verification method from the document.
 
@@ -282,8 +283,8 @@ Remove a verification method from the document.
 | Name | Type | Description |
 | :------ | :------ | :------ |
 | `documentId` | `string` | The id of the document to remove the verification method from. |
-| `documentKeyPair` | [`IKeyPair`](IKeyPair.md) | The key required to sign the updated document. |
-| `verificationMethodName` | `string` | The name of the verification method. |
+| `documentPrivateKey` | `Uint8Array` | The private key required to sign the updated document. |
+| `verificationMethodFragment` | `string` | The fragment of the verification method. |
 
 #### Returns
 
@@ -327,7 +328,7 @@ ___
 
 ### revokeVerifiableCredentials
 
-▸ **revokeVerifiableCredentials**(`documentId`, `documentKeyPair`, `credentialIndices`): `Promise`\<[`IDidDocument`](IDidDocument.md)\>
+▸ **revokeVerifiableCredentials**(`documentId`, `documentPrivateKey`, `credentialIndices`): `Promise`\<[`IDidDocument`](IDidDocument.md)\>
 
 Revoke verifiable credential(s).
 
@@ -336,7 +337,7 @@ Revoke verifiable credential(s).
 | Name | Type | Description |
 | :------ | :------ | :------ |
 | `documentId` | `string` | The id of the document to update the revocation list for. |
-| `documentKeyPair` | [`IKeyPair`](IKeyPair.md) | The key required to sign the updated document. |
+| `documentPrivateKey` | `Uint8Array` | The private key required to sign the updated document. |
 | `credentialIndices` | `number`[] | The revocation bitmap index or indices to revoke. |
 
 #### Returns
@@ -385,7 +386,7 @@ ___
 
 ### verifyProof
 
-▸ **verifyProof**(`documentId`, `bytes`, `verificationMethod`, `signatureType`, `signatureValue`): `Promise`\<`boolean`\>
+▸ **verifyProof**(`documentId`, `bytes`, `verificationMethodId`, `signatureType`, `signatureValue`): `Promise`\<`boolean`\>
 
 Verify proof for arbitrary data with the specified verification method.
 
@@ -395,7 +396,7 @@ Verify proof for arbitrary data with the specified verification method.
 | :------ | :------ | :------ |
 | `documentId` | `string` | The id of the document verifying the data. |
 | `bytes` | `Uint8Array` | The data bytes to verify. |
-| `verificationMethod` | `string` | The verification method to use. |
+| `verificationMethodId` | `string` | The verification method id to use. |
 | `signatureType` | `string` | The type of the signature for the proof. |
 | `signatureValue` | `string` | The value of the signature for the proof. |
 

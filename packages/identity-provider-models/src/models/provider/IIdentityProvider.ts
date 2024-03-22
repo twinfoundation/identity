@@ -6,7 +6,6 @@ import type { IDidDocument } from "./IDidDocument";
 import type { IDidPresentationVerification } from "./IDidPresentationVerification";
 import type { IDidVerifiableCredential } from "./IDidVerifiableCredential";
 import type { IDidVerifiablePresentation } from "./IDidVerifiablePresentation";
-import type { IKeyPair } from "../IKeyPair";
 
 /**
  * Interface describing an identity provider.
@@ -14,10 +13,14 @@ import type { IKeyPair } from "../IKeyPair";
 export interface IIdentityProvider extends IService {
 	/**
 	 * Create a new document from the key pair.
-	 * @param documentKeyPair The key pair to generate the document for.
+	 * @param documentPrivateKey The private key to use in generating the document.
+	 * @param documentPublicKey The public key to use in generating the document.
 	 * @returns The created document.
 	 */
-	createDocument(documentKeyPair: IKeyPair): Promise<IDidDocument>;
+	createDocument(
+		documentPrivateKey: Uint8Array,
+		documentPublicKey: Uint8Array
+	): Promise<IDidDocument>;
 
 	/**
 	 * Resolve a document from its id.
@@ -30,37 +33,37 @@ export interface IIdentityProvider extends IService {
 	/**
 	 * Add a verification method to the document in JSON Web key Format.
 	 * @param documentId The id of the document to add the verification method to.
-	 * @param documentKeyPair The key required to sign the updated document.
+	 * @param documentPrivateKey The private key required to sign the updated document.
 	 * @param verificationPublicKey The public key for the verification method.
 	 * @returns The updated document.
 	 * @throws NotFoundError if the id can not be resolved.
 	 * @throws NotSupportedError if the platform does not support multiple keys.
 	 */
-	addVerificationMethodJwk(
+	addVerificationMethod(
 		documentId: string,
-		documentKeyPair: IKeyPair,
-		verificationPublicKey: string
+		documentPrivateKey: Uint8Array,
+		verificationPublicKey: Uint8Array
 	): Promise<IDidDocument>;
 
 	/**
 	 * Remove a verification method from the document.
 	 * @param documentId The id of the document to remove the verification method from.
-	 * @param documentKeyPair The key required to sign the updated document.
-	 * @param verificationMethodName The name of the verification method.
+	 * @param documentPrivateKey The private key required to sign the updated document.
+	 * @param verificationMethodFragment The fragment of the verification method.
 	 * @returns The updated document.
 	 * @throws NotFoundError if the id can not be resolved.
 	 * @throws NotSupportedError if the platform does not support multiple revocable keys.
 	 */
 	removeVerificationMethod(
 		documentId: string,
-		documentKeyPair: IKeyPair,
-		verificationMethodName: string
+		documentPrivateKey: Uint8Array,
+		verificationMethodFragment: string
 	): Promise<IDidDocument>;
 
 	/**
 	 * Add a service to the document.
 	 * @param documentId The id of the document to add the service to.
-	 * @param documentKeyPair The key required to sign the updated document.
+	 * @param documentPrivateKey The private key required to sign the updated document.
 	 * @param serviceId The id of the service.
 	 * @param serviceType The type of the service.
 	 * @param serviceEndpoint The endpoint for the service.
@@ -69,7 +72,7 @@ export interface IIdentityProvider extends IService {
 	 */
 	addService(
 		documentId: string,
-		documentKeyPair: IKeyPair,
+		documentPrivateKey: Uint8Array,
 		serviceId: string,
 		serviceType: string,
 		serviceEndpoint: string
@@ -78,14 +81,14 @@ export interface IIdentityProvider extends IService {
 	/**
 	 * Remove a service from the document.
 	 * @param documentId The id of the document to remove the service from.
-	 * @param documentKeyPair The key required to sign the updated document.
+	 * @param documentPrivateKey The private key required to sign the updated document.
 	 * @param serviceId The id of the service.
 	 * @returns The updated document.
 	 * @throws NotFoundError if the id can not be resolved.
 	 */
 	removeService(
 		documentId: string,
-		documentKeyPair: IKeyPair,
+		documentPrivateKey: Uint8Array,
 		serviceId: string
 	): Promise<IDidDocument>;
 
@@ -96,8 +99,8 @@ export interface IIdentityProvider extends IService {
 	 * @param schemaTypes The type of the schemas for the data stored in the verifiable credential.
 	 * @param subject The subject data to store for the credential.
 	 * @param revocationIndex The bitmap revocation index of the credential.
-	 * @param verificationMethod The verification method to use.
-	 * @param verificationKeyPair The key required to generate the verifiable credential.
+	 * @param verificationMethodId The verification method fragment to use.
+	 * @param verificationPrivateKey The private key required to generate the verifiable credential.
 	 * @returns The created verifiable credential.
 	 * @throws NotFoundError if the id can not be resolved.
 	 */
@@ -107,8 +110,8 @@ export interface IIdentityProvider extends IService {
 		schemaTypes: string[],
 		subject: T | T[],
 		revocationIndex: string,
-		verificationMethod: string,
-		verificationKeyPair: IKeyPair
+		verificationMethodId: string,
+		verificationPrivateKey: Uint8Array
 	): Promise<IDidVerifiableCredential<T>>;
 
 	/**
@@ -123,13 +126,13 @@ export interface IIdentityProvider extends IService {
 	/**
 	 * Revoke verifiable credential(s).
 	 * @param documentId The id of the document to update the revocation list for.
-	 * @param documentKeyPair The key required to sign the updated document.
+	 * @param documentPrivateKey The private key required to sign the updated document.
 	 * @param credentialIndices The revocation bitmap index or indices to revoke.
 	 * @returns Nothing.
 	 */
 	revokeVerifiableCredentials(
 		documentId: string,
-		documentKeyPair: IKeyPair,
+		documentPrivateKey: Uint8Array,
 		credentialIndices: number[]
 	): Promise<IDidDocument>;
 
@@ -137,8 +140,8 @@ export interface IIdentityProvider extends IService {
 	 * Create a verifiable presentation from the supplied verifiable credentials.
 	 * @param documentId The id of the document creating the verifiable presentation.
 	 * @param verifiableCredentials The credentials to use for creating the presentation.
-	 * @param presentationMethod The method to associate with the presentation.
-	 * @param presentationKeyPair The key required to generate the verifiable presentation.
+	 * @param presentationMethodId The method to associate with the presentation.
+	 * @param presentationPrivateKey The private key required to generate the verifiable presentation.
 	 * @param expiresInMinutes The time in minutes for the presentation to expire.
 	 * @returns The verifiable presentation.
 	 * @throws NotFoundError if the id can not be resolved.
@@ -146,8 +149,8 @@ export interface IIdentityProvider extends IService {
 	createVerifiablePresentation(
 		documentId: string,
 		verifiableCredentials: IDidVerifiableCredential<unknown> | IDidVerifiableCredential<unknown>[],
-		presentationMethod: string,
-		presentationKeyPair: IKeyPair,
+		presentationMethodId: string,
+		presentationPrivateKey: Uint8Array,
 		expiresInMinutes?: number
 	): Promise<IDidVerifiablePresentation>;
 
@@ -164,15 +167,15 @@ export interface IIdentityProvider extends IService {
 	 * Create a proof for arbitrary data with the specified verification method.
 	 * @param documentId The id of the document signing the data.
 	 * @param bytes The data bytes to sign.
-	 * @param verificationMethod The verification method to use.
-	 * @param verificationKeyPair The key required to generate the proof.
+	 * @param verificationMethodId The verification method id to use.
+	 * @param verificationPrivateKey The private key required to generate the proof.
 	 * @returns The proof signature type and value.
 	 */
 	createProof(
 		documentId: string,
 		bytes: Uint8Array,
-		verificationMethod: string,
-		verificationKeyPair: IKeyPair
+		verificationMethodId: string,
+		verificationPrivateKey: Uint8Array
 	): Promise<{
 		type: string;
 		value: string;
@@ -182,7 +185,7 @@ export interface IIdentityProvider extends IService {
 	 * Verify proof for arbitrary data with the specified verification method.
 	 * @param documentId The id of the document verifying the data.
 	 * @param bytes The data bytes to verify.
-	 * @param verificationMethod The verification method to use.
+	 * @param verificationMethodId The verification method id to use.
 	 * @param signatureType The type of the signature for the proof.
 	 * @param signatureValue The value of the signature for the proof.
 	 * @returns True if the signature is valid.
@@ -190,7 +193,7 @@ export interface IIdentityProvider extends IService {
 	verifyProof(
 		documentId: string,
 		bytes: Uint8Array,
-		verificationMethod: string,
+		verificationMethodId: string,
 		signatureType: string,
 		signatureValue: string
 	): Promise<boolean>;

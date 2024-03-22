@@ -1,16 +1,15 @@
 // Copyright 2024 IOTA Stiftung.
 // SPDX-License-Identifier: Apache-2.0.
-import { Converter, GeneralError, Guards, Is, NotFoundError, NotSupportedError } from "@gtsc/core";
+import { Converter, GeneralError, Guards, Is, NotFoundError } from "@gtsc/core";
 import { Sha256 } from "@gtsc/crypto";
-import {
-	KeyType,
-	type IDidCredentialVerification,
-	type IDidDocument,
-	type IDidPresentationVerification,
-	type IDidVerifiableCredential,
-	type IDidVerifiablePresentation,
-	type IIdentityProvider,
-	type IKeyPair
+import type {
+	IDidCredentialVerification,
+	IDidDocument,
+	IDidPresentationVerification,
+	IDidVerifiableCredential,
+	IDidVerifiablePresentation,
+	IDidDocumentVerificationMethod,
+	IIdentityProvider
 } from "@gtsc/identity-provider-models";
 import { nameof } from "@gtsc/nameof";
 import {
@@ -19,7 +18,6 @@ import {
 	EdCurve,
 	EdDSAJwsVerifier,
 	FailFast,
-	type IJwkParams,
 	IotaDID,
 	IotaDocument,
 	IotaIdentityClient,
@@ -44,7 +42,8 @@ import {
 	SubjectHolderRelationship,
 	Timestamp,
 	VerificationMethod,
-	verifyEd25519
+	verifyEd25519,
+	type IJwkParams
 } from "@iota/identity-wasm/node";
 import { Client, SecretManager, Utils, type PrivateKeySecretManager } from "@iota/sdk-wasm/node";
 import {
@@ -101,36 +100,24 @@ export class IotaIdentityProvider implements IIdentityProvider {
 
 	/**
 	 * Create a new document from the key pair.
-	 * @param documentKeyPair The key pair to generate the document for.
+	 * @param documentPrivateKey The private key to use in generating the document.
+	 * @param documentPublicKey The public key to use in generating the document.
 	 * @returns The created document.
 	 */
-	public async createDocument(documentKeyPair: IKeyPair): Promise<IDidDocument> {
-		Guards.object<IKeyPair>(
+	public async createDocument(
+		documentPrivateKey: Uint8Array,
+		documentPublicKey: Uint8Array
+	): Promise<IDidDocument> {
+		Guards.uint8Array(
 			IotaIdentityProvider._CLASS_NAME,
-			nameof(documentKeyPair),
-			documentKeyPair
+			nameof(documentPrivateKey),
+			documentPrivateKey
 		);
-		Guards.stringValue(
+		Guards.uint8Array(
 			IotaIdentityProvider._CLASS_NAME,
-			nameof(documentKeyPair.type),
-			documentKeyPair.type
+			nameof(documentPublicKey),
+			documentPublicKey
 		);
-		Guards.stringValue(
-			IotaIdentityProvider._CLASS_NAME,
-			nameof(documentKeyPair.privateKey),
-			documentKeyPair.privateKey
-		);
-		Guards.stringValue(
-			IotaIdentityProvider._CLASS_NAME,
-			nameof(documentKeyPair.publicKey),
-			documentKeyPair.publicKey
-		);
-
-		if (![KeyType.Ed25519].includes(documentKeyPair.type)) {
-			throw new NotSupportedError(IotaIdentityProvider._CLASS_NAME, "unsupportedKeyType", {
-				keyType: documentKeyPair.type
-			});
-		}
 
 		try {
 			const identityClient = await this.getIotaIdentityClient();
@@ -141,7 +128,7 @@ export class IotaIdentityProvider implements IIdentityProvider {
 			const jwkParams: IJwkParams = {
 				kty: JwkType.Okp,
 				crv: EdCurve.Ed25519,
-				x: Converter.bytesToBase64(Converter.hexToBytes(documentKeyPair.publicKey))
+				x: Converter.bytesToBase64(documentPublicKey)
 			};
 
 			const fingerPrint = Converter.bytesToBase64Url(
@@ -153,7 +140,7 @@ export class IotaIdentityProvider implements IIdentityProvider {
 				kid: fingerPrint
 			});
 
-			const method = VerificationMethod.newFromJwk(document.id(), jwk, fingerPrint);
+			const method = VerificationMethod.newFromJwk(document.id(), jwk, `#${fingerPrint}`);
 
 			await document.insertMethod(method, MethodScope.VerificationMethod());
 
@@ -162,7 +149,7 @@ export class IotaIdentityProvider implements IIdentityProvider {
 			const revocationServiceId = document.id().join("#revocation");
 			document.insertService(revocationBitmap.toService(revocationServiceId));
 
-			return await this.publish(document, documentKeyPair, false);
+			return await this.publish(document, documentPrivateKey, false);
 		} catch (error) {
 			throw new GeneralError(
 				IotaIdentityProvider._CLASS_NAME,
@@ -202,39 +189,24 @@ export class IotaIdentityProvider implements IIdentityProvider {
 	/**
 	 * Add a verification method to the document in JSON Web key Format.
 	 * @param documentId The id of the document to add the verification method to.
-	 * @param documentKeyPair The key required to sign the updated document.
+	 * @param documentPrivateKey The private key required to sign the updated document.
 	 * @param verificationPublicKey The public key for the verification method.
 	 * @returns The updated document.
 	 * @throws NotFoundError if the id can not be resolved.
 	 * @throws NotSupportedError if the platform does not support multiple keys.
 	 */
-	public async addVerificationMethodJwk(
+	public async addVerificationMethod(
 		documentId: string,
-		documentKeyPair: IKeyPair,
-		verificationPublicKey: string
+		documentPrivateKey: Uint8Array,
+		verificationPublicKey: Uint8Array
 	): Promise<IDidDocument> {
 		Guards.stringValue(IotaIdentityProvider._CLASS_NAME, nameof(documentId), documentId);
-		Guards.object<IKeyPair>(
+		Guards.uint8Array(
 			IotaIdentityProvider._CLASS_NAME,
-			nameof(documentKeyPair),
-			documentKeyPair
+			nameof(documentPrivateKey),
+			documentPrivateKey
 		);
-		Guards.stringValue(
-			IotaIdentityProvider._CLASS_NAME,
-			nameof(documentKeyPair.type),
-			documentKeyPair.type
-		);
-		Guards.stringValue(
-			IotaIdentityProvider._CLASS_NAME,
-			nameof(documentKeyPair.privateKey),
-			documentKeyPair.privateKey
-		);
-		Guards.stringValue(
-			IotaIdentityProvider._CLASS_NAME,
-			nameof(documentKeyPair.publicKey),
-			documentKeyPair.publicKey
-		);
-		Guards.stringValue(
+		Guards.uint8Array(
 			IotaIdentityProvider._CLASS_NAME,
 			nameof(verificationPublicKey),
 			verificationPublicKey
@@ -251,7 +223,7 @@ export class IotaIdentityProvider implements IIdentityProvider {
 			const jwkParams: IJwkParams = {
 				kty: JwkType.Okp,
 				crv: EdCurve.Ed25519,
-				x: Converter.bytesToBase64(Converter.hexToBytes(verificationPublicKey))
+				x: Converter.bytesToBase64(verificationPublicKey)
 			};
 
 			const fingerPrint = Converter.bytesToBase64Url(
@@ -263,7 +235,7 @@ export class IotaIdentityProvider implements IIdentityProvider {
 				kid: fingerPrint
 			});
 
-			const method = VerificationMethod.newFromJwk(document.id(), jwk, fingerPrint);
+			const method = VerificationMethod.newFromJwk(document.id(), jwk, `#${fingerPrint}`);
 
 			const methods = document.methods();
 			const existingMethod = methods.find(m => m.id().toString() === method.id().toString());
@@ -274,7 +246,7 @@ export class IotaIdentityProvider implements IIdentityProvider {
 
 			document.insertMethod(method, MethodScope.VerificationMethod());
 
-			return await this.publish(document, documentKeyPair, true);
+			return await this.publish(document, documentPrivateKey, true);
 		} catch (error) {
 			throw new GeneralError(
 				IotaIdentityProvider._CLASS_NAME,
@@ -288,42 +260,27 @@ export class IotaIdentityProvider implements IIdentityProvider {
 	/**
 	 * Remove a verification method from the document.
 	 * @param documentId The id of the document to remove the verification method from.
-	 * @param documentKeyPair The key required to sign the updated document.
-	 * @param verificationMethodName The name of the verification method.
+	 * @param documentPrivateKey The key required to sign the updated document.
+	 * @param verificationMethodId The id of the verification method.
 	 * @returns The updated document.
 	 * @throws NotFoundError if the id can not be resolved.
 	 * @throws NotSupportedError if the platform does not support multiple revocable keys.
 	 */
 	public async removeVerificationMethod(
 		documentId: string,
-		documentKeyPair: IKeyPair,
-		verificationMethodName: string
+		documentPrivateKey: Uint8Array,
+		verificationMethodId: string
 	): Promise<IDidDocument> {
 		Guards.stringValue(IotaIdentityProvider._CLASS_NAME, nameof(documentId), documentId);
-		Guards.object<IKeyPair>(
+		Guards.uint8Array(
 			IotaIdentityProvider._CLASS_NAME,
-			nameof(documentKeyPair),
-			documentKeyPair
+			nameof(documentPrivateKey),
+			documentPrivateKey
 		);
 		Guards.stringValue(
 			IotaIdentityProvider._CLASS_NAME,
-			nameof(documentKeyPair.type),
-			documentKeyPair.type
-		);
-		Guards.stringValue(
-			IotaIdentityProvider._CLASS_NAME,
-			nameof(documentKeyPair.privateKey),
-			documentKeyPair.privateKey
-		);
-		Guards.stringValue(
-			IotaIdentityProvider._CLASS_NAME,
-			nameof(documentKeyPair.publicKey),
-			documentKeyPair.publicKey
-		);
-		Guards.stringValue(
-			IotaIdentityProvider._CLASS_NAME,
-			nameof(verificationMethodName),
-			verificationMethodName
+			nameof(verificationMethodId),
+			verificationMethodId
 		);
 
 		try {
@@ -334,17 +291,18 @@ export class IotaIdentityProvider implements IIdentityProvider {
 				throw new NotFoundError(IotaIdentityProvider._CLASS_NAME, "documentNotFound", documentId);
 			}
 
-			const methodUrl = document.id().toUrl().join(`#${verificationMethodName}`);
 			const methods = document.methods();
-			const methodExists = methods.find(m => m.id().toString() === methodUrl.toString());
+			const method = methods.find(m => m.id().toString() === verificationMethodId);
 
-			if (!methodExists) {
-				return document.toJSON() as IDidDocument;
+			if (!method) {
+				throw new GeneralError(IotaIdentityProvider._CLASS_NAME, "noVerificationMethod", {
+					verificationMethodId
+				});
 			}
 
-			document.removeMethod(methodUrl);
+			document.removeMethod(method.id());
 
-			return await this.publish(document, documentKeyPair, true);
+			return await this.publish(document, documentPrivateKey, true);
 		} catch (error) {
 			throw new GeneralError(
 				IotaIdentityProvider._CLASS_NAME,
@@ -358,7 +316,7 @@ export class IotaIdentityProvider implements IIdentityProvider {
 	/**
 	 * Add a service to the document.
 	 * @param documentId The id of the document to add the service to.
-	 * @param documentKeyPair The key required to sign the updated document.
+	 * @param documentPrivateKey The private key required to sign the updated document.
 	 * @param serviceId The id of the service.
 	 * @param serviceType The type of the service.
 	 * @param serviceEndpoint The endpoint for the service.
@@ -367,31 +325,16 @@ export class IotaIdentityProvider implements IIdentityProvider {
 	 */
 	public async addService(
 		documentId: string,
-		documentKeyPair: IKeyPair,
+		documentPrivateKey: Uint8Array,
 		serviceId: string,
 		serviceType: string,
 		serviceEndpoint: string
 	): Promise<IDidDocument> {
 		Guards.stringValue(IotaIdentityProvider._CLASS_NAME, nameof(documentId), documentId);
-		Guards.object<IKeyPair>(
+		Guards.uint8Array(
 			IotaIdentityProvider._CLASS_NAME,
-			nameof(documentKeyPair),
-			documentKeyPair
-		);
-		Guards.stringValue(
-			IotaIdentityProvider._CLASS_NAME,
-			nameof(documentKeyPair.type),
-			documentKeyPair.type
-		);
-		Guards.stringValue(
-			IotaIdentityProvider._CLASS_NAME,
-			nameof(documentKeyPair.privateKey),
-			documentKeyPair.privateKey
-		);
-		Guards.stringValue(
-			IotaIdentityProvider._CLASS_NAME,
-			nameof(documentKeyPair.publicKey),
-			documentKeyPair.publicKey
+			nameof(documentPrivateKey),
+			documentPrivateKey
 		);
 		Guards.stringValue(IotaIdentityProvider._CLASS_NAME, nameof(serviceId), serviceId);
 		Guards.stringValue(IotaIdentityProvider._CLASS_NAME, nameof(serviceType), serviceType);
@@ -420,7 +363,7 @@ export class IotaIdentityProvider implements IIdentityProvider {
 
 			document.insertService(service);
 
-			return await this.publish(document, documentKeyPair, true);
+			return await this.publish(document, documentPrivateKey, true);
 		} catch (error) {
 			throw new GeneralError(
 				IotaIdentityProvider._CLASS_NAME,
@@ -434,36 +377,21 @@ export class IotaIdentityProvider implements IIdentityProvider {
 	/**
 	 * Remove a service from the document.
 	 * @param documentId The id of the document to remove the service from.
-	 * @param documentKeyPair The key required to sign the updated document.
+	 * @param documentPrivateKey The private key required to sign the updated document.
 	 * @param serviceId The id of the service.
 	 * @returns The updated document.
 	 * @throws NotFoundError if the id can not be resolved.
 	 */
 	public async removeService(
 		documentId: string,
-		documentKeyPair: IKeyPair,
+		documentPrivateKey: Uint8Array,
 		serviceId: string
 	): Promise<IDidDocument> {
 		Guards.stringValue(IotaIdentityProvider._CLASS_NAME, nameof(documentId), documentId);
-		Guards.object<IKeyPair>(
+		Guards.uint8Array(
 			IotaIdentityProvider._CLASS_NAME,
-			nameof(documentKeyPair),
-			documentKeyPair
-		);
-		Guards.stringValue(
-			IotaIdentityProvider._CLASS_NAME,
-			nameof(documentKeyPair.type),
-			documentKeyPair.type
-		);
-		Guards.stringValue(
-			IotaIdentityProvider._CLASS_NAME,
-			nameof(documentKeyPair.privateKey),
-			documentKeyPair.privateKey
-		);
-		Guards.stringValue(
-			IotaIdentityProvider._CLASS_NAME,
-			nameof(documentKeyPair.publicKey),
-			documentKeyPair.publicKey
+			nameof(documentPrivateKey),
+			documentPrivateKey
 		);
 		Guards.stringValue(IotaIdentityProvider._CLASS_NAME, nameof(serviceId), serviceId);
 
@@ -485,7 +413,7 @@ export class IotaIdentityProvider implements IIdentityProvider {
 
 			document.removeService(serviceUrl);
 
-			return await this.publish(document, documentKeyPair, true);
+			return await this.publish(document, documentPrivateKey, true);
 		} catch (error) {
 			throw new GeneralError(
 				IotaIdentityProvider._CLASS_NAME,
@@ -503,8 +431,8 @@ export class IotaIdentityProvider implements IIdentityProvider {
 	 * @param schemaTypes The type of the schemas for the data stored in the verifiable credential.
 	 * @param subject The subject data to store for the credential.
 	 * @param revocationIndex The bitmap revocation index of the credential.
-	 * @param verificationMethod The verification method to use.
-	 * @param verificationKeyPair The key required to generate the verifiable credential.
+	 * @param verificationMethodId The verification method to use.
+	 * @param verificationPrivateKey The private key required to generate the verifiable credential.
 	 * @returns The created verifiable credential.
 	 * @throws NotFoundError if the id can not be resolved.
 	 */
@@ -514,8 +442,8 @@ export class IotaIdentityProvider implements IIdentityProvider {
 		schemaTypes: string[],
 		subject: T | T[],
 		revocationIndex: string,
-		verificationMethod: string,
-		verificationKeyPair: IKeyPair
+		verificationMethodId: string,
+		verificationPrivateKey: Uint8Array
 	): Promise<IDidVerifiableCredential<T>> {
 		Guards.stringValue(IotaIdentityProvider._CLASS_NAME, nameof(documentId), documentId);
 		Guards.stringValue(IotaIdentityProvider._CLASS_NAME, nameof(credentialId), credentialId);
@@ -527,31 +455,33 @@ export class IotaIdentityProvider implements IIdentityProvider {
 		}
 		Guards.stringValue(
 			IotaIdentityProvider._CLASS_NAME,
-			nameof(verificationMethod),
-			verificationMethod
+			nameof(verificationMethodId),
+			verificationMethodId
 		);
-		Guards.stringValue(
+		Guards.uint8Array(
 			IotaIdentityProvider._CLASS_NAME,
-			nameof(verificationKeyPair.type),
-			verificationKeyPair.type
-		);
-		Guards.stringValue(
-			IotaIdentityProvider._CLASS_NAME,
-			nameof(verificationKeyPair.privateKey),
-			verificationKeyPair.privateKey
-		);
-		Guards.stringValue(
-			IotaIdentityProvider._CLASS_NAME,
-			nameof(verificationKeyPair.publicKey),
-			verificationKeyPair.publicKey
+			nameof(verificationPrivateKey),
+			verificationPrivateKey
 		);
 
 		try {
 			const identityClient = await this.getIotaIdentityClient();
-			const issuerDocument = await identityClient.resolveDid(IotaDID.parse(documentId));
+			const document = await identityClient.resolveDid(IotaDID.parse(documentId));
 
-			if (Is.undefined(issuerDocument)) {
+			if (Is.undefined(document)) {
 				throw new NotFoundError(IotaIdentityProvider._CLASS_NAME, "documentNotFound", documentId);
+			}
+
+			const methods = document.methods();
+			const method = methods.find(m => m.id().toString() === verificationMethodId);
+
+			if (!method) {
+				throw new GeneralError(IotaIdentityProvider._CLASS_NAME, "methodMissing");
+			}
+
+			const didMethod = method.toJSON() as IDidDocumentVerificationMethod;
+			if (Is.undefined(didMethod.publicKeyJwk)) {
+				throw new GeneralError(IotaIdentityProvider._CLASS_NAME, "publicKeyJwkMissing");
 			}
 
 			const unsignedVc = new Credential({
@@ -560,26 +490,26 @@ export class IotaIdentityProvider implements IIdentityProvider {
 				issuer: documentId,
 				credentialSubject: subject,
 				credentialStatus: {
-					id: `${issuerDocument.id().toString()}#revocation`,
+					id: `${document.id().toString()}#revocation`,
 					type: RevocationBitmap.type(),
 					revocationBitmapIndex: revocationIndex
 				}
 			});
 
+			const jwk = new Jwk({
+				kty: didMethod.publicKeyJwk.kty as JwkType,
+				crv: didMethod.publicKeyJwk.crv,
+				x: didMethod.publicKeyJwk.x,
+				d: Converter.bytesToBase64(verificationPrivateKey)
+			} as IJwkParams);
+
 			const jwkMemStore = new JwkMemStore();
-			jwkMemStore.insert(
-				new Jwk({
-					kty: JwkType.Okp,
-					crv: EdCurve.Ed25519,
-					x: Converter.bytesToBase64(Converter.hexToBytes(verificationKeyPair.publicKey)),
-					d: Converter.bytesToBase64(Converter.hexToBytes(verificationKeyPair.privateKey))
-				})
-			);
+			jwkMemStore.insert(jwk);
 
 			const storage = new Storage(jwkMemStore, new KeyIdMemStore());
-			const credentialJwt = await issuerDocument.createCredentialJwt(
+			const credentialJwt = await document.createCredentialJwt(
 				storage,
-				`#${verificationMethod}`,
+				`#${verificationMethodId}`,
 				unsignedVc,
 				new JwsSignatureOptions()
 			);
@@ -618,9 +548,9 @@ export class IotaIdentityProvider implements IIdentityProvider {
 			const validatedCredential = new JwtCredentialValidator(new EdDSAJwsVerifier());
 
 			const issuerId = JwtCredentialValidator.extractIssuer(credentialJwt);
-			let issuerDocument = await resolver.resolve(issuerId.toString());
+			let document = await resolver.resolve(issuerId.toString());
 
-			if (Is.undefined(issuerDocument)) {
+			if (Is.undefined(document)) {
 				throw new NotFoundError(
 					IotaIdentityProvider._CLASS_NAME,
 					"documentNotFound",
@@ -628,13 +558,13 @@ export class IotaIdentityProvider implements IIdentityProvider {
 				);
 			}
 
-			if ("toCoreDocument" in issuerDocument) {
-				issuerDocument = issuerDocument.toCoreDocument();
+			if ("toCoreDocument" in document) {
+				document = document.toCoreDocument();
 			}
 
 			validatedCredential.validate(
 				credentialJwt,
-				issuerDocument,
+				document,
 				new JwtCredentialValidationOptions(),
 				FailFast.FirstError
 			);
@@ -651,9 +581,9 @@ export class IotaIdentityProvider implements IIdentityProvider {
 			return {
 				isVerified: true,
 				issuer: {
-					id: issuerDocument.id().toString(),
+					id: document.id().toString(),
 					isVerified: true,
-					document: issuerDocument.toJSON() as IDidDocument
+					document: document.toJSON() as IDidDocument
 				},
 				subjects: subjects.map(s => {
 					if ("toCoreDocument" in s) {
@@ -679,35 +609,20 @@ export class IotaIdentityProvider implements IIdentityProvider {
 	/**
 	 * Revoke verifiable credential(s).
 	 * @param documentId The id of the document to update the revocation list for.
-	 * @param documentKeyPair The key required to sign the updated document.
+	 * @param documentPrivateKey The private key required to sign the updated document.
 	 * @param credentialIndices The revocation bitmap index or indices to revoke.
 	 * @returns Nothing.
 	 */
 	public async revokeVerifiableCredentials(
 		documentId: string,
-		documentKeyPair: IKeyPair,
+		documentPrivateKey: Uint8Array,
 		credentialIndices: number[]
 	): Promise<IDidDocument> {
 		Guards.stringValue(IotaIdentityProvider._CLASS_NAME, nameof(documentId), documentId);
-		Guards.object<IKeyPair>(
+		Guards.uint8Array(
 			IotaIdentityProvider._CLASS_NAME,
-			nameof(documentKeyPair),
-			documentKeyPair
-		);
-		Guards.stringValue(
-			IotaIdentityProvider._CLASS_NAME,
-			nameof(documentKeyPair.type),
-			documentKeyPair.type
-		);
-		Guards.stringValue(
-			IotaIdentityProvider._CLASS_NAME,
-			nameof(documentKeyPair.privateKey),
-			documentKeyPair.privateKey
-		);
-		Guards.stringValue(
-			IotaIdentityProvider._CLASS_NAME,
-			nameof(documentKeyPair.publicKey),
-			documentKeyPair.publicKey
+			nameof(documentPrivateKey),
+			documentPrivateKey
 		);
 		Guards.arrayValue(
 			IotaIdentityProvider._CLASS_NAME,
@@ -725,7 +640,7 @@ export class IotaIdentityProvider implements IIdentityProvider {
 
 			document.revokeCredentials("revocation", credentialIndices);
 
-			return await this.publish(document, documentKeyPair, true);
+			return await this.publish(document, documentPrivateKey, true);
 		} catch (error) {
 			throw new GeneralError(
 				IotaIdentityProvider._CLASS_NAME,
@@ -740,8 +655,8 @@ export class IotaIdentityProvider implements IIdentityProvider {
 	 * Create a verifiable presentation from the supplied verifiable credentials.
 	 * @param documentId The id of the document creating the verifiable presentation.
 	 * @param verifiableCredentials The credentials to use for creating the presentation.
-	 * @param presentationMethod The method to associate with the presentation.
-	 * @param presentationKeyPair The key required to generate the verifiable presentation.
+	 * @param presentationMethodId The method to associate with the presentation.
+	 * @param presentationPrivateKey The private key required to generate the verifiable presentation.
 	 * @param expiresInMinutes The time in minutes for the presentation to expire.
 	 * @returns The verifiable presentation.
 	 * @throws NotFoundError if the id can not be resolved.
@@ -750,8 +665,8 @@ export class IotaIdentityProvider implements IIdentityProvider {
 	public async createVerifiablePresentation(
 		documentId: string,
 		verifiableCredentials: IDidVerifiableCredential<unknown> | IDidVerifiableCredential<unknown>[],
-		presentationMethod: string,
-		presentationKeyPair: IKeyPair,
+		presentationMethodId: string,
+		presentationPrivateKey: Uint8Array,
 		expiresInMinutes: number = -1
 	): Promise<IDidVerifiablePresentation> {
 		Guards.stringValue(IotaIdentityProvider._CLASS_NAME, nameof(documentId), documentId);
@@ -771,23 +686,13 @@ export class IotaIdentityProvider implements IIdentityProvider {
 
 		Guards.stringValue(
 			IotaIdentityProvider._CLASS_NAME,
-			nameof(presentationMethod),
-			presentationMethod
+			nameof(presentationMethodId),
+			presentationMethodId
 		);
-		Guards.stringValue(
+		Guards.uint8Array(
 			IotaIdentityProvider._CLASS_NAME,
-			nameof(presentationKeyPair.type),
-			presentationKeyPair.type
-		);
-		Guards.stringValue(
-			IotaIdentityProvider._CLASS_NAME,
-			nameof(presentationKeyPair.privateKey),
-			presentationKeyPair.privateKey
-		);
-		Guards.stringValue(
-			IotaIdentityProvider._CLASS_NAME,
-			nameof(presentationKeyPair.publicKey),
-			presentationKeyPair.publicKey
+			nameof(presentationPrivateKey),
+			presentationPrivateKey
 		);
 
 		try {
@@ -797,6 +702,28 @@ export class IotaIdentityProvider implements IIdentityProvider {
 			if (Is.undefined(document)) {
 				throw new NotFoundError(IotaIdentityProvider._CLASS_NAME, "documentNotFound", documentId);
 			}
+
+			const methods = document.methods();
+			const method = methods.find(m => m.id().toString() === presentationMethodId);
+			if (!method) {
+				throw new GeneralError(IotaIdentityProvider._CLASS_NAME, "methodMissing");
+			}
+
+			const didMethod = method.toJSON() as IDidDocumentVerificationMethod;
+			if (Is.undefined(didMethod.publicKeyJwk)) {
+				throw new GeneralError(IotaIdentityProvider._CLASS_NAME, "publicKeyJwkMissing");
+			}
+
+			const jwkMemStore = new JwkMemStore();
+
+			const jwk = new Jwk({
+				kty: didMethod.publicKeyJwk.kty as JwkType,
+				crv: didMethod.publicKeyJwk.crv,
+				x: didMethod.publicKeyJwk.x,
+				d: Converter.bytesToBase64(presentationPrivateKey)
+			} as IJwkParams);
+
+			await jwkMemStore.insert(jwk);
 
 			const vcs = (
 				Is.array(verifiableCredentials) ? verifiableCredentials : [verifiableCredentials]
@@ -808,16 +735,6 @@ export class IotaIdentityProvider implements IIdentityProvider {
 				holder: document.id()
 			});
 
-			const jwkMemStore = new JwkMemStore();
-			jwkMemStore.insert(
-				new Jwk({
-					kty: JwkType.Okp,
-					crv: EdCurve.Ed25519,
-					x: Converter.bytesToBase64(Converter.hexToBytes(presentationKeyPair.publicKey)),
-					d: Converter.bytesToBase64(Converter.hexToBytes(presentationKeyPair.privateKey))
-				})
-			);
-
 			const storage = new Storage(jwkMemStore, new KeyIdMemStore());
 
 			const expirationDate =
@@ -827,7 +744,7 @@ export class IotaIdentityProvider implements IIdentityProvider {
 
 			const presentationJwt = await document.createPresentationJwt(
 				storage,
-				presentationMethod,
+				presentationMethodId,
 				unsignedVp,
 				new JwsSignatureOptions(),
 				new JwtPresentationOptions({ expirationDate })
@@ -943,15 +860,15 @@ export class IotaIdentityProvider implements IIdentityProvider {
 	 * Create a proof for arbitrary data with the specified verification method.
 	 * @param documentId The id of the document signing the data.
 	 * @param bytes The data bytes to sign.
-	 * @param verificationMethod The verification method to use.
-	 * @param verificationKeyPair The key required to generate the proof.
+	 * @param verificationMethodId The verification method id to use.
+	 * @param verificationPrivateKey The private key required to generate the proof.
 	 * @returns The proof signature type and value.
 	 */
 	public async createProof(
 		documentId: string,
 		bytes: Uint8Array,
-		verificationMethod: string,
-		verificationKeyPair: IKeyPair
+		verificationMethodId: string,
+		verificationPrivateKey: Uint8Array
 	): Promise<{
 		type: string;
 		value: string;
@@ -960,23 +877,13 @@ export class IotaIdentityProvider implements IIdentityProvider {
 		Guards.uint8Array(IotaIdentityProvider._CLASS_NAME, nameof(bytes), bytes);
 		Guards.stringValue(
 			IotaIdentityProvider._CLASS_NAME,
-			nameof(verificationMethod),
-			verificationMethod
+			nameof(verificationMethodId),
+			verificationMethodId
 		);
-		Guards.stringValue(
+		Guards.uint8Array(
 			IotaIdentityProvider._CLASS_NAME,
-			nameof(verificationKeyPair.type),
-			verificationKeyPair.type
-		);
-		Guards.stringValue(
-			IotaIdentityProvider._CLASS_NAME,
-			nameof(verificationKeyPair.privateKey),
-			verificationKeyPair.privateKey
-		);
-		Guards.stringValue(
-			IotaIdentityProvider._CLASS_NAME,
-			nameof(verificationKeyPair.publicKey),
-			verificationKeyPair.publicKey
+			nameof(verificationPrivateKey),
+			verificationPrivateKey
 		);
 
 		try {
@@ -988,20 +895,25 @@ export class IotaIdentityProvider implements IIdentityProvider {
 			}
 
 			const methods = document.methods();
-			const method = methods.find(m => m.id().toString() === `#${verificationMethod}`);
+			const method = methods.find(m => m.id().toString() === `#${verificationMethodId}`);
 
 			if (!method) {
 				throw new GeneralError(IotaIdentityProvider._CLASS_NAME, "methodMissing");
 			}
 
+			const didMethod = method.toJSON() as IDidDocumentVerificationMethod;
+			if (Is.undefined(didMethod.publicKeyJwk)) {
+				throw new GeneralError(IotaIdentityProvider._CLASS_NAME, "publicKeyJwkMissing");
+			}
+
 			const jwkMemStore = new JwkMemStore();
 
 			const jwk = new Jwk({
-				kty: JwkType.Okp,
-				crv: EdCurve.Ed25519,
-				x: Converter.bytesToBase64(Converter.hexToBytes(verificationKeyPair.publicKey)),
-				d: Converter.bytesToBase64(Converter.hexToBytes(verificationKeyPair.privateKey))
-			});
+				kty: didMethod.publicKeyJwk.kty as JwkType,
+				crv: didMethod.publicKeyJwk.crv,
+				x: didMethod.publicKeyJwk.x,
+				d: Converter.bytesToBase64(verificationPrivateKey)
+			} as IJwkParams);
 
 			const keyId = await jwkMemStore.insert(jwk);
 
@@ -1025,7 +937,7 @@ export class IotaIdentityProvider implements IIdentityProvider {
 	 * Verify proof for arbitrary data with the specified verification method.
 	 * @param documentId The id of the document verifying the data.
 	 * @param bytes The data bytes to verify.
-	 * @param verificationMethod The verification method to use.
+	 * @param verificationMethodId The verification id method to use.
 	 * @param signatureType The type of the signature for the proof.
 	 * @param signatureValue The value of the signature for the proof.
 	 * @returns True if the signature is valid.
@@ -1033,7 +945,7 @@ export class IotaIdentityProvider implements IIdentityProvider {
 	public async verifyProof(
 		documentId: string,
 		bytes: Uint8Array,
-		verificationMethod: string,
+		verificationMethodId: string,
 		signatureType: string,
 		signatureValue: string
 	): Promise<boolean> {
@@ -1041,8 +953,8 @@ export class IotaIdentityProvider implements IIdentityProvider {
 		Guards.uint8Array(IotaIdentityProvider._CLASS_NAME, nameof(bytes), bytes);
 		Guards.stringValue(
 			IotaIdentityProvider._CLASS_NAME,
-			nameof(verificationMethod),
-			verificationMethod
+			nameof(verificationMethodId),
+			verificationMethodId
 		);
 		Guards.stringValue(IotaIdentityProvider._CLASS_NAME, nameof(signatureType), signatureType);
 		Guards.stringValue(IotaIdentityProvider._CLASS_NAME, nameof(signatureValue), signatureValue);
@@ -1056,7 +968,7 @@ export class IotaIdentityProvider implements IIdentityProvider {
 			}
 
 			const methods = document.methods();
-			const method = methods.find(m => m.id().toString() === `#${verificationMethod}`);
+			const method = methods.find(m => m.id().toString() === `#${verificationMethodId}`);
 
 			if (!method) {
 				throw new GeneralError(IotaIdentityProvider._CLASS_NAME, "methodMissing");
@@ -1093,21 +1005,21 @@ export class IotaIdentityProvider implements IIdentityProvider {
 	/**
 	 * Sign and publish a document.
 	 * @param document The document to sign and publish.
-	 * @param documentKeyPair The key pair to generate the document for.
+	 * @param documentPrivateKey The private key used to update the document.
 	 * @param isUpdate True if this is an update.
 	 * @returns The published document.
 	 * @internal
 	 */
 	private async publish(
 		document: IotaDocument,
-		documentKeyPair: IKeyPair,
+		documentPrivateKey: Uint8Array,
 		isUpdate: boolean
 	): Promise<IDidDocument> {
 		const identityClient = await this.getIotaIdentityClient();
 		const networkHrp = await identityClient.getNetworkHrp();
 
 		const privateSecretManager: PrivateKeySecretManager = {
-			privateKey: documentKeyPair.privateKey
+			privateKey: Converter.bytesToHex(documentPrivateKey, true)
 		};
 
 		const secretManager = new SecretManager(privateSecretManager);

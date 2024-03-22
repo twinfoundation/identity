@@ -2,17 +2,14 @@
 // SPDX-License-Identifier: Apache-2.0.
 
 import { Converter } from "@gtsc/core";
-import {
-	KeyPairHelper,
-	KeyType,
-	type IDidService,
-	type IKeyPair
-} from "@gtsc/identity-provider-models";
+import { Bip39, Bip44, KeyType } from "@gtsc/crypto";
+import type { IDidDocumentVerificationMethod, IDidService } from "@gtsc/identity-provider-models";
 import type { IIotaIdentityProviderConfig } from "../../src/models/IIotaIdentityProviderConfig";
 import { IotaIdentityProvider } from "../../src/providers/iotaIdentityProvider";
 import {
 	TEST_BECH32_HRP,
 	TEST_CLIENT_OPTIONS,
+	TEST_COIN_TYPE,
 	TEST_EXPLORER_SEARCH,
 	TEST_MNEMONIC,
 	TEST_WALLET_KEY_PAIR,
@@ -20,7 +17,8 @@ import {
 } from "../testWallet";
 
 const TEST_IDENTITY_ADDRESS_INDEX = 500000;
-let documentId: string;
+let testDocumentId: string;
+let testVerificationId: string;
 
 describe("IotaIdentityProvider", () => {
 	beforeAll(async () => {
@@ -55,94 +53,59 @@ describe("IotaIdentityProvider", () => {
 		);
 	});
 
-	test("can fail to create a document with no key pair", async () => {
+	test("can fail to create a document with no document private key ", async () => {
 		const identityProvider = new IotaIdentityProvider({ clientOptions: TEST_CLIENT_OPTIONS });
 		await expect(
-			identityProvider.createDocument(undefined as unknown as IKeyPair)
+			identityProvider.createDocument(
+				undefined as unknown as Uint8Array,
+				undefined as unknown as Uint8Array
+			)
 		).rejects.toMatchObject({
 			name: "GuardError",
-			message: "guard.objectUndefined",
+			message: "guard.uint8Array",
 			properties: {
-				property: "documentKeyPair",
+				property: "documentPrivateKey",
 				value: "undefined"
 			}
 		});
 	});
 
-	test("can fail to create a document with no key pair type", async () => {
-		const identityProvider = new IotaIdentityProvider({ clientOptions: TEST_CLIENT_OPTIONS });
-		await expect(identityProvider.createDocument({} as unknown as IKeyPair)).rejects.toMatchObject({
-			name: "GuardError",
-			message: "guard.string",
-			properties: {
-				property: "documentKeyPair.type",
-				value: "undefined"
-			}
-		});
-	});
-
-	test("can fail to create a document with no private key", async () => {
+	test("can fail to create a document with no public key ", async () => {
 		const identityProvider = new IotaIdentityProvider({ clientOptions: TEST_CLIENT_OPTIONS });
 		await expect(
-			identityProvider.createDocument({ type: KeyType.Ed25519 } as unknown as IKeyPair)
+			identityProvider.createDocument(new Uint8Array(), undefined as unknown as Uint8Array)
 		).rejects.toMatchObject({
 			name: "GuardError",
-			message: "guard.string",
+			message: "guard.uint8Array",
 			properties: {
-				property: "documentKeyPair.privateKey",
+				property: "documentPublicKey",
 				value: "undefined"
 			}
 		});
 	});
 
-	test("can fail to create a document with no private key", async () => {
-		const identityProvider = new IotaIdentityProvider({ clientOptions: TEST_CLIENT_OPTIONS });
-		await expect(
-			identityProvider.createDocument({ type: KeyType.Ed25519 } as unknown as IKeyPair)
-		).rejects.toMatchObject({
-			name: "GuardError",
-			message: "guard.string",
-			properties: {
-				property: "documentKeyPair.privateKey",
-				value: "undefined"
-			}
-		});
-	});
-
-	test("can fail to create a document with no public key", async () => {
-		const identityProvider = new IotaIdentityProvider({ clientOptions: TEST_CLIENT_OPTIONS });
-		await expect(
-			identityProvider.createDocument({
-				type: KeyType.Ed25519,
-				privateKey: "foo"
-			} as unknown as IKeyPair)
-		).rejects.toMatchObject({
-			name: "GuardError",
-			message: "guard.string",
-			properties: {
-				property: "documentKeyPair.publicKey",
-				value: "undefined"
-			}
-		});
-	});
-
-	test("can create a document", { timeout: 60000 }, async () => {
+	test("can create a document", { timeout: 120000 }, async () => {
 		const identityProvider = new IotaIdentityProvider({
 			clientOptions: TEST_CLIENT_OPTIONS,
 			addressIndex: TEST_IDENTITY_ADDRESS_INDEX
 		});
 
-		const doc = await identityProvider.createDocument({
-			type: KeyType.Ed25519,
-			privateKey: Converter.bytesToHex(TEST_WALLET_KEY_PAIR.privateKey, true),
-			publicKey: Converter.bytesToHex(TEST_WALLET_KEY_PAIR.publicKey, true)
-		});
-		documentId = doc.id;
+		const doc = await identityProvider.createDocument(
+			TEST_WALLET_KEY_PAIR.privateKey,
+			TEST_WALLET_KEY_PAIR.publicKey
+		);
+		testDocumentId = doc.id;
 		expect(doc.id.slice(0, 15)).toBe(`did:iota:${TEST_BECH32_HRP}:0x`);
 		console.log("DID Document", `${TEST_EXPLORER_SEARCH}${doc.id.slice(15)}`);
 		expect(doc.verificationMethod).toBeDefined();
 		expect(doc.service).toBeDefined();
 		expect((doc.service?.[0] as IDidService)?.id).toBe(`${doc.id}#revocation`);
+
+		const verificationMethod = (doc.verificationMethod as IDidDocumentVerificationMethod[])?.find(
+			v => v.publicKeyJwk?.x === Converter.bytesToBase64(TEST_WALLET_KEY_PAIR.publicKey)
+		);
+		expect(verificationMethod).toBeDefined();
+		expect(verificationMethod?.id).toBe(`${doc.id}#${verificationMethod?.publicKeyJwk?.kid}`);
 		// documentId = `did:iota:${TEST_BECH32_HRP}:0xa689b6194a3fed279eb18c5b1caab9f13ef8eeab0f1e908f51c1cf32f976f572`;
 		// console.log("DID Document", `${TEST_EXPLORER_SEARCH}${documentId.slice(15)}`);
 	});
@@ -167,7 +130,7 @@ describe("IotaIdentityProvider", () => {
 			addressIndex: TEST_IDENTITY_ADDRESS_INDEX
 		});
 
-		const doc = await identityProvider.resolveDocument(documentId);
+		const doc = await identityProvider.resolveDocument(testDocumentId);
 		expect(doc.id.slice(0, 15)).toBe(`did:iota:${TEST_BECH32_HRP}:0x`);
 		expect(doc.verificationMethod).toBeDefined();
 		expect(doc.service).toBeDefined();
@@ -177,9 +140,93 @@ describe("IotaIdentityProvider", () => {
 	test("can fail to add a verification method with no document id", async () => {
 		const identityProvider = new IotaIdentityProvider({ clientOptions: TEST_CLIENT_OPTIONS });
 		await expect(
-			identityProvider.addVerificationMethodJwk(
+			identityProvider.addVerificationMethod(
 				undefined as unknown as string,
-				undefined as unknown as IKeyPair,
+				undefined as unknown as Uint8Array,
+				undefined as unknown as Uint8Array
+			)
+		).rejects.toMatchObject({
+			name: "GuardError",
+			message: "guard.string",
+			properties: {
+				property: "documentId",
+				value: "undefined"
+			}
+		});
+	});
+
+	test("can fail to add a verification method with no document private key", async () => {
+		const identityProvider = new IotaIdentityProvider({ clientOptions: TEST_CLIENT_OPTIONS });
+		await expect(
+			identityProvider.addVerificationMethod(
+				"foo",
+				undefined as unknown as Uint8Array,
+				undefined as unknown as Uint8Array
+			)
+		).rejects.toMatchObject({
+			name: "GuardError",
+			message: "guard.uint8Array",
+			properties: {
+				property: "documentPrivateKey",
+				value: "undefined"
+			}
+		});
+	});
+
+	test("can fail to add a verification method with no verification public key", async () => {
+		const identityProvider = new IotaIdentityProvider({ clientOptions: TEST_CLIENT_OPTIONS });
+		await expect(
+			identityProvider.addVerificationMethod(
+				"foo",
+				new Uint8Array(),
+				undefined as unknown as Uint8Array
+			)
+		).rejects.toMatchObject({
+			name: "GuardError",
+			message: "guard.uint8Array",
+			properties: {
+				property: "verificationPublicKey",
+				value: "undefined"
+			}
+		});
+	});
+
+	test("can add a verification method", { timeout: 120000 }, async () => {
+		const identityProvider = new IotaIdentityProvider({ clientOptions: TEST_CLIENT_OPTIONS });
+		const seed = Bip39.mnemonicToSeed(TEST_MNEMONIC);
+		const verificationKeyPair = Bip44.addressBech32(
+			seed,
+			KeyType.Ed25519,
+			TEST_BECH32_HRP,
+			TEST_COIN_TYPE,
+			1000,
+			false,
+			0
+		);
+		const doc = await identityProvider.addVerificationMethod(
+			testDocumentId,
+			TEST_WALLET_KEY_PAIR.privateKey,
+			verificationKeyPair.keyPair.publicKey
+		);
+
+		expect(doc.id).toBe(testDocumentId);
+		expect(doc.verificationMethod).toBeDefined();
+
+		const verificationMethod = (doc.verificationMethod as IDidDocumentVerificationMethod[])?.find(
+			v => v.publicKeyJwk?.x === Converter.bytesToBase64(verificationKeyPair.keyPair.publicKey)
+		);
+		expect(verificationMethod).toBeDefined();
+		expect(verificationMethod?.id).toBe(`${doc.id}#${verificationMethod?.publicKeyJwk?.kid}`);
+
+		testVerificationId = verificationMethod?.id ?? "";
+	});
+
+	test("can fail to remove a verification method with no document id", async () => {
+		const identityProvider = new IotaIdentityProvider({ clientOptions: TEST_CLIENT_OPTIONS });
+		await expect(
+			identityProvider.removeVerificationMethod(
+				undefined as unknown as string,
+				undefined as unknown as Uint8Array,
 				undefined as unknown as string
 			)
 		).rejects.toMatchObject({
@@ -192,122 +239,57 @@ describe("IotaIdentityProvider", () => {
 		});
 	});
 
-	test("can fail to add a verification method with no document key pair", async () => {
+	test("can fail to remove a verification method with no document private key", async () => {
 		const identityProvider = new IotaIdentityProvider({ clientOptions: TEST_CLIENT_OPTIONS });
 		await expect(
-			identityProvider.addVerificationMethodJwk(
+			identityProvider.removeVerificationMethod(
 				"foo",
-				undefined as unknown as IKeyPair,
+				undefined as unknown as Uint8Array,
 				undefined as unknown as string
 			)
 		).rejects.toMatchObject({
 			name: "GuardError",
-			message: "guard.objectUndefined",
+			message: "guard.uint8Array",
 			properties: {
-				property: "documentKeyPair",
+				property: "documentPrivateKey",
 				value: "undefined"
 			}
 		});
 	});
 
-	test("can fail to add a verification method with no document key pair type", async () => {
+	test("can fail to remove a verification method with no verification method id", async () => {
 		const identityProvider = new IotaIdentityProvider({ clientOptions: TEST_CLIENT_OPTIONS });
 		await expect(
-			identityProvider.addVerificationMethodJwk(
+			identityProvider.removeVerificationMethod(
 				"foo",
-				{} as unknown as IKeyPair,
-				undefined as unknown as string
-			)
-		).rejects.toMatchObject({
-			name: "GuardError",
-			message: "guard.string",
-			properties: {
-				property: "documentKeyPair.type",
-				value: "undefined"
-			}
-		});
-	});
-
-	test("can fail to add a verification method with no document key pair private key", async () => {
-		const identityProvider = new IotaIdentityProvider({ clientOptions: TEST_CLIENT_OPTIONS });
-		await expect(
-			identityProvider.addVerificationMethodJwk(
-				"foo",
-				{
-					type: KeyType.Ed25519
-				} as unknown as IKeyPair,
+				new Uint8Array(),
 				undefined as unknown as string
 			)
 		).rejects.toMatchObject({
 			name: "GuardError",
 			message: "guard.string",
 			properties: {
-				property: "documentKeyPair.privateKey",
+				property: "verificationMethodId",
 				value: "undefined"
 			}
 		});
 	});
 
-	test("can fail to add a verification method with no document key pair public key", async () => {
+	test("can remove a verification method", { timeout: 120000 }, async () => {
 		const identityProvider = new IotaIdentityProvider({ clientOptions: TEST_CLIENT_OPTIONS });
-		await expect(
-			identityProvider.addVerificationMethodJwk(
-				"foo",
-				{
-					type: KeyType.Ed25519,
-					privateKey: "foo"
-				} as unknown as IKeyPair,
-				undefined as unknown as string
-			)
-		).rejects.toMatchObject({
-			name: "GuardError",
-			message: "guard.string",
-			properties: {
-				property: "documentKeyPair.publicKey",
-				value: "undefined"
-			}
-		});
-	});
 
-	test("can fail to add a verification method with no verification public key", async () => {
-		const identityProvider = new IotaIdentityProvider({ clientOptions: TEST_CLIENT_OPTIONS });
-		await expect(
-			identityProvider.addVerificationMethodJwk(
-				"foo",
-				{
-					type: KeyType.Ed25519,
-					privateKey: "foo",
-					publicKey: "foo"
-				},
-				undefined as unknown as string
-			)
-		).rejects.toMatchObject({
-			name: "GuardError",
-			message: "guard.string",
-			properties: {
-				property: "verificationPublicKey",
-				value: "undefined"
-			}
-		});
-	});
-
-	test("can add a verification method", { timeout: 60000 }, async () => {
-		const identityProvider = new IotaIdentityProvider({ clientOptions: TEST_CLIENT_OPTIONS });
-		const verificationKeyPair = KeyPairHelper.subKeyPair(
-			KeyPairHelper.fromMnemonic(KeyType.Ed25519, TEST_MNEMONIC),
-			KeyPairHelper.nameToPath("my-key")
-		);
-		const doc = await identityProvider.addVerificationMethodJwk(
-			documentId,
-			{
-				type: KeyType.Ed25519,
-				privateKey: Converter.bytesToHex(TEST_WALLET_KEY_PAIR.privateKey, true),
-				publicKey: Converter.bytesToHex(TEST_WALLET_KEY_PAIR.publicKey, true)
-			},
-			verificationKeyPair.publicKey
+		const doc = await identityProvider.removeVerificationMethod(
+			testDocumentId,
+			TEST_WALLET_KEY_PAIR.privateKey,
+			testVerificationId
 		);
 
-		expect(doc.id).toBe(documentId);
+		expect(doc.id).toBe(testDocumentId);
 		expect(doc.verificationMethod).toBeDefined();
+
+		const verificationMethod = (doc.verificationMethod as IDidDocumentVerificationMethod[])?.find(
+			v => v.id === testVerificationId
+		);
+		expect(verificationMethod).toBeUndefined();
 	});
 });
