@@ -2,12 +2,11 @@
 // SPDX-License-Identifier: Apache-2.0.
 
 import type { IDidCredentialStatus } from "./IDidCredentialStatus";
-import type { IDidProof } from "./IDidProof";
 
 /**
  * Interface describing a verifiable credential.
  */
-export interface IDidVerifiableCredential<T> {
+export interface IDidVerifiableCredential<T = unknown> {
 	/**
 	 * The context for the verifiable credential.
 	 */
@@ -43,9 +42,4 @@ export interface IDidVerifiableCredential<T> {
 	 * The date the verifiable credential was issued.
 	 */
 	issuanceDate: string;
-
-	/**
-	 * The signature proof created by the issuer.
-	 */
-	proof?: IDidProof;
 }

@@ -1,9 +1,6 @@
 // Copyright 2024 IOTA Stiftung.
 // SPDX-License-Identifier: Apache-2.0.
 
-import type { IDidProof } from "./IDidProof";
-import type { IDidVerifiableCredential } from "./IDidVerifiableCredential";
-
 /**
  * Interface describing a verifiable presentation.
  */
@@ -26,12 +23,7 @@ export interface IDidVerifiablePresentation {
 	/**
 	 * The data for the verifiable credentials.
 	 */
-	verifiableCredential: IDidVerifiableCredential<unknown> | IDidVerifiableCredential<unknown>[];
-
-	/**
-	 * The signature proof created by the issuer.
-	 */
-	proof?: IDidProof;
+	verifiableCredential: string[];
 
 	/**
 	 * The entity generating the presentation.

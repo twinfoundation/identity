@@ -4,9 +4,9 @@ Interface describing a verifiable credential.
 
 ## Type parameters
 
-| Name |
-| :------ |
-| `T` |
+| Name | Type |
+| :------ | :------ |
+| `T` | `unknown` |
 
 ## Properties
 
@@ -56,14 +56,6 @@ ___
 • **issuer**: `string`
 
 The issuing identity.
-
-___
-
-### proof
-
-• `Optional` **proof**: [`IDidProof`](IDidProof.md)
-
-The signature proof created by the issuer.
 
 ___
 

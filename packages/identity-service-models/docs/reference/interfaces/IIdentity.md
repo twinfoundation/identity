@@ -300,7 +300,7 @@ ___
 
 ### verifiableCredentialCheck
 
-▸ **verifiableCredentialCheck**\<`T`\>(`requestContext`, `verifiableCredential`): `Promise`\<`IDidCredentialVerification`\>
+▸ **verifiableCredentialCheck**\<`T`\>(`requestContext`, `verifiableCredential`): `Promise`\<`IDidVerifiableCredential`\<`T`\>\>
 
 Checks a verifiable credential.
 
@@ -319,7 +319,7 @@ Checks a verifiable credential.
 
 #### Returns
 
-`Promise`\<`IDidCredentialVerification`\>
+`Promise`\<`IDidVerifiableCredential`\<`T`\>\>
 
 The verifiable credential check details.
 
