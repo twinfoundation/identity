@@ -28,14 +28,6 @@ Provide a unique identifier for the presentation.
 
 ___
 
-### proof
-
-• `Optional` **proof**: [`IDidProof`](IDidProof.md)
-
-The signature proof created by the issuer.
-
-___
-
 ### type
 
 • **type**: `string`[]
@@ -46,6 +38,6 @@ ___
 
 ### verifiableCredential
 
-• **verifiableCredential**: [`IDidVerifiableCredential`](IDidVerifiableCredential.md)\<`unknown`\> \| [`IDidVerifiableCredential`](IDidVerifiableCredential.md)\<`unknown`\>[]
+• **verifiableCredential**: `string`[]
 
 The data for the verifiable credentials.

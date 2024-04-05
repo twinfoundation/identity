@@ -61,5 +61,5 @@ export interface IIdentityProfile {
 	 * The next index to map to a verifiable credential id.
 	 * Used for revocation of VCs.
 	 */
-	nextRevocationIndex?: string;
+	nextRevocationIndex?: number;
 }

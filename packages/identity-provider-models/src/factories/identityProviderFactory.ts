@@ -1,13 +1,10 @@
 // Copyright 2024 IOTA Stiftung.
 // SPDX-License-Identifier: Apache-2.0.
-import { FactoryInstance } from "@gtsc/core";
-import type { IIdentityProvider } from "../models/provider/IIdentityProvider";
+import { Factory } from "@gtsc/core";
+import type { IIdentityProvider } from "../models/IIdentityProvider";
 
 /**
  * Factory for creating identity providers.
  */
-export class IdentityProviderFactory {
-	// eslint-disable-next-line @typescript-eslint/naming-convention
-	public static readonly Instance: FactoryInstance<IIdentityProvider> =
-		new FactoryInstance<IIdentityProvider>("identityProvider");
-}
+// eslint-disable-next-line @typescript-eslint/naming-convention
+export const IdentityProviderFactory = new Factory<IIdentityProvider>("identityProvider");

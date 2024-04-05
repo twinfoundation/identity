@@ -21,6 +21,12 @@ export default defineConfig({
 			provider: "v8",
 			reporter: ["text", "lcov"],
 			exclude: ["**/index.ts", "**/models/**/*.ts"]
+		},
+		poolOptions: {
+			threads: {
+				minThreads: 1,
+				maxThreads: 1
+			}
 		}
 	}
 });

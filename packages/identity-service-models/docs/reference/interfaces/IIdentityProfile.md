@@ -42,7 +42,7 @@ ___
 
 ### nextRevocationIndex
 
-• `Optional` **nextRevocationIndex**: `string`
+• `Optional` **nextRevocationIndex**: `number`
 
 The next index to map to a verifiable credential id.
 Used for revocation of VCs.

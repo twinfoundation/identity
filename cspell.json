@@ -7,6 +7,7 @@
 		"**/dist/**",
 		"**/docs/reference/**",
 		"**/tests/**",
+		"*.yaml",
 		"package.json",
 		"rollup.config.mjs",
 		"vitest.config.ts",
@@ -15,6 +16,6 @@
 		".eslintrc.cjs",
 		"**/wordlists/**"
 	],
-	"words": ["bech", "gtsc", "Multibase", "nameof", "Stiftung"],
+	"words": ["bech", "gtsc", "Multibase", "nameof", "Stiftung", "unrevoke", "Unrevoking"],
 	"ignoreRegExpList": ["/from\\s+(['\"]).*\\1/", "/eslint-disable.*/"]
 }

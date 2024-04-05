@@ -94,7 +94,7 @@ ___
 
 ### checkVerifiableCredential
 
-▸ **checkVerifiableCredential**\<`T`\>(`credential`): `Promise`\<[`IDidCredentialVerification`](IDidCredentialVerification.md)\>
+▸ **checkVerifiableCredential**\<`T`\>(`credentialJwt`): `Promise`\<\{ `revoked`: `boolean` ; `verifiableCredential?`: [`IDidVerifiableCredential`](IDidVerifiableCredential.md)\<`T`\>  }\>
 
 Check a verifiable credential is valid.
 
@@ -108,33 +108,33 @@ Check a verifiable credential is valid.
 
 | Name | Type | Description |
 | :------ | :------ | :------ |
-| `credential` | [`IDidVerifiableCredential`](IDidVerifiableCredential.md)\<`T`\> | The credential to verify. |
+| `credentialJwt` | `string` | The credential to verify. |
 
 #### Returns
 
-`Promise`\<[`IDidCredentialVerification`](IDidCredentialVerification.md)\>
+`Promise`\<\{ `revoked`: `boolean` ; `verifiableCredential?`: [`IDidVerifiableCredential`](IDidVerifiableCredential.md)\<`T`\>  }\>
 
-Verification details for the credential.
+The credential stored in the jwt and the revocation status.
 
 ___
 
 ### checkVerifiablePresentation
 
-▸ **checkVerifiablePresentation**(`presentation`): `Promise`\<[`IDidPresentationVerification`](IDidPresentationVerification.md)\>
+▸ **checkVerifiablePresentation**(`presentationJwt`): `Promise`\<\{ `issuers?`: [`IDidDocument`](IDidDocument.md)[] ; `revoked`: `boolean` ; `verifiablePresentation?`: [`IDidVerifiablePresentation`](IDidVerifiablePresentation.md)  }\>
 
-Verify a presentation.
+Check a verifiable presentation is valid.
 
 #### Parameters
 
 | Name | Type | Description |
 | :------ | :------ | :------ |
-| `presentation` | [`IDidVerifiablePresentation`](IDidVerifiablePresentation.md) | The presentation to verify. |
+| `presentationJwt` | `string` | The presentation to verify. |
 
 #### Returns
 
-`Promise`\<[`IDidPresentationVerification`](IDidPresentationVerification.md)\>
+`Promise`\<\{ `issuers?`: [`IDidDocument`](IDidDocument.md)[] ; `revoked`: `boolean` ; `verifiablePresentation?`: [`IDidVerifiablePresentation`](IDidVerifiablePresentation.md)  }\>
 
-Verification details for the presentation.
+The presentation stored in the jwt and the revocation status.
 
 ___
 
@@ -161,7 +161,7 @@ ___
 
 ### createProof
 
-▸ **createProof**(`documentId`, `bytes`, `verificationMethodId`, `verificationPrivateKey`): `Promise`\<\{ `type`: `string` ; `value`: `string`  }\>
+▸ **createProof**(`documentId`, `verificationMethodId`, `verificationPrivateKey`, `bytes`): `Promise`\<\{ `type`: `string` ; `value`: `Uint8Array`  }\>
 
 Create a proof for arbitrary data with the specified verification method.
 
@@ -170,13 +170,13 @@ Create a proof for arbitrary data with the specified verification method.
 | Name | Type | Description |
 | :------ | :------ | :------ |
 | `documentId` | `string` | The id of the document signing the data. |
-| `bytes` | `Uint8Array` | The data bytes to sign. |
 | `verificationMethodId` | `string` | The verification method id to use. |
 | `verificationPrivateKey` | `Uint8Array` | The private key required to generate the proof. |
+| `bytes` | `Uint8Array` | The data bytes to sign. |
 
 #### Returns
 
-`Promise`\<\{ `type`: `string` ; `value`: `string`  }\>
+`Promise`\<\{ `type`: `string` ; `value`: `Uint8Array`  }\>
 
 The proof signature type and value.
 
@@ -184,7 +184,7 @@ ___
 
 ### createVerifiableCredential
 
-▸ **createVerifiableCredential**\<`T`\>(`documentId`, `credentialId`, `schemaTypes`, `subject`, `revocationIndex`, `verificationMethodId`, `verificationPrivateKey`): `Promise`\<[`IDidVerifiableCredential`](IDidVerifiableCredential.md)\<`T`\>\>
+▸ **createVerifiableCredential**\<`T`\>(`issuerDocumentId`, `assertionMethodId`, `assertionMethodPrivateKey`, `credentialId`, `schemaTypes`, `subject`, `revocationIndex`): `Promise`\<\{ `jwt`: `string` ; `verifiableCredential`: [`IDidVerifiableCredential`](IDidVerifiableCredential.md)\<`T`\>  }\>
 
 Create a verifiable credential for a verification method.
 
@@ -198,19 +198,19 @@ Create a verifiable credential for a verification method.
 
 | Name | Type | Description |
 | :------ | :------ | :------ |
-| `documentId` | `string` | The id of the document issuing the verifiable credential. |
+| `issuerDocumentId` | `string` | The id of the document issuing the verifiable credential. |
+| `assertionMethodId` | `string` | The assertion method id to use. |
+| `assertionMethodPrivateKey` | `Uint8Array` | The private key required to generate the verifiable credential. |
 | `credentialId` | `string` | The id of the credential. |
 | `schemaTypes` | `string`[] | The type of the schemas for the data stored in the verifiable credential. |
 | `subject` | `T` \| `T`[] | The subject data to store for the credential. |
-| `revocationIndex` | `string` | The bitmap revocation index of the credential. |
-| `verificationMethodId` | `string` | The verification method fragment to use. |
-| `verificationPrivateKey` | `Uint8Array` | The private key required to generate the verifiable credential. |
+| `revocationIndex` | `number` | The bitmap revocation index of the credential. |
 
 #### Returns
 
-`Promise`\<[`IDidVerifiableCredential`](IDidVerifiableCredential.md)\<`T`\>\>
+`Promise`\<\{ `jwt`: `string` ; `verifiableCredential`: [`IDidVerifiableCredential`](IDidVerifiableCredential.md)\<`T`\>  }\>
 
-The created verifiable credential.
+The created verifiable credential and its token.
 
 **`Throws`**
 
@@ -220,7 +220,7 @@ ___
 
 ### createVerifiablePresentation
 
-▸ **createVerifiablePresentation**(`documentId`, `verifiableCredentials`, `presentationMethodId`, `presentationPrivateKey`, `expiresInMinutes?`): `Promise`\<[`IDidVerifiablePresentation`](IDidVerifiablePresentation.md)\>
+▸ **createVerifiablePresentation**(`holderDocumentId`, `presentationMethodId`, `presentationPrivateKey`, `verifiableCredentials`, `expiresInMinutes?`): `Promise`\<\{ `jwt`: `string` ; `verifiablePresentation`: [`IDidVerifiablePresentation`](IDidVerifiablePresentation.md)  }\>
 
 Create a verifiable presentation from the supplied verifiable credentials.
 
@@ -228,17 +228,17 @@ Create a verifiable presentation from the supplied verifiable credentials.
 
 | Name | Type | Description |
 | :------ | :------ | :------ |
-| `documentId` | `string` | The id of the document creating the verifiable presentation. |
-| `verifiableCredentials` | [`IDidVerifiableCredential`](IDidVerifiableCredential.md)\<`unknown`\> \| [`IDidVerifiableCredential`](IDidVerifiableCredential.md)\<`unknown`\>[] | The credentials to use for creating the presentation. |
+| `holderDocumentId` | `string` | The id of the document creating the verifiable presentation. |
 | `presentationMethodId` | `string` | The method to associate with the presentation. |
 | `presentationPrivateKey` | `Uint8Array` | The private key required to generate the verifiable presentation. |
+| `verifiableCredentials` | `string`[] | The credentials to use for creating the presentation in jwt format. |
 | `expiresInMinutes?` | `number` | The time in minutes for the presentation to expire. |
 
 #### Returns
 
-`Promise`\<[`IDidVerifiablePresentation`](IDidVerifiablePresentation.md)\>
+`Promise`\<\{ `jwt`: `string` ; `verifiablePresentation`: [`IDidVerifiablePresentation`](IDidVerifiablePresentation.md)  }\>
 
-The verifiable presentation.
+The created verifiable presentation and its token.
 
 **`Throws`**
 
@@ -274,7 +274,7 @@ ___
 
 ### removeVerificationMethod
 
-▸ **removeVerificationMethod**(`documentId`, `documentPrivateKey`, `verificationMethodFragment`): `Promise`\<[`IDidDocument`](IDidDocument.md)\>
+▸ **removeVerificationMethod**(`documentId`, `documentPrivateKey`, `verificationMethodId`): `Promise`\<[`IDidDocument`](IDidDocument.md)\>
 
 Remove a verification method from the document.
 
@@ -284,7 +284,7 @@ Remove a verification method from the document.
 | :------ | :------ | :------ |
 | `documentId` | `string` | The id of the document to remove the verification method from. |
 | `documentPrivateKey` | `Uint8Array` | The private key required to sign the updated document. |
-| `verificationMethodFragment` | `string` | The fragment of the verification method. |
+| `verificationMethodId` | `string` | The id of the verification method. |
 
 #### Returns
 
@@ -328,7 +328,7 @@ ___
 
 ### revokeVerifiableCredentials
 
-▸ **revokeVerifiableCredentials**(`documentId`, `documentPrivateKey`, `credentialIndices`): `Promise`\<[`IDidDocument`](IDidDocument.md)\>
+▸ **revokeVerifiableCredentials**(`issuerDocumentId`, `issuerDocumentPrivateKey`, `credentialIndices`): `Promise`\<[`IDidDocument`](IDidDocument.md)\>
 
 Revoke verifiable credential(s).
 
@@ -336,8 +336,8 @@ Revoke verifiable credential(s).
 
 | Name | Type | Description |
 | :------ | :------ | :------ |
-| `documentId` | `string` | The id of the document to update the revocation list for. |
-| `documentPrivateKey` | `Uint8Array` | The private key required to sign the updated document. |
+| `issuerDocumentId` | `string` | The id of the document to update the revocation list for. |
+| `issuerDocumentPrivateKey` | `Uint8Array` | The private key required to sign the updated document. |
 | `credentialIndices` | `number`[] | The revocation bitmap index or indices to revoke. |
 
 #### Returns
@@ -384,9 +384,31 @@ IService.stop
 
 ___
 
+### unrevokeVerifiableCredentials
+
+▸ **unrevokeVerifiableCredentials**(`issuerDocumentId`, `issuerDocumentPrivateKey`, `credentialIndices`): `Promise`\<[`IDidDocument`](IDidDocument.md)\>
+
+Unrevoke verifiable credential(s).
+
+#### Parameters
+
+| Name | Type | Description |
+| :------ | :------ | :------ |
+| `issuerDocumentId` | `string` | The id of the document to update the revocation list for. |
+| `issuerDocumentPrivateKey` | `Uint8Array` | The private key required to sign the updated document. |
+| `credentialIndices` | `number`[] | The revocation bitmap index or indices to un revoke. |
+
+#### Returns
+
+`Promise`\<[`IDidDocument`](IDidDocument.md)\>
+
+Nothing.
+
+___
+
 ### verifyProof
 
-▸ **verifyProof**(`documentId`, `bytes`, `verificationMethodId`, `signatureType`, `signatureValue`): `Promise`\<`boolean`\>
+▸ **verifyProof**(`documentId`, `verificationMethodId`, `signatureType`, `signatureValue`, `bytes`): `Promise`\<`boolean`\>
 
 Verify proof for arbitrary data with the specified verification method.
 
@@ -395,10 +417,10 @@ Verify proof for arbitrary data with the specified verification method.
 | Name | Type | Description |
 | :------ | :------ | :------ |
 | `documentId` | `string` | The id of the document verifying the data. |
-| `bytes` | `Uint8Array` | The data bytes to verify. |
 | `verificationMethodId` | `string` | The verification method id to use. |
 | `signatureType` | `string` | The type of the signature for the proof. |
-| `signatureValue` | `string` | The value of the signature for the proof. |
+| `signatureValue` | `Uint8Array` | The value of the signature for the proof. |
+| `bytes` | `Uint8Array` | The data bytes to verify. |
 
 #### Returns
 

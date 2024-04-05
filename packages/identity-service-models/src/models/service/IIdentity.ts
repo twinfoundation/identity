@@ -1,9 +1,6 @@
 // Copyright 2024 IOTA Stiftung.
 // SPDX-License-Identifier: Apache-2.0.
-import type {
-	IDidCredentialVerification,
-	IDidVerifiableCredential
-} from "@gtsc/identity-provider-models";
+import type { IDidVerifiableCredential } from "@gtsc/identity-provider-models";
 import type { IProperty } from "@gtsc/schema";
 import type { IRequestContext, IService } from "@gtsc/services";
 import type { IIdentityClaimRequirement } from "./IIdentityClaimRequirement";
@@ -260,7 +257,7 @@ export interface IIdentity extends IService {
 	verifiableCredentialCheck<T>(
 		requestContext: IRequestContext,
 		verifiableCredential: IDidVerifiableCredential<T>
-	): Promise<IDidCredentialVerification>;
+	): Promise<IDidVerifiableCredential<T>>;
 
 	/**
 	 * Sign arbitrary data with the specified verification method.
