@@ -6,6 +6,11 @@
  */
 export enum IdentityRole {
 	/**
+	 * Node.
+	 */
+	Node = "node",
+
+	/**
 	 * Organization.
 	 */
 	Organization = "organization",
@@ -13,10 +18,5 @@ export enum IdentityRole {
 	/**
 	 * User.
 	 */
-	User = "user",
-
-	/**
-	 * Infrastructure.
-	 */
-	Infrastructure = "infrastructure"
+	User = "user"
 }

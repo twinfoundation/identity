@@ -15,6 +15,3 @@ The response payload.
 | Name | Type | Description |
 | :------ | :------ | :------ |
 | `identity` | `string` | The identity created. |
-| `privateKey` | `string` | Private key. |
-| `publicKey` | `string` | Public key. |
-| `recoveryPhrase` | `string` | Recovery phrase mnemonic. |

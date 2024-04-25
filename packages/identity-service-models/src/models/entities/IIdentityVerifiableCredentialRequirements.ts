@@ -1,6 +1,5 @@
 // Copyright 2024 IOTA Stiftung.
 // SPDX-License-Identifier: Apache-2.0.
-
 import type { IIdentityClaimRequirement } from "../service/IIdentityClaimRequirement";
 
 /**
@@ -16,11 +15,6 @@ export interface IIdentityVerifiableCredentialRequirements {
 	 * The type of the verifiable credential.
 	 */
 	verifiableCredentialType: string;
-
-	/**
-	 * E-mail domain match.
-	 */
-	matchDomains?: string;
 
 	/**
 	 * The requirements for verifiable credential.

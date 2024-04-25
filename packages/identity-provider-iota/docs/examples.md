@@ -1,1 +1,1 @@
-# @gtsc/identity-provider-models - Examples
+# @gtsc/identity-provider-iota - Examples

@@ -4,11 +4,11 @@ The roles that an identity can have.
 
 ## Enumeration Members
 
-### Infrastructure
+### Node
 
-• **Infrastructure** = ``"infrastructure"``
+• **Node** = ``"node"``
 
-Infrastructure.
+Node.
 
 ___
 

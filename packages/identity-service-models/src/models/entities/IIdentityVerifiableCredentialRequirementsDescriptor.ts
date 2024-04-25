@@ -1,7 +1,7 @@
 // Copyright 2024 IOTA Stiftung.
 // SPDX-License-Identifier: Apache-2.0.
-
 import type { IEntityDescriptor } from "@gtsc/entity";
+import { nameof } from "@gtsc/nameof";
 import type { IIdentityVerifiableCredentialRequirements } from "./IIdentityVerifiableCredentialRequirements";
 
 /**
@@ -11,6 +11,7 @@ import type { IIdentityVerifiableCredentialRequirements } from "./IIdentityVerif
 // eslint-disable-next-line @typescript-eslint/naming-convention, max-len
 export const IIdentityVerifiableCredentialRequirementsDescriptor: IEntityDescriptor<IIdentityVerifiableCredentialRequirements> =
 	{
+		name: nameof<IIdentityVerifiableCredentialRequirements>(),
 		properties: [
 			{
 				name: "identity",
@@ -21,11 +22,6 @@ export const IIdentityVerifiableCredentialRequirementsDescriptor: IEntityDescrip
 				name: "verifiableCredentialType",
 				type: "string",
 				isSecondary: true
-			},
-			{
-				name: "matchDomains",
-				type: "string",
-				optional: true
 			},
 			{
 				name: "requiredClaims",

@@ -1,6 +1,7 @@
 // Copyright 2024 IOTA Stiftung.
 // SPDX-License-Identifier: Apache-2.0.
 import type { IEntityDescriptor } from "@gtsc/entity";
+import { nameof } from "@gtsc/nameof";
 import type { IIdentityVerifiableCredentialApplication } from "./IIdentityVerifiableCredentialApplication";
 
 /**
@@ -10,6 +11,7 @@ import type { IIdentityVerifiableCredentialApplication } from "./IIdentityVerifi
 // eslint-disable-next-line max-len, @typescript-eslint/naming-convention
 export const IIdentityVerifiableCredentialApplicationDescriptor: IEntityDescriptor<IIdentityVerifiableCredentialApplication> =
 	{
+		name: nameof<IIdentityVerifiableCredentialApplication>(),
 		properties: [
 			{
 				name: "id",

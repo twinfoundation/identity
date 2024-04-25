@@ -70,7 +70,7 @@ ___
 
 ### bootstrap
 
-▸ **bootstrap**(`requestContext`): `Promise`\<`ILogEntry`[]\>
+▸ **bootstrap**(`requestContext`): `Promise`\<`void`\>
 
 Bootstrap the service by creating and initializing any resources it needs.
 
@@ -82,9 +82,9 @@ Bootstrap the service by creating and initializing any resources it needs.
 
 #### Returns
 
-`Promise`\<`ILogEntry`[]\>
+`Promise`\<`void`\>
 
-The response of the bootstrapping as log entries.
+Nothing.
 
 #### Inherited from
 
@@ -202,7 +202,7 @@ Create a verifiable credential for a verification method.
 | `assertionMethodId` | `string` | The assertion method id to use. |
 | `assertionMethodPrivateKey` | `Uint8Array` | The private key required to generate the verifiable credential. |
 | `credentialId` | `string` | The id of the credential. |
-| `schemaTypes` | `string`[] | The type of the schemas for the data stored in the verifiable credential. |
+| `schemaTypes` | `string` \| `string`[] | The type of the schemas for the data stored in the verifiable credential. |
 | `subject` | `T` \| `T`[] | The subject data to store for the credential. |
 | `revocationIndex` | `number` | The bitmap revocation index of the credential. |
 
@@ -220,7 +220,7 @@ ___
 
 ### createVerifiablePresentation
 
-▸ **createVerifiablePresentation**(`holderDocumentId`, `presentationMethodId`, `presentationPrivateKey`, `verifiableCredentials`, `expiresInMinutes?`): `Promise`\<\{ `jwt`: `string` ; `verifiablePresentation`: [`IDidVerifiablePresentation`](IDidVerifiablePresentation.md)  }\>
+▸ **createVerifiablePresentation**(`holderDocumentId`, `presentationMethodId`, `presentationPrivateKey`, `schemaTypes`, `verifiableCredentials`, `expiresInMinutes?`): `Promise`\<\{ `jwt`: `string` ; `verifiablePresentation`: [`IDidVerifiablePresentation`](IDidVerifiablePresentation.md)  }\>
 
 Create a verifiable presentation from the supplied verifiable credentials.
 
@@ -231,6 +231,7 @@ Create a verifiable presentation from the supplied verifiable credentials.
 | `holderDocumentId` | `string` | The id of the document creating the verifiable presentation. |
 | `presentationMethodId` | `string` | The method to associate with the presentation. |
 | `presentationPrivateKey` | `Uint8Array` | The private key required to generate the verifiable presentation. |
+| `schemaTypes` | `string` \| `string`[] | The type of the schemas for the data stored in the verifiable credential. |
 | `verifiableCredentials` | `string`[] | The credentials to use for creating the presentation in jwt format. |
 | `expiresInMinutes?` | `number` | The time in minutes for the presentation to expire. |
 

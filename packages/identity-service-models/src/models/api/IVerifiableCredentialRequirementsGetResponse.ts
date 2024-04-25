@@ -11,11 +11,6 @@ export interface IVerifiableCredentialRequirementsGetResponse {
 	 */
 	data: {
 		/**
-		 * Verifiable credential applications must match the users email domain.
-		 */
-		matchDomains?: string;
-
-		/**
 		 * The requisites needed to apply for a verifiable credential.
 		 */
 		requiredClaims?: IIdentityClaimRequirement[];

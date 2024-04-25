@@ -1,4 +1,4 @@
-# @gtsc/identity-provider-models - Changelog
+# @gtsc/identity-provider-iota - Changelog
 
 ## v0.0.1
 

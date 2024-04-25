@@ -1,0 +1,9 @@
+{
+	"error": {
+		"identity": {
+			"identityCreateFailed": "Creating the identity failed",
+			"identityGetFailed": "Getting the identity failed \"{notFoundId}\"",
+			"identityUpdateFailed": "Updating the identity failed \"{identity}\""
+		}
+	}
+}

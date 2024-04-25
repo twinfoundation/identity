@@ -13,6 +13,14 @@
 		{
 			"name": "identity-provider-iota",
 			"description": "Identity provider implementation using IOTA."
+		},
+		{
+			"name": "identity-provider-memory",
+			"description": "Identity provider implementation using in-memory storage."
+		},
+		{
+			"name": "identity-service",
+			"description": "Implementation of the Identity service."
 		}
 	]
 }

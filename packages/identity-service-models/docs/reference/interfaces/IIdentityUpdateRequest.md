@@ -1,6 +1,6 @@
 # Interface: IIdentityUpdateRequest
 
-Update an identity.
+Request to update an identity.
 
 ## Properties
 
@@ -14,7 +14,7 @@ The data for the request.
 
 | Name | Type | Description |
 | :------ | :------ | :------ |
-| `properties?` | `IProperty`[] | Optional fields. |
+| `properties?` | `IProperty`[] | Properties for the identity. |
 
 ___
 
@@ -22,4 +22,4 @@ ___
 
 • **identity**: `string`
 
-The identity to update.
+The identity to update the properties.

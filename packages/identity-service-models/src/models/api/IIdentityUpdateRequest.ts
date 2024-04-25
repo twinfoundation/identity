@@ -4,11 +4,11 @@
 import type { IProperty } from "@gtsc/schema";
 
 /**
- * Update an identity.
+ * Request to update an identity.
  */
 export interface IIdentityUpdateRequest {
 	/**
-	 * The identity to update.
+	 * The identity to update the properties.
 	 */
 	identity: string;
 
@@ -17,7 +17,7 @@ export interface IIdentityUpdateRequest {
 	 */
 	data: {
 		/**
-		 * Optional fields.
+		 * Properties for the identity.
 		 */
 		properties?: IProperty[];
 	};

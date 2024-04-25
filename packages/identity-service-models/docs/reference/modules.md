@@ -7,22 +7,17 @@
 
 ## Interfaces
 
-- [IIdentity](interfaces/IIdentity.md)
 - [IIdentityClaimRequirement](interfaces/IIdentityClaimRequirement.md)
 - [IIdentityCreateRequest](interfaces/IIdentityCreateRequest.md)
 - [IIdentityCreateResponse](interfaces/IIdentityCreateResponse.md)
-- [IIdentityProfile](interfaces/IIdentityProfile.md)
+- [IIdentityGetRequest](interfaces/IIdentityGetRequest.md)
+- [IIdentityGetResponse](interfaces/IIdentityGetResponse.md)
+- [IIdentityListRequest](interfaces/IIdentityListRequest.md)
+- [IIdentityListResponse](interfaces/IIdentityListResponse.md)
+- [IIdentityService](interfaces/IIdentityService.md)
 - [IIdentityUpdateRequest](interfaces/IIdentityUpdateRequest.md)
 - [IIdentityVerifiableCredentialApplication](interfaces/IIdentityVerifiableCredentialApplication.md)
 - [IIdentityVerifiableCredentialRequirements](interfaces/IIdentityVerifiableCredentialRequirements.md)
-- [IOrganizationGetRequest](interfaces/IOrganizationGetRequest.md)
-- [IOrganizationGetResponse](interfaces/IOrganizationGetResponse.md)
-- [IOrganizationsGetRequest](interfaces/IOrganizationsGetRequest.md)
-- [IOrganizationsGetResponse](interfaces/IOrganizationsGetResponse.md)
-- [IProfile](interfaces/IProfile.md)
-- [IProfileGetRequest](interfaces/IProfileGetRequest.md)
-- [IProfileGetResponse](interfaces/IProfileGetResponse.md)
-- [IProfileSetRequest](interfaces/IProfileSetRequest.md)
 - [ISignDataRequest](interfaces/ISignDataRequest.md)
 - [ISignDataResponse](interfaces/ISignDataResponse.md)
 - [IVerifiableCredentialApplicationsGetRequest](interfaces/IVerifiableCredentialApplicationsGetRequest.md)
@@ -40,14 +35,6 @@
 - [IVerifyDataResponse](interfaces/IVerifyDataResponse.md)
 
 ## Variables
-
-### IIdentityProfileDescriptor
-
-• `Const` **IIdentityProfileDescriptor**: `IEntityDescriptor`\<[`IIdentityProfile`](interfaces/IIdentityProfile.md)\>
-
-Entity description for a IIdentityProfile.
-
-___
 
 ### IIdentityVerifiableCredentialApplicationDescriptor
 

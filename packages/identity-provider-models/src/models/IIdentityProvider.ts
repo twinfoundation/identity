@@ -107,7 +107,7 @@ export interface IIdentityProvider extends IService {
 		assertionMethodId: string,
 		assertionMethodPrivateKey: Uint8Array,
 		credentialId: string,
-		schemaTypes: string[],
+		schemaTypes: string | string[],
 		subject: T | T[],
 		revocationIndex: number
 	): Promise<{
@@ -158,6 +158,7 @@ export interface IIdentityProvider extends IService {
 	 * @param holderDocumentId The id of the document creating the verifiable presentation.
 	 * @param presentationMethodId The method to associate with the presentation.
 	 * @param presentationPrivateKey The private key required to generate the verifiable presentation.
+	 * @param schemaTypes The type of the schemas for the data stored in the verifiable credential.
 	 * @param verifiableCredentials The credentials to use for creating the presentation in jwt format.
 	 * @param expiresInMinutes The time in minutes for the presentation to expire.
 	 * @returns The created verifiable presentation and its token.
@@ -167,6 +168,7 @@ export interface IIdentityProvider extends IService {
 		holderDocumentId: string,
 		presentationMethodId: string,
 		presentationPrivateKey: Uint8Array,
+		schemaTypes: string | string[],
 		verifiableCredentials: string[],
 		expiresInMinutes?: number
 	): Promise<{

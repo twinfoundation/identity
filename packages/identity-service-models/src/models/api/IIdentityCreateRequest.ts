@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0.
 
 import type { IProperty } from "@gtsc/schema";
+import type { IdentityRole } from "../service/identityRole";
 
 /**
  * Create a new identity.
@@ -12,7 +13,12 @@ export interface IIdentityCreateRequest {
 	 */
 	data: {
 		/**
-		 * Optional fields.
+		 * The role for the identity.
+		 */
+		role: IdentityRole;
+
+		/**
+		 * Initial properties for the identity.
 		 */
 		properties?: IProperty[];
 	};

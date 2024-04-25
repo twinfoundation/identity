@@ -25,7 +25,7 @@ export interface IDidVerifiableCredential<T = unknown> {
 	/**
 	 * The data for the verifiable credential.
 	 */
-	credentialSubject: T;
+	credentialSubject: T | T[];
 
 	/**
 	 * Used to discover information about the current status of the

@@ -29,7 +29,7 @@ ___
 
 ### credentialSubject
 
-• **credentialSubject**: `T`
+• **credentialSubject**: `T` \| `T`[]
 
 The data for the verifiable credential.
 

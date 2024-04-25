@@ -14,7 +14,6 @@ The request payload.
 
 | Name | Type | Description |
 | :------ | :------ | :------ |
-| `matchDomains?` | `string` | Verifiable credential applicants must match the users email domain. |
 | `requiredClaims?` | [`IIdentityClaimRequirement`](IIdentityClaimRequirement.md)[] | The requisites needed to apply for a verifiable credential. |
 
 ___

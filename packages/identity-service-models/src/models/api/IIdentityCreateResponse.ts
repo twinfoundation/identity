@@ -13,20 +13,5 @@ export interface IIdentityCreateResponse {
 		 * The identity created.
 		 */
 		identity: string;
-
-		/**
-		 * Recovery phrase mnemonic.
-		 */
-		recoveryPhrase: string;
-
-		/**
-		 * Private key.
-		 */
-		privateKey: string;
-
-		/**
-		 * Public key.
-		 */
-		publicKey: string;
 	};
 }

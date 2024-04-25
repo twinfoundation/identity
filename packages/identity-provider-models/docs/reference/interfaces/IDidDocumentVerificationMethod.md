@@ -22,14 +22,10 @@ ___
 
 ### publicKeyJwk
 
-• `Optional` **publicKeyJwk**: `Object`
+• `Optional` **publicKeyJwk**: `IJwk`
 
 The public key for the entry as a JWK.
 Spec https://datatracker.ietf.org/doc/html/rfc7517 .
-
-#### Index signature
-
-▪ [id: `string`]: `string`
 
 ___
 

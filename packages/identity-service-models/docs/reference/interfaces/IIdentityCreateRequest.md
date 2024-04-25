@@ -14,4 +14,5 @@ The data for the request.
 
 | Name | Type | Description |
 | :------ | :------ | :------ |
-| `properties?` | `IProperty`[] | Optional fields. |
+| `properties?` | `IProperty`[] | Initial properties for the identity. |
+| `role` | [`IdentityRole`](../enums/IdentityRole.md) | The role for the identity. |

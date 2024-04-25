@@ -1,9 +1,9 @@
-# @gtsc/identity-provider-models - Overview
+# @gtsc/identity-provider-iota - Overview
 
-Models which define the structure of the service implementations.
+Identity provider implementation using IOTA.
 
 ## Installation
 
 ```shell
-npm install @gtsc/identity-provider-models
+npm install @gtsc/identity-provider-iota
 ```

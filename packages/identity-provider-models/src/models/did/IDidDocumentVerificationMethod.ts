@@ -1,5 +1,6 @@
 // Copyright 2024 IOTA Stiftung.
 // SPDX-License-Identifier: Apache-2.0.
+import type { IJwk } from "@gtsc/web";
 
 /**
  * Interface describing a DID document verification method.
@@ -30,7 +31,7 @@ export interface IDidDocumentVerificationMethod {
 	 * The public key for the entry as a JWK.
 	 * Spec https://datatracker.ietf.org/doc/html/rfc7517 .
 	 */
-	publicKeyJwk?: { [id: string]: string };
+	publicKeyJwk?: IJwk;
 
 	/**
 	 * Multi key partial revocation.
