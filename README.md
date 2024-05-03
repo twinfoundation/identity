@@ -4,9 +4,10 @@ This mono-repository contains the packages to use with Identity in GTSC applicat
 
 ## Packages
 
-- [identity-provider-models](packages/identity-provider-models/README.md) - Models which define the structure of the provider implementations.
-- [identity-provider-iota](packages/identity-provider-iota/README.md) - Identity provider implementation using IOTA.
-- [identity-service-models](packages/identity-service-models/README.md) - Models which define the structure of the service implementations.
+- [identity-models](packages/identity-models/README.md) - Models which define the structure of the contracts and connectors.
+- [identity-connector-entity-storage](packages/identity-connector-entity-storage/README.md) - Identity connector implementation using entity storage.
+- [identity-connector-iota](packages/identity-connector-iota/README.md) - Identity connector implementation using IOTA.
+- [identity-service](packages/identity-service/README.md) - Implementation of the Identity service.
 
 ## Contributing
 

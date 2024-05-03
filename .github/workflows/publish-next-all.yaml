@@ -11,7 +11,13 @@ jobs:
     strategy:
       max-parallel: 1
       matrix:
-        package: [identity-provider-models, identity-service-models, identity-provider-iota]
+        package:
+          [
+            identity-models,
+            identity-connector-entity-storage,
+            identity-connector-iota,
+            identity-service
+          ]
 
     steps:
       - name: Checkout

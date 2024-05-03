@@ -16,6 +16,15 @@
 		".eslintrc.cjs",
 		"**/wordlists/**"
 	],
-	"words": ["bech", "gtsc", "Multibase", "nameof", "Stiftung", "unrevoke", "Unrevoking"],
+	"words": [
+		"bech",
+		"Bitstring",
+		"gtsc",
+		"Multibase",
+		"nameof",
+		"Stiftung",
+		"unrevoke",
+		"Unrevoking"
+	],
 	"ignoreRegExpList": ["/from\\s+(['\"]).*\\1/", "/eslint-disable.*/"]
 }
