@@ -1,27 +1,27 @@
 // Copyright 2024 IOTA Stiftung.
 // SPDX-License-Identifier: Apache-2.0.
-import { BaseError, Converter, GeneralError, Guards, NotFoundError } from "@gtsc/core";
-import { Bip39, Ed25519 } from "@gtsc/crypto";
+import { BaseError, GeneralError, Guards, NotFoundError } from "@gtsc/core";
 import { ComparisonOperator } from "@gtsc/entity";
-import type { IEntityStorageProvider } from "@gtsc/entity-storage-provider-models";
-import type { IDidVerifiableCredential, IIdentityProvider } from "@gtsc/identity-provider-models";
+import type { IEntityStorageConnector } from "@gtsc/entity-storage-models";
 import {
-	type IIdentityClaimRequirement,
-	type IIdentityVerifiableCredentialApplication,
 	IdentityRole,
 	VerifiableCredentialState,
-	type IIdentityService
-} from "@gtsc/identity-service-models";
+	type IIdentityClaimRequirement,
+	type IIdentityConnector,
+	type IIdentityContract,
+	type IIdentityVerifiableCredentialApplication
+} from "@gtsc/identity-models";
 import { nameof } from "@gtsc/nameof";
 import { PropertyHelper, type IProperty } from "@gtsc/schema";
 import type { IRequestContext } from "@gtsc/services";
-import type { IVaultProvider } from "@gtsc/vault-provider-models";
+import type { IDidVerifiableCredential } from "@gtsc/standards-w3c-did";
+import type { IVaultConnector } from "@gtsc/vault-models";
 import type { IIdentityProfile } from "./models/IIdentityProfile";
 
 /**
- * Class which implements the identity service.
+ * Class which implements the identity contract.
  */
-export class IdentityService implements IIdentityService {
+export class IdentityService implements IIdentityContract {
 	/**
 	 * Runtime name for the class.
 	 * @internal
@@ -29,55 +29,55 @@ export class IdentityService implements IIdentityService {
 	private static readonly _CLASS_NAME: string = nameof<IdentityService>();
 
 	/**
-	 * The vault provider.
+	 * The vault connector.
 	 * @internal
 	 */
-	private readonly _vaultProvider: IVaultProvider;
+	private readonly _vaultConnector: IVaultConnector;
 
 	/**
-	 * The identity provider.
+	 * The identity connector.
 	 * @internal
 	 */
-	private readonly _identityProvider: IIdentityProvider;
+	private readonly _identityConnector: IIdentityConnector;
 
 	/**
-	 * The storage provider for the profiles.
+	 * The storage connector for the profiles.
 	 * @internal
 	 */
-	private readonly _profileStorageProvider: IEntityStorageProvider<IIdentityProfile>;
+	private readonly _profileEntityStorageConnector: IEntityStorageConnector<IIdentityProfile>;
 
 	/**
 	 * Create a new instance of Identity.
 	 * @param dependencies The dependencies for the identity service.
-	 * @param dependencies.vaultProvider The vault provider.
-	 * @param dependencies.identityProvider The identity provider.
-	 * @param dependencies.profileStorageProvider The storage provider for the profiles.
+	 * @param dependencies.vaultConnector The vault connector.
+	 * @param dependencies.identityConnector The identity connector.
+	 * @param dependencies.profileEntityStorageConnector The storage connector for the profiles.
 	 */
 	constructor(dependencies: {
-		vaultProvider: IVaultProvider;
-		identityProvider: IIdentityProvider;
-		profileStorageProvider: IEntityStorageProvider<IIdentityProfile>;
+		vaultConnector: IVaultConnector;
+		identityConnector: IIdentityConnector;
+		profileEntityStorageConnector: IEntityStorageConnector<IIdentityProfile>;
 	}) {
 		Guards.object(IdentityService._CLASS_NAME, nameof(dependencies), dependencies);
 		Guards.object(
 			IdentityService._CLASS_NAME,
-			nameof(dependencies.vaultProvider),
-			dependencies.vaultProvider
+			nameof(dependencies.vaultConnector),
+			dependencies.vaultConnector
 		);
 		Guards.object(
 			IdentityService._CLASS_NAME,
-			nameof(dependencies.identityProvider),
-			dependencies.identityProvider
+			nameof(dependencies.identityConnector),
+			dependencies.identityConnector
 		);
 		Guards.object(
 			IdentityService._CLASS_NAME,
-			nameof(dependencies.profileStorageProvider),
-			dependencies.profileStorageProvider
+			nameof(dependencies.profileEntityStorageConnector),
+			dependencies.profileEntityStorageConnector
 		);
 
-		this._vaultProvider = dependencies.vaultProvider;
-		this._identityProvider = dependencies.identityProvider;
-		this._profileStorageProvider = dependencies.profileStorageProvider;
+		this._vaultConnector = dependencies.vaultConnector;
+		this._identityConnector = dependencies.identityConnector;
+		this._profileEntityStorageConnector = dependencies.profileEntityStorageConnector;
 	}
 
 	/**
@@ -97,32 +97,30 @@ export class IdentityService implements IIdentityService {
 		 */
 		identity: string;
 	}> {
+		Guards.object<IRequestContext>(
+			IdentityService._CLASS_NAME,
+			nameof(requestContext),
+			requestContext
+		);
+		Guards.stringValue(
+			IdentityService._CLASS_NAME,
+			nameof(requestContext.tenantId),
+			requestContext.tenantId
+		);
+		Guards.stringValue(
+			IdentityService._CLASS_NAME,
+			nameof(requestContext.identity),
+			requestContext.identity
+		);
 		Guards.arrayOneOf(IdentityService._CLASS_NAME, nameof(role), role, Object.values(IdentityRole));
 
 		try {
-			const mnemonic = Bip39.randomMnemonic();
-			const seed = Bip39.mnemonicToSeed(mnemonic);
-			const signKeyPair = Ed25519.keyPairFromSeed(seed);
+			const document = await this._identityConnector.createDocument(requestContext);
 
-			const document = await this._identityProvider.createDocument(
-				signKeyPair.privateKey,
-				signKeyPair.publicKey
-			);
-
-			await this._profileStorageProvider.set(requestContext, {
+			await this._profileEntityStorageConnector.set(requestContext, {
 				identity: document.id,
 				role,
 				properties
-			});
-
-			await this._vaultProvider.set<{
-				mnemonic: string;
-				privateKey: string;
-				publicKey: string;
-			}>(requestContext, document.id, {
-				mnemonic,
-				privateKey: Converter.bytesToHex(signKeyPair.privateKey),
-				publicKey: Converter.bytesToHex(signKeyPair.publicKey)
 			});
 
 			return {
@@ -154,7 +152,7 @@ export class IdentityService implements IIdentityService {
 		Guards.string(IdentityService._CLASS_NAME, nameof(identity), identity);
 
 		try {
-			const profile = await this._profileStorageProvider.get(requestContext, identity);
+			const profile = await this._profileEntityStorageConnector.get(requestContext, identity);
 			if (!profile) {
 				throw new NotFoundError(IdentityService._CLASS_NAME, "identityGetFailed", identity);
 			}
@@ -183,14 +181,14 @@ export class IdentityService implements IIdentityService {
 		Guards.string(IdentityService._CLASS_NAME, nameof(identity), identity);
 
 		try {
-			const profile = await this._profileStorageProvider.get(requestContext, identity);
+			const profile = await this._profileEntityStorageConnector.get(requestContext, identity);
 			if (!profile) {
 				throw new NotFoundError(IdentityService._CLASS_NAME, "itemUpdateFailed", identity);
 			}
 
 			PropertyHelper.merge(profile.properties, properties);
 
-			await this._profileStorageProvider.set(requestContext, profile);
+			await this._profileEntityStorageConnector.set(requestContext, profile);
 		} catch (error) {
 			throw new GeneralError(IdentityService._CLASS_NAME, "itemUpdateFailed", { identity }, error);
 		}
@@ -231,7 +229,7 @@ export class IdentityService implements IIdentityService {
 	}> {
 		Guards.string(IdentityService._CLASS_NAME, nameof(role), role);
 
-		const result = await this._profileStorageProvider.query(requestContext, {
+		const result = await this._profileEntityStorageConnector.query(requestContext, {
 			property: "role",
 			value: role,
 			operator: ComparisonOperator.Equals

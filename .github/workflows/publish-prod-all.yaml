@@ -13,10 +13,9 @@ jobs:
       matrix:
         package:
           [
-            identity-provider-models,
-            identity-service-models,
-            identity-provider-iota,
-            identity-provider-memory,
+            identity-models,
+            identity-connector-entity-storage,
+            identity-connector-iota,
             identity-service
           ]
 

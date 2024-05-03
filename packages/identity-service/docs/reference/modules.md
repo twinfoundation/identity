@@ -11,8 +11,8 @@
 
 ## Variables
 
-### IIdentityProfileDescriptor
+### IdentityProfileDescriptor
 
-• `Const` **IIdentityProfileDescriptor**: `IEntityDescriptor`\<[`IIdentityProfile`](interfaces/IIdentityProfile.md)\>
+• `Const` **IdentityProfileDescriptor**: `IEntityDescriptor`\<[`IIdentityProfile`](interfaces/IIdentityProfile.md)\>
 
 Entity description for a IIdentityProfile.

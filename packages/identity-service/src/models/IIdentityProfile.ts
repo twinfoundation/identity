@@ -1,6 +1,6 @@
 // Copyright 2024 IOTA Stiftung.
 // SPDX-License-Identifier: Apache-2.0.
-import type { IdentityRole } from "@gtsc/identity-service-models";
+import type { IdentityRole } from "@gtsc/identity-models";
 import type { IProperty } from "@gtsc/schema";
 
 /**

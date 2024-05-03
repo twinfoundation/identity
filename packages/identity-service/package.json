@@ -1,6 +1,6 @@
 {
 	"name": "@gtsc/identity-service",
-	"version": "0.0.3-next.2",
+	"version": "0.0.3-next.3",
 	"description": "Implementation of the identity service",
 	"repository": {
 		"type": "git",
@@ -31,27 +31,26 @@
 		"@gtsc/core": "next",
 		"@gtsc/crypto": "next",
 		"@gtsc/entity": "next",
-		"@gtsc/entity-storage-provider-models": "next",
-		"@gtsc/entity-storage-provider-memory": "next",
-		"@gtsc/identity-provider-models": "0.0.3-next.2",
-		"@gtsc/identity-service-models": "0.0.3-next.2",
-		"@gtsc/identity-provider-memory": "0.0.3-next.2",
+		"@gtsc/entity-storage-models": "next",
+		"@gtsc/entity-storage-connector-memory": "next",
+		"@gtsc/identity-models": "0.0.3-next.3",
+		"@gtsc/identity-connector-entity-storage": "0.0.3-next.3",
 		"@gtsc/schema": "next",
-		"@gtsc/vault-provider-models": "next",
-		"@gtsc/vault-provider-memory": "next"
+		"@gtsc/vault-models": "next",
+		"@gtsc/vault-connector-entity-storage": "next"
 	},
 	"devDependencies": {
 		"@gtsc/nameof-transformer": "^0.0.4",
-		"@vitest/coverage-v8": "^1.5.0",
+		"@vitest/coverage-v8": "^1.5.3",
 		"copyfiles": "^2.4.1",
 		"rimraf": "^5.0.5",
-		"rollup": "^4.16.3",
+		"rollup": "^4.17.2",
 		"rollup-plugin-typescript2": "^0.36.0",
 		"ts-patch": "^3.1.2",
 		"typedoc": "^0.25.13",
 		"typedoc-plugin-markdown": "^3.17.1",
 		"typescript": "^5.4.5",
-		"vitest": "^1.5.0"
+		"vitest": "^1.5.3"
 	},
 	"main": "./dist/cjs/index.cjs",
 	"module": "./dist/esm/index.mjs",

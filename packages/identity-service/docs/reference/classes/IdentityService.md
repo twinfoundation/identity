@@ -1,10 +1,10 @@
 # Class: IdentityService
 
-Class which implements the identity service.
+Class which implements the identity contract.
 
 ## Implements
 
-- `IIdentityService`
+- `IIdentityContract`
 
 ## Constructors
 
@@ -19,9 +19,9 @@ Create a new instance of Identity.
 | Name | Type | Description |
 | :------ | :------ | :------ |
 | `dependencies` | `Object` | The dependencies for the identity service. |
-| `dependencies.identityProvider` | `IIdentityProvider` | The identity provider. |
-| `dependencies.profileStorageProvider` | `IEntityStorageProvider`\<[`IIdentityProfile`](../interfaces/IIdentityProfile.md)\> | The storage provider for the profiles. |
-| `dependencies.vaultProvider` | `IVaultProvider` | The vault provider. |
+| `dependencies.identityConnector` | `IIdentityConnector` | The identity connector. |
+| `dependencies.profileEntityStorageConnector` | `IEntityStorageConnector`\<[`IIdentityProfile`](../interfaces/IIdentityProfile.md)\> | The storage connector for the profiles. |
+| `dependencies.vaultConnector` | `IVaultConnector` | The vault connector. |
 
 #### Returns
 
@@ -51,7 +51,7 @@ The created identity details.
 
 #### Implementation of
 
-IIdentityService.identityCreate
+IIdentityContract.identityCreate
 
 ___
 
@@ -77,7 +77,7 @@ The items properties.
 
 #### Implementation of
 
-IIdentityService.itemGet
+IIdentityContract.itemGet
 
 ___
 
@@ -103,7 +103,7 @@ Nothing.
 
 #### Implementation of
 
-IIdentityService.itemUpdate
+IIdentityContract.itemUpdate
 
 ___
 
@@ -131,7 +131,7 @@ The list of items and cursor for paging.
 
 #### Implementation of
 
-IIdentityService.list
+IIdentityContract.list
 
 ___
 
@@ -158,7 +158,7 @@ The signature type and value.
 
 #### Implementation of
 
-IIdentityService.signData
+IIdentityContract.signData
 
 ___
 
@@ -189,7 +189,7 @@ The verifiable credential if successful.
 
 #### Implementation of
 
-IIdentityService.verifiableCredential
+IIdentityContract.verifiableCredential
 
 ___
 
@@ -217,7 +217,7 @@ The verifiable credential applications details.
 
 #### Implementation of
 
-IIdentityService.verifiableCredentialApplications
+IIdentityContract.verifiableCredentialApplications
 
 ___
 
@@ -248,7 +248,7 @@ The verifiable credential check details.
 
 #### Implementation of
 
-IIdentityService.verifiableCredentialCheck
+IIdentityContract.verifiableCredentialCheck
 
 ___
 
@@ -276,7 +276,7 @@ The id of the verification credential generated, may not be immediately valid.
 
 #### Implementation of
 
-IIdentityService.verifiableCredentialCreate
+IIdentityContract.verifiableCredentialCreate
 
 ___
 
@@ -302,7 +302,7 @@ The requirements for creating the verifiable credential.
 
 #### Implementation of
 
-IIdentityService.verifiableCredentialRequirementsGet
+IIdentityContract.verifiableCredentialRequirementsGet
 
 ___
 
@@ -329,7 +329,7 @@ Nothing.
 
 #### Implementation of
 
-IIdentityService.verifiableCredentialRequirementsSet
+IIdentityContract.verifiableCredentialRequirementsSet
 
 ___
 
@@ -356,7 +356,7 @@ The updated application.
 
 #### Implementation of
 
-IIdentityService.verifiableCredentialUpdate
+IIdentityContract.verifiableCredentialUpdate
 
 ___
 
@@ -385,4 +385,4 @@ True if the signature is valid.
 
 #### Implementation of
 
-IIdentityService.verifyData
+IIdentityContract.verifyData
