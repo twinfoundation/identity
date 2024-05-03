@@ -1,6 +1,6 @@
 {
 	"name": "@gtsc/identity-service",
-	"version": "0.0.3-next.3",
+	"version": "0.0.3-next.4",
 	"description": "Implementation of the identity service",
 	"repository": {
 		"type": "git",
@@ -33,8 +33,8 @@
 		"@gtsc/entity": "next",
 		"@gtsc/entity-storage-models": "next",
 		"@gtsc/entity-storage-connector-memory": "next",
-		"@gtsc/identity-models": "0.0.3-next.3",
-		"@gtsc/identity-connector-entity-storage": "0.0.3-next.3",
+		"@gtsc/identity-models": "0.0.3-next.4",
+		"@gtsc/identity-connector-entity-storage": "0.0.3-next.4",
 		"@gtsc/schema": "next",
 		"@gtsc/vault-models": "next",
 		"@gtsc/vault-connector-entity-storage": "next"

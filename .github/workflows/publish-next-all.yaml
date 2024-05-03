@@ -6,6 +6,9 @@ jobs:
   publish:
     runs-on: ubuntu-latest
 
+    env:
+      TEST_MNEMONIC: ${{ secrets.TEST_MNEMONIC }}
+
     if: github.ref != 'refs/heads/main'
 
     strategy:
