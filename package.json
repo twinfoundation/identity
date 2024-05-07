@@ -1,7 +1,7 @@
 {
 	"name": "@gtsc/identity",
 	"version": "0.0.3-next.4",
-	"description": "Identity packages for GTSC",
+	"description": "Identity",
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/gtscio/identity.git"
