@@ -189,7 +189,6 @@ export class IotaIdentityConnector implements IIdentityConnector {
 
 			return await this.updateDocument(requestContext, document, false);
 		} catch (error) {
-			console.log(error);
 			throw new GeneralError(
 				IotaIdentityConnector._CLASS_NAME,
 				"createDocumentFailed",
