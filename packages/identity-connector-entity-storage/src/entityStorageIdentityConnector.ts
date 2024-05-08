@@ -866,8 +866,6 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 			}
 			await this.verifyDocument(requestContext, issuerIdentityDocument);
 			const issuerDidDocument = JSON.parse(issuerIdentityDocument.document) as IDidDocument;
-			console.log(issuerDidDocument);
-			console.log(jwtHeader.kid);
 
 			const methods = this.getAllMethods(issuerDidDocument);
 			const methodAndArray = methods.find(m => {

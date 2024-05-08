@@ -11,13 +11,26 @@ export interface IIdentityListResponse {
 	 */
 	data: {
 		/**
-		 * The cursor for paged requests.
+		 * The identities.
+		 */
+		identities: {
+			identity: string;
+			properties?: IProperty[];
+		}[];
+
+		/**
+		 * An optional cursor, when defined can be used to call find to get more entities.
 		 */
 		cursor?: string;
 
 		/**
-		 * The identities.
+		 * Number of entities to return.
 		 */
-		identities: { [id: string]: IProperty[] }[];
+		pageSize?: number;
+
+		/**
+		 * Total entities length.
+		 */
+		totalEntities: number;
 	};
 }

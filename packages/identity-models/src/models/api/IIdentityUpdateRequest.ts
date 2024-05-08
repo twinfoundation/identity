@@ -19,6 +19,6 @@ export interface IIdentityUpdateRequest {
 		/**
 		 * Properties for the identity.
 		 */
-		properties?: IProperty[];
+		properties: IProperty[];
 	};
 }
