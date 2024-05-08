@@ -21,40 +21,4 @@ export interface IIdentityProfile {
 	 * The properties for the profile.
 	 */
 	properties?: IProperty[];
-
-	/**
-	 * Indexes for the current issuing keys.
-	 */
-	keyIndexes?: {
-		[id: string]: {
-			index: number;
-			allocated: number;
-		};
-	};
-
-	/**
-	 * Issued verifiable credential ids.
-	 */
-	verifiableCredentials?: {
-		/**
-		 * The type of the credential.
-		 */
-		type: string;
-
-		/**
-		 * The id of the credential.
-		 */
-		id: string;
-
-		/**
-		 * Which did issuer the credential.
-		 */
-		issuer: string;
-	}[];
-
-	/**
-	 * The next index to map to a verifiable credential id.
-	 * Used for revocation of VCs.
-	 */
-	nextRevocationIndex?: string;
 }

@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0.
 
 import type { IProperty } from "@gtsc/schema";
-import type { IdentityRole } from "../contract/identityRole";
+import type { IdentityRole } from "../identityRole";
 
 /**
  * Response to get an identity details.

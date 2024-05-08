@@ -1,9 +1,11 @@
 {
 	"error": {
-		"identity": {
+		"identityService": {
 			"identityCreateFailed": "Creating the identity failed",
 			"identityGetFailed": "Getting the identity failed \"{notFoundId}\"",
-			"identityUpdateFailed": "Updating the identity failed \"{identity}\""
+			"identityUpdateFailed": "Updating the identity failed \"{identity}\"",
+			"identityMismatch": "The authenticated user does not match",
+			"identityListFailed": "Failed listing identities"
 		}
 	}
 }
