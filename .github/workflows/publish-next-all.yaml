@@ -19,7 +19,8 @@ jobs:
             identity-models,
             identity-connector-entity-storage,
             identity-connector-iota,
-            identity-service
+            identity-service,
+            identity-rest-client
           ]
 
     steps:

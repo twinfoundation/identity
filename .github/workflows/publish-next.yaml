@@ -12,6 +12,7 @@ on:
           - identity-connector-entity-storage
           - identity-connector-iota
           - identity-service
+          - identity-rest-client
 
 jobs:
   publish:
