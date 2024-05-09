@@ -57,15 +57,23 @@ export function generateRestRoutes(routeName: string, serviceName: string): IRes
 			type: nameof<IIdentityCreateRequest>(),
 			examples: [
 				{
-					body: {
-						role: IdentityRole.User,
-						properties: [
-							{
-								key: "email",
-								type: "https://schema.org/Text",
-								value: "test@example.com"
-							}
-						]
+					id: "identityCreateRequestExample",
+					request: {
+						body: {
+							role: IdentityRole.User,
+							properties: [
+								{
+									key: "email",
+									type: "https://schema.org/Text",
+									value: "john@example.com"
+								},
+								{
+									key: "name",
+									type: "https://schema.org/Text",
+									value: "John Doe"
+								}
+							]
+						}
 					}
 				}
 			]
@@ -75,10 +83,13 @@ export function generateRestRoutes(routeName: string, serviceName: string): IRes
 				type: nameof<ICreatedResponse>(),
 				examples: [
 					{
-						statusCode: HttpStatusCodes.CREATED,
-						headers: {
-							location:
-								"did:gtsc:0xc57d94b088f4c6d2cb32ded014813d0c786aa00134c8ee22f84b1e2545602a70"
+						id: "identityCreateResponseExample",
+						response: {
+							statusCode: HttpStatusCodes.CREATED,
+							headers: {
+								location:
+									"did:gtsc:0xc57d94b088f4c6d2cb32ded014813d0c786aa00134c8ee22f84b1e2545602a70"
+							}
 						}
 					}
 				]
@@ -95,7 +106,32 @@ export function generateRestRoutes(routeName: string, serviceName: string): IRes
 		handler: async (requestContext, request, body) =>
 			identityUpdate(requestContext, serviceName, request, body),
 		requestType: {
-			type: nameof<IIdentityUpdateRequest>()
+			type: nameof<IIdentityUpdateRequest>(),
+			examples: [
+				{
+					id: "identityUpdateRequestExample",
+					request: {
+						path: {
+							identity:
+								"did:gtsc:0xc57d94b088f4c6d2cb32ded014813d0c786aa00134c8ee22f84b1e2545602a70"
+						},
+						body: {
+							properties: [
+								{
+									key: "email",
+									type: "https://schema.org/Text",
+									value: "john@example.com"
+								},
+								{
+									key: "name",
+									type: "https://schema.org/Text",
+									value: "John Smith"
+								}
+							]
+						}
+					}
+				}
+			]
 		},
 		responseType: [
 			{
@@ -116,22 +152,44 @@ export function generateRestRoutes(routeName: string, serviceName: string): IRes
 		handler: async (requestContext, request, body) =>
 			identityGet(requestContext, serviceName, request, body),
 		requestType: {
-			type: nameof<IIdentityGetRequest>()
+			type: nameof<IIdentityGetRequest>(),
+			examples: [
+				{
+					id: "identityGetRequestExample",
+					request: {
+						path: {
+							identity:
+								"did:gtsc:0xc57d94b088f4c6d2cb32ded014813d0c786aa00134c8ee22f84b1e2545602a70"
+						},
+						query: {
+							propertyNames: "email,name"
+						}
+					}
+				}
+			]
 		},
 		responseType: [
 			{
 				type: nameof<IIdentityGetResponse>(),
 				examples: [
 					{
-						body: {
-							role: IdentityRole.User,
-							properties: [
-								{
-									key: "email",
-									type: "https://schema.org/Text",
-									value: "test@example.com"
-								}
-							]
+						id: "identityGetResponseExample",
+						response: {
+							body: {
+								role: IdentityRole.User,
+								properties: [
+									{
+										key: "email",
+										type: "https://schema.org/Text",
+										value: "john@example.com"
+									},
+									{
+										key: "name",
+										type: "https://schema.org/Text",
+										value: "John Does"
+									}
+								]
+							}
 						}
 					}
 				]
@@ -151,30 +209,43 @@ export function generateRestRoutes(routeName: string, serviceName: string): IRes
 		handler: async (requestContext, request, body) =>
 			identitiesList(requestContext, serviceName, request, body),
 		requestType: {
-			type: nameof<IIdentityListRequest>()
+			type: nameof<IIdentityListRequest>(),
+			examples: [
+				{
+					id: "identityListRequestExample",
+					request: {
+						query: {
+							role: IdentityRole.User
+						}
+					}
+				}
+			]
 		},
 		responseType: [
 			{
 				type: nameof<IIdentityListResponse>(),
 				examples: [
 					{
-						body: {
-							identities: [
-								{
-									identity:
-										"did:gtsc:0xc57d94b088f4c6d2cb32ded014813d0c786aa00134c8ee22f84b1e2545602a70",
-									properties: [
-										{
-											key: "email",
-											type: "https://schema.org/Text",
-											value: "test@example.com"
-										}
-									]
-								}
-							],
-							cursor: "1",
-							pageSize: 10,
-							totalEntities: 20
+						id: "identitiesListResponseExample",
+						response: {
+							body: {
+								identities: [
+									{
+										identity:
+											"did:gtsc:0xc57d94b088f4c6d2cb32ded014813d0c786aa00134c8ee22f84b1e2545602a70",
+										properties: [
+											{
+												key: "email",
+												type: "https://schema.org/Text",
+												value: "john@example.com"
+											}
+										]
+									}
+								],
+								cursor: "1",
+								pageSize: 10,
+								totalEntities: 20
+							}
 						}
 					}
 				]
