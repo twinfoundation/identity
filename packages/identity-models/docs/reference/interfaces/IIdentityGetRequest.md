@@ -28,4 +28,4 @@ The query parameters.
 
 | Name | Type | Description |
 | :------ | :------ | :------ |
-| `propertyNames?` | `string` | The properties to get for the profile, defaults to all. should be a comma separated list. |
+| `propertyNames?` | `string` | The properties to get for the profile, defaults to all, should be a comma separated list. |
