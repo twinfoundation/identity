@@ -11,7 +11,7 @@ export interface IIdentityGetResponse {
 	/**
 	 * The response payload.
 	 */
-	data: {
+	body: {
 		/**
 		 * The role of the identity.
 		 */

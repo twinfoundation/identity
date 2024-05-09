@@ -62,7 +62,7 @@ export class IdentityClient extends BaseRestClient implements IIdentity {
 			"/",
 			"POST",
 			{
-				data: {
+				body: {
 					role,
 					properties
 				}
@@ -96,12 +96,16 @@ export class IdentityClient extends BaseRestClient implements IIdentity {
 			"/:identity",
 			"GET",
 			{
-				identity,
-				propertyNames
+				path: {
+					identity
+				},
+				query: {
+					propertyNames: propertyNames?.join(",")
+				}
 			}
 		);
 
-		return response.data;
+		return response.body;
 	}
 
 	/**
@@ -119,8 +123,10 @@ export class IdentityClient extends BaseRestClient implements IIdentity {
 		Guards.stringValue(IdentityClient._CLASS_NAME, nameof(identity), identity);
 
 		await this.fetch<IIdentityUpdateRequest, never>(requestContext, "/:identity", "PUT", {
-			identity,
-			data: {
+			path: {
+				identity
+			},
+			body: {
 				properties
 			}
 		});
@@ -177,6 +183,6 @@ export class IdentityClient extends BaseRestClient implements IIdentity {
 				}
 			}
 		);
-		return response.data;
+		return response.body;
 	}
 }
