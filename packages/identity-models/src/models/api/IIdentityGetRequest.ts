@@ -6,12 +6,23 @@
  */
 export interface IIdentityGetRequest {
 	/**
-	 * The identity to get the profile for.
+	 * The path parameters.
 	 */
-	identity: string;
+	path: {
+		/**
+		 * The identity to get the profile for.
+		 */
+		identity: string;
+	};
 
 	/**
-	 * The properties to get for the profile, defaults to all.
+	 * The query parameters.
 	 */
-	propertyNames?: string[];
+	query: {
+		/**
+		 * The properties to get for the profile, defaults to all.
+		 * should be a comma separated list.
+		 */
+		propertyNames?: string;
+	};
 }

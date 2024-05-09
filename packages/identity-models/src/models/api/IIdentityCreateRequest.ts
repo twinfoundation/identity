@@ -11,7 +11,7 @@ export interface IIdentityCreateRequest {
 	/**
 	 * The data for the request.
 	 */
-	data: {
+	body: {
 		/**
 		 * The role for the identity.
 		 */

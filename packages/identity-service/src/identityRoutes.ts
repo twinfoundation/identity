@@ -3,29 +3,30 @@
 
 import type {
 	ICreatedResponse,
+	INoContentResponse,
 	INotFoundResponse,
 	IRestRoute,
-	ISuccessResponse,
 	ITag
 } from "@gtsc/api-models";
 import { Coerce, Guards } from "@gtsc/core";
-import type {
-	IIdentity,
-	IIdentityCreateRequest,
-	IIdentityGetRequest,
-	IIdentityGetResponse,
-	IIdentityListRequest,
-	IIdentityListResponse,
-	IIdentityUpdateRequest
+import {
+	IdentityRole,
+	type IIdentity,
+	type IIdentityCreateRequest,
+	type IIdentityGetRequest,
+	type IIdentityGetResponse,
+	type IIdentityListRequest,
+	type IIdentityListResponse,
+	type IIdentityUpdateRequest
 } from "@gtsc/identity-models";
 import { nameof } from "@gtsc/nameof";
 import { ServiceFactory, type IRequestContext } from "@gtsc/services";
 import { HttpStatusCodes } from "@gtsc/web";
 
 /**
- * The context used when communicating about these routes.
+ * The source used when communicating about these routes.
  */
-const ROUTES_CONTEXT = "identity";
+const ROUTES_SOURCE = "identityRoutes";
 
 /**
  * The tag to associate with the routes.
@@ -44,80 +45,144 @@ export const tags: ITag[] = [
  * @returns The generated routes.
  */
 export function generateRestRoutes(routeName: string, serviceName: string): IRestRoute[] {
-	return [
-		{
-			operationId: "identityCreate",
-			summary: "Create a new identity",
-			tag: tags[0].name,
-			method: "POST",
-			path: `${routeName}/`,
-			handler: async (requestContext, request, body) =>
-				identityCreate(requestContext, serviceName, request, body),
-			requestType: nameof<IIdentityCreateRequest>(),
-			responseType: [
+	const identityCreateRoute: IRestRoute<IIdentityCreateRequest, ICreatedResponse> = {
+		operationId: "identityCreate",
+		summary: "Create a new identity",
+		tag: tags[0].name,
+		method: "POST",
+		path: `${routeName}/`,
+		handler: async (requestContext, request, body) =>
+			identityCreate(requestContext, serviceName, request, body),
+		requestType: {
+			type: nameof<IIdentityCreateRequest>(),
+			examples: [
 				{
-					type: nameof<ICreatedResponse>(),
-					statusCode: HttpStatusCodes.CREATED
+					body: {
+						role: IdentityRole.User,
+						properties: [
+							{
+								key: "email",
+								type: "https://schema.org/Text",
+								value: "test@example.com"
+							}
+						]
+					}
 				}
 			]
 		},
-		{
-			operationId: "identityUpdate",
-			summary: "Update an identity",
-			tag: tags[0].name,
-			method: "PUT",
-			path: `${routeName}/:identity`,
-			handler: async (requestContext, request, body) =>
-				identityUpdate(requestContext, serviceName, request, body),
-			requestType: nameof<IIdentityUpdateRequest>(),
-			responseType: [
-				{
-					type: nameof<ISuccessResponse>(),
-					statusCode: HttpStatusCodes.OK
-				},
-				{
-					type: nameof<INotFoundResponse>(),
-					statusCode: HttpStatusCodes.NOT_FOUND
-				}
-			]
+		responseType: [
+			{
+				type: nameof<ICreatedResponse>(),
+				examples: [
+					{
+						statusCode: HttpStatusCodes.CREATED,
+						headers: {
+							location:
+								"did:gtsc:0xc57d94b088f4c6d2cb32ded014813d0c786aa00134c8ee22f84b1e2545602a70"
+						}
+					}
+				]
+			}
+		]
+	};
+
+	const identityUpdateRoute: IRestRoute<IIdentityUpdateRequest, void> = {
+		operationId: "identityUpdate",
+		summary: "Update an identity",
+		tag: tags[0].name,
+		method: "PUT",
+		path: `${routeName}/:identity`,
+		handler: async (requestContext, request, body) =>
+			identityUpdate(requestContext, serviceName, request, body),
+		requestType: {
+			type: nameof<IIdentityUpdateRequest>()
 		},
-		{
-			operationId: "identityGet",
-			summary: "Get the identity details",
-			tag: tags[0].name,
-			method: "GET",
-			path: `${routeName}/:identity`,
-			handler: async (requestContext, request, body) =>
-				identityGet(requestContext, serviceName, request, body),
-			requestType: nameof<IIdentityGetRequest>(),
-			responseType: [
-				{
-					type: nameof<IIdentityGetResponse>(),
-					statusCode: HttpStatusCodes.OK
-				},
-				{
-					type: nameof<INotFoundResponse>(),
-					statusCode: HttpStatusCodes.NOT_FOUND
-				}
-			]
+		responseType: [
+			{
+				type: nameof<INoContentResponse>()
+			},
+			{
+				type: nameof<INotFoundResponse>()
+			}
+		]
+	};
+
+	const identityGetRoute: IRestRoute<IIdentityGetRequest, IIdentityGetResponse> = {
+		operationId: "identityGet",
+		summary: "Get the identity details",
+		tag: tags[0].name,
+		method: "GET",
+		path: `${routeName}/:identity`,
+		handler: async (requestContext, request, body) =>
+			identityGet(requestContext, serviceName, request, body),
+		requestType: {
+			type: nameof<IIdentityGetRequest>()
 		},
-		{
-			operationId: "identitiesList",
-			summary: "Get the list of identities based on the provided criteria",
-			tag: tags[0].name,
-			method: "GET",
-			path: `${routeName}/`,
-			handler: async (requestContext, request, body) =>
-				identitiesList(requestContext, serviceName, request, body),
-			requestType: nameof<IIdentityListRequest>(),
-			responseType: [
-				{
-					type: nameof<IIdentityListResponse>(),
-					statusCode: HttpStatusCodes.OK
-				}
-			]
-		}
-	];
+		responseType: [
+			{
+				type: nameof<IIdentityGetResponse>(),
+				examples: [
+					{
+						body: {
+							role: IdentityRole.User,
+							properties: [
+								{
+									key: "email",
+									type: "https://schema.org/Text",
+									value: "test@example.com"
+								}
+							]
+						}
+					}
+				]
+			},
+			{
+				type: nameof<INotFoundResponse>()
+			}
+		]
+	};
+
+	const identityListRoute: IRestRoute<IIdentityListRequest, IIdentityListResponse> = {
+		operationId: "identitiesList",
+		summary: "Get the list of identities based on the provided criteria",
+		tag: tags[0].name,
+		method: "GET",
+		path: `${routeName}/`,
+		handler: async (requestContext, request, body) =>
+			identitiesList(requestContext, serviceName, request, body),
+		requestType: {
+			type: nameof<IIdentityListRequest>()
+		},
+		responseType: [
+			{
+				type: nameof<IIdentityListResponse>(),
+				examples: [
+					{
+						body: {
+							identities: [
+								{
+									identity:
+										"did:gtsc:0xc57d94b088f4c6d2cb32ded014813d0c786aa00134c8ee22f84b1e2545602a70",
+									properties: [
+										{
+											key: "email",
+											type: "https://schema.org/Text",
+											value: "test@example.com"
+										}
+									]
+								}
+							],
+							cursor: "1",
+							pageSize: 10,
+							totalEntities: 20
+						}
+					}
+				]
+			}
+		]
+	};
+
+	return [identityCreateRoute, identityUpdateRoute, identityGetRoute, identityListRoute];
 }
 
 /**
@@ -134,14 +199,14 @@ export async function identityCreate(
 	request: IIdentityCreateRequest,
 	body?: unknown
 ): Promise<ICreatedResponse> {
-	Guards.object(ROUTES_CONTEXT, nameof(request.data), request.data);
+	Guards.object(ROUTES_SOURCE, nameof(request.body), request.body);
 
 	const identity = ServiceFactory.get<IIdentity>(serviceName);
 
 	const result = await identity.identityCreate(
 		requestContext,
-		request.data.role,
-		request.data.properties
+		request.body.role,
+		request.body.properties
 	);
 
 	return {
@@ -166,10 +231,11 @@ export async function identityUpdate(
 	request: IIdentityUpdateRequest,
 	body?: unknown
 ): Promise<void> {
-	Guards.object(ROUTES_CONTEXT, nameof(request.data), request.data);
+	Guards.object(ROUTES_SOURCE, nameof(request.path), request.path);
+	Guards.object(ROUTES_SOURCE, nameof(request.body), request.body);
 	const identity = ServiceFactory.get<IIdentity>(serviceName);
 
-	return identity.identityUpdate(requestContext, request.identity, request.data.properties);
+	await identity.identityUpdate(requestContext, request.path.identity, request.body.properties);
 }
 
 /**
@@ -186,12 +252,17 @@ export async function identityGet(
 	request: IIdentityGetRequest,
 	body?: unknown
 ): Promise<IIdentityGetResponse> {
+	Guards.object(ROUTES_SOURCE, nameof(request.path), request.path);
 	const identity = ServiceFactory.get<IIdentity>(serviceName);
 
-	const result = await identity.identityGet(requestContext, request.identity);
+	const result = await identity.identityGet(
+		requestContext,
+		request.path.identity,
+		request?.query?.propertyNames?.split(",")
+	);
 
 	return {
-		data: {
+		body: {
 			role: result.role,
 			properties: result.properties
 		}
@@ -215,7 +286,7 @@ export async function identitiesList(
 	const identity = ServiceFactory.get<IIdentity>(serviceName);
 
 	return {
-		data: await identity.identityList(
+		body: await identity.identityList(
 			requestContext,
 			request?.query?.role,
 			request?.query?.propertyNames?.split(","),

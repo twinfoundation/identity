@@ -9,7 +9,7 @@ export interface IIdentityListResponse {
 	/**
 	 * The response payload.
 	 */
-	data: {
+	body: {
 		/**
 		 * The identities.
 		 */
