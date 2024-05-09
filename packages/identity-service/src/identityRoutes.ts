@@ -112,7 +112,8 @@ export function generateRestRoutes(routeName: string, serviceName: string): IRes
 					id: "identityUpdateRequestExample",
 					request: {
 						path: {
-							identity: "did:gtsc:0xc57d94b088f4c6d2cb32ded014813d0c786aa00134c8ee22f84b1e2545602a70"
+							identity:
+								"did:gtsc:0xc57d94b088f4c6d2cb32ded014813d0c786aa00134c8ee22f84b1e2545602a70"
 						},
 						body: {
 							properties: [
@@ -157,7 +158,8 @@ export function generateRestRoutes(routeName: string, serviceName: string): IRes
 					id: "identityGetRequestExample",
 					request: {
 						path: {
-							identity: "did:gtsc:0xc57d94b088f4c6d2cb32ded014813d0c786aa00134c8ee22f84b1e2545602a70"
+							identity:
+								"did:gtsc:0xc57d94b088f4c6d2cb32ded014813d0c786aa00134c8ee22f84b1e2545602a70"
 						},
 						query: {
 							propertyNames: "email,name"
