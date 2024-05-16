@@ -1,4 +1,4 @@
-# GTSC / Identity
+# GTSC Identity
 
 This mono-repository contains the packages to use with Identity in GTSC applications.
 
