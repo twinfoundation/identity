@@ -2,19 +2,18 @@
 // SPDX-License-Identifier: Apache-2.0.
 
 import { Converter, Is } from "@gtsc/core";
+import { EntitySchemaHelper } from "@gtsc/entity";
 import { MemoryEntityStorageConnector } from "@gtsc/entity-storage-connector-memory";
 import type { IRequestContext } from "@gtsc/services";
 import type {
 	DidVerificationMethodType,
-	IDidService,
-	IDidDocumentVerificationMethod
+	IDidDocumentVerificationMethod,
+	IDidService
 } from "@gtsc/standards-w3c-did";
 import {
 	EntityStorageVaultConnector,
-	VaultKeyDescriptor,
-	VaultSecretDescriptor,
-	type IVaultKey,
-	type IVaultSecret
+	VaultKey,
+	VaultSecret
 } from "@gtsc/vault-connector-entity-storage";
 import type { IVaultConnector } from "@gtsc/vault-models";
 import {
@@ -32,13 +31,13 @@ import type { IIotaIdentityConnectorConfig } from "../src/models/IIotaIdentityCo
 const TEST_IDENTITY_ACCOUNT_INDEX = 500000;
 const TEST_REVOCATION_INDEX = 15;
 let testDocumentId: string;
-let testVaultKey: IVaultKey;
+let testVaultKey: VaultKey;
 let testDocumentVerificationMethodId: string;
-let testDocumentVerificationMethodKey: IVaultKey;
+let testDocumentVerificationMethodKey: VaultKey;
 let testServiceId: string;
 let holderDocumentId: string;
 let holderDocumentVerificationMethodId: string;
-let holderDocumentVerificationMethodKey: IVaultKey;
+let holderDocumentVerificationMethodKey: VaultKey;
 let testVcJwt: string;
 let testVpJwt: string;
 let testProofSignature: string;
@@ -61,8 +60,8 @@ interface IDegree {
 	degreeName: string;
 }
 
-let vaultKeyEntityStorageConnector: MemoryEntityStorageConnector<IVaultKey>;
-let vaultSecretEntityStorageConnector: MemoryEntityStorageConnector<IVaultSecret>;
+let vaultKeyEntityStorageConnector: MemoryEntityStorageConnector<VaultKey>;
+let vaultSecretEntityStorageConnector: MemoryEntityStorageConnector<VaultSecret>;
 let vaultConnector: EntityStorageVaultConnector;
 
 describe("IotaIdentityConnector", () => {
@@ -71,12 +70,12 @@ describe("IotaIdentityConnector", () => {
 	});
 
 	beforeEach(async () => {
-		vaultKeyEntityStorageConnector = new MemoryEntityStorageConnector<IVaultKey>(
-			VaultKeyDescriptor
+		vaultKeyEntityStorageConnector = new MemoryEntityStorageConnector<VaultKey>(
+			EntitySchemaHelper.getSchema(VaultKey)
 		);
 
-		vaultSecretEntityStorageConnector = new MemoryEntityStorageConnector<IVaultSecret>(
-			VaultSecretDescriptor
+		vaultSecretEntityStorageConnector = new MemoryEntityStorageConnector<VaultSecret>(
+			EntitySchemaHelper.getSchema(VaultSecret)
 		);
 
 		vaultConnector = new EntityStorageVaultConnector({
@@ -302,7 +301,7 @@ describe("IotaIdentityConnector", () => {
 
 		testDocumentVerificationMethodId = verificationMethod?.id ?? "";
 		const keyStore = vaultKeyEntityStorageConnector.getStore(TEST_TENANT_ID);
-		testDocumentVerificationMethodKey = keyStore?.[1] ?? ({} as IVaultKey);
+		testDocumentVerificationMethodKey = keyStore?.[1] ?? ({} as VaultKey);
 	});
 
 	test("can fail to remove a verification method with no document id", async () => {
@@ -726,7 +725,7 @@ describe("IotaIdentityConnector", () => {
 		holderDocumentVerificationMethodKey = (await vaultKeyEntityStorageConnector.get(
 			TEST_CONTEXT,
 			`${TEST_IDENTITY_ID}/${holderVm.id}`
-		)) as IVaultKey;
+		)) as VaultKey;
 
 		const result = await identityConnector.createVerifiableCredential(
 			TEST_CONTEXT,

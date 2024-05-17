@@ -1,12 +1,12 @@
 // Copyright 2024 IOTA Stiftung.
 // SPDX-License-Identifier: Apache-2.0.
 import { I18n, Is } from "@gtsc/core";
+import { EntitySchemaHelper } from "@gtsc/entity";
 import { MemoryEntityStorageConnector } from "@gtsc/entity-storage-connector-memory";
 import type { IEntityStorageConnector } from "@gtsc/entity-storage-models";
 import {
 	EntityStorageIdentityConnector,
-	IdentityDocumentDescriptor,
-	type IIdentityDocument
+	IdentityDocument
 } from "@gtsc/identity-connector-entity-storage";
 import { IdentityRole, type IIdentityConnector } from "@gtsc/identity-models";
 import { PropertyHelper, type IProperty } from "@gtsc/schema";
@@ -14,15 +14,12 @@ import type { IRequestContext } from "@gtsc/services";
 import type { IDidDocument } from "@gtsc/standards-w3c-did";
 import {
 	EntityStorageVaultConnector,
-	VaultKeyDescriptor,
-	VaultSecretDescriptor,
-	type IVaultKey,
-	type IVaultSecret
+	VaultKey,
+	VaultSecret
 } from "@gtsc/vault-connector-entity-storage";
 import type { IVaultConnector } from "@gtsc/vault-models";
+import { IdentityProfile } from "../src/entities/identityProfile";
 import { IdentityService } from "../src/identityService";
-import { IdentityProfileDescriptor } from "../src/models/identityProfileDescriptor";
-import type { IIdentityProfile } from "../src/models/IIdentityProfile";
 
 export const TEST_TENANT_ID = "test-tenant";
 export const TEST_IDENTITY_ID = "test-identity";
@@ -32,9 +29,9 @@ export const TEST_CONTEXT: IRequestContext = {
 };
 
 let vaultConnector: IVaultConnector;
-let vaultKeyEntityStorageConnector: MemoryEntityStorageConnector<IVaultKey>;
-let didDocumentEntityStorage: MemoryEntityStorageConnector<IIdentityDocument>;
-let profileEntityStorage: MemoryEntityStorageConnector<IIdentityProfile>;
+let vaultKeyEntityStorageConnector: MemoryEntityStorageConnector<VaultKey>;
+let didDocumentEntityStorage: MemoryEntityStorageConnector<IdentityDocument>;
+let profileEntityStorage: MemoryEntityStorageConnector<IdentityProfile>;
 
 describe("IdentityService", () => {
 	beforeAll(async () => {
@@ -42,21 +39,21 @@ describe("IdentityService", () => {
 	});
 
 	beforeEach(() => {
-		vaultKeyEntityStorageConnector = new MemoryEntityStorageConnector<IVaultKey>(
-			VaultKeyDescriptor
+		vaultKeyEntityStorageConnector = new MemoryEntityStorageConnector<VaultKey>(
+			EntitySchemaHelper.getSchema(VaultKey)
 		);
 
 		vaultConnector = new EntityStorageVaultConnector({
 			vaultKeyEntityStorageConnector,
-			vaultSecretEntityStorageConnector: new MemoryEntityStorageConnector<IVaultSecret>(
-				VaultSecretDescriptor
+			vaultSecretEntityStorageConnector: new MemoryEntityStorageConnector<VaultSecret>(
+				EntitySchemaHelper.getSchema(VaultSecret)
 			)
 		});
-		profileEntityStorage = new MemoryEntityStorageConnector<IIdentityProfile>(
-			IdentityProfileDescriptor
+		profileEntityStorage = new MemoryEntityStorageConnector<IdentityProfile>(
+			EntitySchemaHelper.getSchema(IdentityProfile)
 		);
-		didDocumentEntityStorage = new MemoryEntityStorageConnector<IIdentityDocument>(
-			IdentityDocumentDescriptor
+		didDocumentEntityStorage = new MemoryEntityStorageConnector<IdentityDocument>(
+			EntitySchemaHelper.getSchema(IdentityDocument)
 		);
 	});
 
@@ -66,7 +63,7 @@ describe("IdentityService", () => {
 				new IdentityService(
 					undefined as unknown as {
 						identityConnector: IIdentityConnector;
-						profileEntityStorage: IEntityStorageConnector<IIdentityProfile>;
+						profileEntityStorage: IEntityStorageConnector<IdentityProfile>;
 					}
 				)
 		).toThrow(
@@ -87,7 +84,7 @@ describe("IdentityService", () => {
 				new IdentityService(
 					{} as unknown as {
 						identityConnector: IIdentityConnector;
-						profileEntityStorage: IEntityStorageConnector<IIdentityProfile>;
+						profileEntityStorage: IEntityStorageConnector<IdentityProfile>;
 					}
 				)
 		).toThrow(
@@ -107,7 +104,7 @@ describe("IdentityService", () => {
 			() =>
 				new IdentityService({ identityConnector: {} } as unknown as {
 					identityConnector: IIdentityConnector;
-					profileEntityStorage: IEntityStorageConnector<IIdentityProfile>;
+					profileEntityStorage: IEntityStorageConnector<IdentityProfile>;
 				})
 		).toThrow(
 			expect.objectContaining({

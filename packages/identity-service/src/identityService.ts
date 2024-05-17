@@ -7,7 +7,7 @@ import { IdentityRole, type IIdentity, type IIdentityConnector } from "@gtsc/ide
 import { nameof } from "@gtsc/nameof";
 import { PropertyHelper, type IProperty } from "@gtsc/schema";
 import type { IRequestContext } from "@gtsc/services";
-import type { IIdentityProfile } from "./models/IIdentityProfile";
+import type { IdentityProfile } from "./entities/identityProfile";
 
 /**
  * Class which implements the identity contract.
@@ -29,7 +29,7 @@ export class IdentityService implements IIdentity {
 	 * The storage connector for the profiles.
 	 * @internal
 	 */
-	private readonly _profileEntityStorage: IEntityStorageConnector<IIdentityProfile>;
+	private readonly _profileEntityStorage: IEntityStorageConnector<IdentityProfile>;
 
 	/**
 	 * Create a new instance of Identity.
@@ -39,7 +39,7 @@ export class IdentityService implements IIdentity {
 	 */
 	constructor(dependencies: {
 		identityConnector: IIdentityConnector;
-		profileEntityStorage: IEntityStorageConnector<IIdentityProfile>;
+		profileEntityStorage: IEntityStorageConnector<IdentityProfile>;
 	}) {
 		Guards.object(IdentityService._CLASS_NAME, nameof(dependencies), dependencies);
 		Guards.object(

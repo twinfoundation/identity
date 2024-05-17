@@ -27,8 +27,8 @@ import type {
 } from "@gtsc/standards-w3c-did";
 import type { IVaultConnector } from "@gtsc/vault-models";
 import { Jwt, type IJwk, type IJwtHeader, type IJwtPayload } from "@gtsc/web";
+import type { IdentityDocument } from "./entities/identityDocument";
 import type { IEntityStorageIdentityConnectorConfig } from "./models/IEntityStorageIdentityConnectorConfig";
-import type { IIdentityDocument } from "./models/IIdentityDocument";
 
 /**
  * Class for performing identity operations using entity storage.
@@ -54,7 +54,7 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 	 * The entity storage for identities.
 	 * @internal
 	 */
-	private readonly _didDocumentEntityStorage: IEntityStorageConnector<IIdentityDocument>;
+	private readonly _didDocumentEntityStorage: IEntityStorageConnector<IdentityDocument>;
 
 	/**
 	 * The vault for the keys.
@@ -77,7 +77,7 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 	 */
 	constructor(
 		dependencies: {
-			didDocumentEntityStorage: IEntityStorageConnector<IIdentityDocument>;
+			didDocumentEntityStorage: IEntityStorageConnector<IdentityDocument>;
 			vaultConnector: IVaultConnector;
 		},
 		config?: IEntityStorageIdentityConnectorConfig
@@ -1678,7 +1678,7 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 	 */
 	private async verifyDocument(
 		requestContext: IRequestContext,
-		didIdentityDocument: IIdentityDocument
+		didIdentityDocument: IdentityDocument
 	): Promise<void> {
 		const stringifiedDocument = didIdentityDocument.document;
 		const docBytes = Converter.bytesToBase64(Converter.utf8ToBytes(stringifiedDocument));

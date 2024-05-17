@@ -3,23 +3,21 @@
 
 import { Converter, Is } from "@gtsc/core";
 import { Ed25519 } from "@gtsc/crypto";
+import { EntitySchemaHelper } from "@gtsc/entity";
 import { MemoryEntityStorageConnector } from "@gtsc/entity-storage-connector-memory";
 import type { IRequestContext } from "@gtsc/services";
 import type { DidVerificationMethodType, IDidDocument, IDidService } from "@gtsc/standards-w3c-did";
 import {
 	EntityStorageVaultConnector,
-	VaultKeyDescriptor,
-	VaultSecretDescriptor,
-	type IVaultKey,
-	type IVaultSecret
+	VaultKey,
+	VaultSecret
 } from "@gtsc/vault-connector-entity-storage";
+import { IdentityDocument } from "../src/entities/identityDocument";
 import { EntityStorageIdentityConnector } from "../src/entityStorageIdentityConnector";
-import { IdentityDocumentDescriptor } from "../src/models/identityDocumentDescriptor";
-import type { IIdentityDocument } from "../src/models/IIdentityDocument";
 
-let testIdentityDocument: IIdentityDocument;
-let testDocumentKey: IVaultKey;
-let testDocumentVerificationMethodKey: IVaultKey;
+let testIdentityDocument: IdentityDocument;
+let testDocumentKey: VaultKey;
+let testDocumentVerificationMethodKey: VaultKey;
 let testDocumentVerificationMethodId: string;
 let testServiceId: string;
 let testProof: string;
@@ -44,9 +42,9 @@ interface IDegree {
 	degreeName: string;
 }
 
-let didDocumentEntityStorage: MemoryEntityStorageConnector<IIdentityDocument>;
-let vaultKeyEntityStorageConnector: MemoryEntityStorageConnector<IVaultKey>;
-let vaultSecretEntityStorageConnector: MemoryEntityStorageConnector<IVaultSecret>;
+let didDocumentEntityStorage: MemoryEntityStorageConnector<IdentityDocument>;
+let vaultKeyEntityStorageConnector: MemoryEntityStorageConnector<VaultKey>;
+let vaultSecretEntityStorageConnector: MemoryEntityStorageConnector<VaultSecret>;
 let vaultConnector: EntityStorageVaultConnector;
 
 export const TEST_TENANT_ID = "test-tenant";
@@ -60,16 +58,16 @@ export const TEST_CONTEXT: IRequestContext = {
 
 describe("EntityStorageIdentityConnector", () => {
 	beforeEach(() => {
-		didDocumentEntityStorage = new MemoryEntityStorageConnector<IIdentityDocument>(
-			IdentityDocumentDescriptor
+		didDocumentEntityStorage = new MemoryEntityStorageConnector<IdentityDocument>(
+			EntitySchemaHelper.getSchema(IdentityDocument)
 		);
 
-		vaultKeyEntityStorageConnector = new MemoryEntityStorageConnector<IVaultKey>(
-			VaultKeyDescriptor
+		vaultKeyEntityStorageConnector = new MemoryEntityStorageConnector<VaultKey>(
+			EntitySchemaHelper.getSchema(VaultKey)
 		);
 
-		vaultSecretEntityStorageConnector = new MemoryEntityStorageConnector<IVaultSecret>(
-			VaultSecretDescriptor
+		vaultSecretEntityStorageConnector = new MemoryEntityStorageConnector<VaultSecret>(
+			EntitySchemaHelper.getSchema(VaultSecret)
 		);
 
 		vaultConnector = new EntityStorageVaultConnector({
@@ -104,7 +102,7 @@ describe("EntityStorageIdentityConnector", () => {
 		const testDocument = await identityConnector.createDocument(TEST_CONTEXT);
 
 		const keyStore = vaultKeyEntityStorageConnector.getStore(TEST_TENANT_ID);
-		testDocumentKey = keyStore?.[0] ?? ({} as IVaultKey);
+		testDocumentKey = keyStore?.[0] ?? ({} as VaultKey);
 
 		expect(testDocument.id.slice(0, 11)).toBe("did:gtsc:0x");
 		expect(testDocument.service).toBeDefined();
@@ -120,7 +118,7 @@ describe("EntityStorageIdentityConnector", () => {
 
 		testIdentityDocument = didDocumentEntityStorage.getStore(
 			TEST_TENANT_ID
-		)?.[0] as IIdentityDocument;
+		)?.[0] as IdentityDocument;
 	});
 
 	test("can fail to resolve a document with no id", async () => {
@@ -217,7 +215,7 @@ describe("EntityStorageIdentityConnector", () => {
 
 		testIdentityDocument = didDocumentEntityStorage.getStore(
 			TEST_TENANT_ID
-		)?.[0] as IIdentityDocument;
+		)?.[0] as IdentityDocument;
 
 		const testDocument = JSON.parse(testIdentityDocument.document) as IDidDocument;
 		expect(testDocument?.assertionMethod).toBeDefined();
@@ -225,7 +223,7 @@ describe("EntityStorageIdentityConnector", () => {
 		testDocumentVerificationMethodId = verificationMethod?.id ?? "";
 
 		const keyStore = vaultKeyEntityStorageConnector.getStore(TEST_TENANT_ID);
-		testDocumentVerificationMethodKey = keyStore?.[1] ?? ({} as IVaultKey);
+		testDocumentVerificationMethodKey = keyStore?.[1] ?? ({} as VaultKey);
 	});
 
 	test("can fail to remove a verification method with no document id", async () => {
@@ -774,7 +772,7 @@ describe("EntityStorageIdentityConnector", () => {
 
 		testIdentityDocument = didDocumentEntityStorage.getStore(
 			TEST_TENANT_ID
-		)?.[0] as IIdentityDocument;
+		)?.[0] as IdentityDocument;
 		const testDocument = JSON.parse(testIdentityDocument.document) as IDidDocument;
 
 		expect(testDocument.service).toBeDefined();
@@ -852,7 +850,7 @@ describe("EntityStorageIdentityConnector", () => {
 
 		testIdentityDocument = didDocumentEntityStorage.getStore(
 			TEST_TENANT_ID
-		)?.[0] as IIdentityDocument;
+		)?.[0] as IdentityDocument;
 		const testDocument = JSON.parse(testIdentityDocument.document) as IDidDocument;
 
 		const revokeService = testDocument.service?.find(s => s.id === `${testDocument.id}#revocation`);

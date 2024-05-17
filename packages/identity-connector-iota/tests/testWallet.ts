@@ -4,14 +4,13 @@
 import path from "node:path";
 import { Converter } from "@gtsc/core";
 import { Bip39, Bip44, KeyType } from "@gtsc/crypto";
+import { EntitySchemaHelper } from "@gtsc/entity";
 import { MemoryEntityStorageConnector } from "@gtsc/entity-storage-connector-memory";
 import type { IRequestContext } from "@gtsc/services";
 import {
 	EntityStorageVaultConnector,
-	VaultKeyDescriptor,
-	VaultSecretDescriptor,
-	type IVaultKey,
-	type IVaultSecret
+	VaultKey,
+	VaultSecret
 } from "@gtsc/vault-connector-entity-storage";
 import type { IVaultConnector } from "@gtsc/vault-models";
 import { IotaFaucetConnector, IotaWalletConnector } from "@gtsc/wallet-connector-iota";
@@ -33,9 +32,11 @@ export const TEST_IDENTITY_ID = "test-identity";
 export const TEST_MNEMONIC_NAME = "test-mnemonic";
 
 export const TEST_VAULT: IVaultConnector = new EntityStorageVaultConnector({
-	vaultKeyEntityStorageConnector: new MemoryEntityStorageConnector<IVaultKey>(VaultKeyDescriptor),
-	vaultSecretEntityStorageConnector: new MemoryEntityStorageConnector<IVaultSecret>(
-		VaultSecretDescriptor,
+	vaultKeyEntityStorageConnector: new MemoryEntityStorageConnector<VaultKey>(
+		EntitySchemaHelper.getSchema(VaultKey)
+	),
+	vaultSecretEntityStorageConnector: new MemoryEntityStorageConnector<VaultSecret>(
+		EntitySchemaHelper.getSchema(VaultSecret),
 		{
 			initialValues: {
 				[TEST_TENANT_ID]: [
