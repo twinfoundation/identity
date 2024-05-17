@@ -1,7 +1,3 @@
-[**@gtsc/identity-service**](../overview.md) • **Docs**
-
-***
-
 # Function: identityGet()
 
 > **identityGet**(`requestContext`, `serviceName`, `request`, `body`?): `Promise`\<`IIdentityGetResponse`\>

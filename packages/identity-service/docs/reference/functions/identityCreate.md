@@ -1,7 +1,3 @@
-[**@gtsc/identity-service**](../overview.md) • **Docs**
-
-***
-
 # Function: identityCreate()
 
 > **identityCreate**(`requestContext`, `serviceName`, `request`, `body`?): `Promise`\<`ICreatedResponse`\>

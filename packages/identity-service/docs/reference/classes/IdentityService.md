@@ -1,7 +1,3 @@
-[**@gtsc/identity-service**](../overview.md) • **Docs**
-
-***
-
 # Class: IdentityService
 
 Class which implements the identity contract.

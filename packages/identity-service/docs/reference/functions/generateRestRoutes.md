@@ -1,7 +1,3 @@
-[**@gtsc/identity-service**](../overview.md) • **Docs**
-
-***
-
 # Function: generateRestRoutes()
 
 > **generateRestRoutes**(`routeName`, `serviceName`): `IRestRoute`[]

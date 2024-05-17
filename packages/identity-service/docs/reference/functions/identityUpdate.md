@@ -1,7 +1,3 @@
-[**@gtsc/identity-service**](../overview.md) • **Docs**
-
-***
-
 # Function: identityUpdate()
 
 > **identityUpdate**(`requestContext`, `serviceName`, `request`, `body`?): `Promise`\<`void`\>

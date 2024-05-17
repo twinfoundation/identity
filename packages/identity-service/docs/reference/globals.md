@@ -1,7 +1,3 @@
-[**@gtsc/identity-service**](overview.md) • **Docs**
-
-***
-
 # @gtsc/identity-service
 
 ## Classes

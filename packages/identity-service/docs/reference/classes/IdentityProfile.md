@@ -1,7 +1,3 @@
-[**@gtsc/identity-service**](../overview.md) • **Docs**
-
-***
-
 # Class: IdentityProfile
 
 Class representing profile details for the identity.
