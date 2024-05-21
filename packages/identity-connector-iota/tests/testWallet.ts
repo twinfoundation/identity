@@ -70,7 +70,7 @@ export const TEST_WALLET_CONNECTOR = new IotaWalletConnector(
 const seed = Bip39.mnemonicToSeed(process.env.TEST_MNEMONIC ?? "");
 const coinType = process.env.TEST_COIN_TYPE
 	? Number.parseInt(process.env.TEST_COIN_TYPE, 10)
-	: CoinType.Shimmer;
+	: CoinType.IOTA;
 const addressKeyPair = Bip44.addressBech32(
 	seed,
 	KeyType.Ed25519,
@@ -80,8 +80,8 @@ const addressKeyPair = Bip44.addressBech32(
 	false,
 	0
 );
-export const TEST_WALLET_PRIVATE_KEY = Converter.bytesToBase64(addressKeyPair.keyPair.privateKey);
-export const TEST_WALLET_PUBLIC_KEY = Converter.bytesToBase64(addressKeyPair.keyPair.publicKey);
+export const TEST_WALLET_PRIVATE_KEY = Converter.bytesToBase64(addressKeyPair.privateKey);
+export const TEST_WALLET_PUBLIC_KEY = Converter.bytesToBase64(addressKeyPair.publicKey);
 export const TEST_ADDRESS_BECH32 = addressKeyPair.address;
 export const TEST_CONTEXT: IRequestContext = {
 	tenantId: TEST_TENANT_ID,
