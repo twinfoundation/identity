@@ -23,8 +23,8 @@ import {
 	TEST_TENANT_ID,
 	TEST_WALLET_PRIVATE_KEY,
 	TEST_WALLET_PUBLIC_KEY,
-	initTestWallet
-} from "./testWallet";
+	setupTestEnv
+} from "./setupTestEnv";
 import { IotaIdentityConnector } from "../src/iotaIdentityConnector";
 import type { IIotaIdentityConnectorConfig } from "../src/models/IIotaIdentityConnectorConfig";
 
@@ -66,7 +66,7 @@ let vaultConnector: EntityStorageVaultConnector;
 
 describe("IotaIdentityConnector", () => {
 	beforeAll(async () => {
-		await initTestWallet();
+		await setupTestEnv();
 	});
 
 	beforeEach(async () => {

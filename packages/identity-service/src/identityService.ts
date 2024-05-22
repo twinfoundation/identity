@@ -42,12 +42,12 @@ export class IdentityService implements IIdentity {
 		profileEntityStorage: IEntityStorageConnector<IdentityProfile>;
 	}) {
 		Guards.object(IdentityService._CLASS_NAME, nameof(dependencies), dependencies);
-		Guards.object(
+		Guards.object<IIdentityConnector>(
 			IdentityService._CLASS_NAME,
 			nameof(dependencies.identityConnector),
 			dependencies.identityConnector
 		);
-		Guards.object(
+		Guards.object<IEntityStorageConnector<IdentityProfile>>(
 			IdentityService._CLASS_NAME,
 			nameof(dependencies.profileEntityStorage),
 			dependencies.profileEntityStorage

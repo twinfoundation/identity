@@ -270,7 +270,8 @@ export async function identityCreate(
 	request: IIdentityCreateRequest,
 	body?: unknown
 ): Promise<ICreatedResponse> {
-	Guards.object(ROUTES_SOURCE, nameof(request.body), request.body);
+	Guards.object<IIdentityCreateRequest>(ROUTES_SOURCE, nameof(request.body), request.body);
+	Guards.object<IIdentityCreateRequest["body"]>(ROUTES_SOURCE, nameof(request.body), request.body);
 
 	const service = ServiceFactory.get<IIdentity>(serviceName);
 
@@ -302,8 +303,9 @@ export async function identityUpdate(
 	request: IIdentityUpdateRequest,
 	body?: unknown
 ): Promise<void> {
-	Guards.object(ROUTES_SOURCE, nameof(request.path), request.path);
-	Guards.object(ROUTES_SOURCE, nameof(request.body), request.body);
+	Guards.object<IIdentityUpdateRequest>(ROUTES_SOURCE, nameof(request.body), request.body);
+	Guards.object<IIdentityUpdateRequest["path"]>(ROUTES_SOURCE, nameof(request.path), request.path);
+	Guards.object<IIdentityUpdateRequest["body"]>(ROUTES_SOURCE, nameof(request.body), request.body);
 	const service = ServiceFactory.get<IIdentity>(serviceName);
 
 	await service.identityUpdate(requestContext, request.path.identity, request.body.properties);
@@ -323,7 +325,8 @@ export async function identityGet(
 	request: IIdentityGetRequest,
 	body?: unknown
 ): Promise<IIdentityGetResponse> {
-	Guards.object(ROUTES_SOURCE, nameof(request.path), request.path);
+	Guards.object<IIdentityGetRequest>(ROUTES_SOURCE, nameof(request), request);
+	Guards.object<IIdentityGetRequest["path"]>(ROUTES_SOURCE, nameof(request.path), request.path);
 	Guards.stringValue(ROUTES_SOURCE, nameof(request.path.identity), request.path.identity);
 
 	const service = ServiceFactory.get<IIdentity>(serviceName);
