@@ -272,9 +272,9 @@ export async function identityCreate(
 ): Promise<ICreatedResponse> {
 	Guards.object(ROUTES_SOURCE, nameof(request.body), request.body);
 
-	const identity = ServiceFactory.get<IIdentity>(serviceName);
+	const service = ServiceFactory.get<IIdentity>(serviceName);
 
-	const result = await identity.identityCreate(
+	const result = await service.identityCreate(
 		requestContext,
 		request.body.role,
 		request.body.properties
@@ -304,9 +304,9 @@ export async function identityUpdate(
 ): Promise<void> {
 	Guards.object(ROUTES_SOURCE, nameof(request.path), request.path);
 	Guards.object(ROUTES_SOURCE, nameof(request.body), request.body);
-	const identity = ServiceFactory.get<IIdentity>(serviceName);
+	const service = ServiceFactory.get<IIdentity>(serviceName);
 
-	await identity.identityUpdate(requestContext, request.path.identity, request.body.properties);
+	await service.identityUpdate(requestContext, request.path.identity, request.body.properties);
 }
 
 /**
@@ -324,9 +324,11 @@ export async function identityGet(
 	body?: unknown
 ): Promise<IIdentityGetResponse> {
 	Guards.object(ROUTES_SOURCE, nameof(request.path), request.path);
-	const identity = ServiceFactory.get<IIdentity>(serviceName);
+	Guards.stringValue(ROUTES_SOURCE, nameof(request.path.identity), request.path.identity);
 
-	const result = await identity.identityGet(
+	const service = ServiceFactory.get<IIdentity>(serviceName);
+
+	const result = await service.identityGet(
 		requestContext,
 		request.path.identity,
 		request?.query?.propertyNames?.split(",")
@@ -354,10 +356,10 @@ export async function identitiesList(
 	request: IIdentityListRequest,
 	body?: unknown
 ): Promise<IIdentityListResponse> {
-	const identity = ServiceFactory.get<IIdentity>(serviceName);
+	const service = ServiceFactory.get<IIdentity>(serviceName);
 
 	return {
-		body: await identity.identityList(
+		body: await service.identityList(
 			requestContext,
 			request?.query?.role,
 			request?.query?.propertyNames?.split(","),
