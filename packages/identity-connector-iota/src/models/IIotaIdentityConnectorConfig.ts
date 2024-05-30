@@ -3,11 +3,6 @@
 import type { IClientOptions } from "@iota/sdk-wasm/node";
 
 /**
- * The default index to use for storing identities.
- */
-export const DEFAULT_IDENTITY_ACCOUNT_INDEX = 1000000;
-
-/**
  * Configuration for the IOTA Identity Connector.
  */
 export interface IIotaIdentityConnectorConfig {
@@ -17,7 +12,26 @@ export interface IIotaIdentityConnectorConfig {
 	clientOptions: IClientOptions;
 
 	/**
-	 * The account index of the address to use for storing identities. Defaults to DEFAULT_IDENTITY_ACCOUNT_INDEX
+	 * The id of the entry in the vault containing the wallet mnemonic.
+	 * @default wallet-mnemonic
 	 */
-	accountIndex?: number;
+	walletMnemonicId?: string;
+
+	/**
+	 * The address index of the account to use for storing identities.
+	 * @default 1
+	 */
+	addressIndex?: number;
+
+	/**
+	 * The coin type.
+	 * @default IOTA 4218
+	 */
+	coinType?: number;
+
+	/**
+	 * The length of time to wait for the inclusion of a transaction in seconds.
+	 * @default 60
+	 */
+	inclusionTimeoutSeconds?: number;
 }

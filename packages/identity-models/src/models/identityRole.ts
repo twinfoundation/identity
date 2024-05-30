@@ -4,19 +4,25 @@
 /**
  * The roles that an identity can have.
  */
-export enum IdentityRole {
+// eslint-disable-next-line @typescript-eslint/naming-convention
+export const IdentityRole = {
 	/**
 	 * Node.
 	 */
-	Node = "node",
+	Node: "node",
 
 	/**
 	 * Organization.
 	 */
-	Organization = "organization",
+	Organization: "organization",
 
 	/**
 	 * User.
 	 */
-	User = "user"
-}
+	User: "user"
+} as const;
+
+/**
+ * The roles that an identity can have.
+ */
+export type IdentityRole = (typeof IdentityRole)[keyof typeof IdentityRole];

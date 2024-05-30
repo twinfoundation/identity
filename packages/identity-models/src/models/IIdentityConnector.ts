@@ -17,15 +17,9 @@ export interface IIdentityConnector extends IService {
 	/**
 	 * Create a new document.
 	 * @param requestContext The context for the request.
-	 * @param privateKey The private key to use for the document in base64, if undefined a new key will be generated.
-	 * @param publicKey The public key to use for the document in base64, must be provided if privateKey is supplied.
 	 * @returns The created document.
 	 */
-	createDocument(
-		requestContext: IRequestContext,
-		privateKey?: string,
-		publicKey?: string
-	): Promise<IDidDocument>;
+	createDocument(requestContext: IRequestContext): Promise<IDidDocument>;
 
 	/**
 	 * Resolve a document from its id.
@@ -208,17 +202,17 @@ export interface IIdentityConnector extends IService {
 	 * @param requestContext The context for the request.
 	 * @param documentId The id of the document signing the data.
 	 * @param verificationMethodId The verification method id to use.
-	 * @param bytes The data bytes to sign in base64.
-	 * @returns The proof signature type and value in base64.
+	 * @param bytes The data bytes to sign.
+	 * @returns The proof signature type and value.
 	 */
 	createProof(
 		requestContext: IRequestContext,
 		documentId: string,
 		verificationMethodId: string,
-		bytes: string
+		bytes: Uint8Array
 	): Promise<{
 		type: string;
-		value: string;
+		value: Uint8Array;
 	}>;
 
 	/**
@@ -226,17 +220,17 @@ export interface IIdentityConnector extends IService {
 	 * @param requestContext The context for the request.
 	 * @param documentId The id of the document verifying the data.
 	 * @param verificationMethodId The verification method id to use.
-	 * @param bytes The data bytes to verify in base64.
+	 * @param bytes The data bytes to verify.
 	 * @param signatureType The type of the signature for the proof.
-	 * @param signatureValue The value of the signature for the proof in base64.
+	 * @param signatureValue The value of the signature for the proof.
 	 * @returns True if the signature is valid.
 	 */
 	verifyProof(
 		requestContext: IRequestContext,
 		documentId: string,
 		verificationMethodId: string,
-		bytes: string,
+		bytes: Uint8Array,
 		signatureType: string,
-		signatureValue: string
+		signatureValue: Uint8Array
 	): Promise<boolean>;
 }

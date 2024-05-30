@@ -2,7 +2,6 @@
 	"error": {
 		"iotaIdentityConnector": {
 			"createDocumentFailed": "Creating the document failed",
-			"privateAndPublic": "You must pass both the privateKey and publicKey to create a document",
 			"resolveDocumentFailed": "Resolving the document failed",
 			"addVerificationMethodFailed": "Adding the verification method failed",
 			"removeVerificationMethodFailed": "Removing the verification method failed",
@@ -22,7 +21,8 @@
 			"methodMissing": "The verification method specified does not exist",
 			"verifyProofFailed": "Verifying the signature for the data failed",
 			"revokeVerifiableCredentialsFailed": "Revoking verifiable credentials failed",
-			"unrevokeVerifiableCredentialsFailed": "Unrevoking verifiable credentials failed"
+			"unrevokeVerifiableCredentialsFailed": "Unrevoking verifiable credentials failed",
+			"inclusionFailed": "The transaction generated for the identity was not included in a reasonable amount of time"
 		}
 	}
 }

@@ -20,7 +20,7 @@ let testDocumentKey: VaultKey;
 let testDocumentVerificationMethodKey: VaultKey;
 let testDocumentVerificationMethodId: string;
 let testServiceId: string;
-let testProof: string;
+let testProof: Uint8Array;
 let testVcJwt: string;
 let testVpJwt: string;
 
@@ -104,9 +104,9 @@ describe("EntityStorageIdentityConnector", () => {
 		const keyStore = vaultKeyEntityStorageConnector.getStore(TEST_TENANT_ID);
 		testDocumentKey = keyStore?.[0] ?? ({} as VaultKey);
 
-		expect(testDocument.id.slice(0, 11)).toBe("did:gtsc:0x");
+		expect(testDocument.id.slice(0, 11)).toEqual("did:gtsc:0x");
 		expect(testDocument.service).toBeDefined();
-		expect((testDocument.service?.[0] as IDidService)?.id).toBe(`${testDocument.id}#revocation`);
+		expect((testDocument.service?.[0] as IDidService)?.id).toEqual(`${testDocument.id}#revocation`);
 
 		const revocationService = testDocument.service?.[0];
 		expect(revocationService).toBeDefined();
@@ -147,9 +147,9 @@ describe("EntityStorageIdentityConnector", () => {
 		});
 
 		const doc = await identityConnector.resolveDocument(TEST_CONTEXT, testIdentityDocument.id);
-		expect(doc.id.slice(0, 11)).toBe("did:gtsc:0x");
+		expect(doc.id.slice(0, 11)).toEqual("did:gtsc:0x");
 		expect(doc.service).toBeDefined();
-		expect((doc.service?.[0] as IDidService)?.id).toBe(`${doc.id}#revocation`);
+		expect((doc.service?.[0] as IDidService)?.id).toEqual(`${doc.id}#revocation`);
 	});
 
 	test("can fail to add a verification method with no document id", async () => {
@@ -211,7 +211,7 @@ describe("EntityStorageIdentityConnector", () => {
 		);
 
 		expect(verificationMethod).toBeDefined();
-		expect(verificationMethod?.id).toBe(`${testIdentityDocument.id}#my-verification-id`);
+		expect(verificationMethod?.id).toEqual(`${testIdentityDocument.id}#my-verification-id`);
 
 		testIdentityDocument = didDocumentEntityStorage.getStore(
 			TEST_TENANT_ID
@@ -395,8 +395,8 @@ describe("EntityStorageIdentityConnector", () => {
 		);
 
 		expect(service).toBeDefined();
-		expect(service?.type).toBe("LinkedDomains");
-		expect(service?.serviceEndpoint).toBe("https://bar.example.com/");
+		expect(service?.type).toEqual("LinkedDomains");
+		expect(service?.serviceEndpoint).toEqual("https://bar.example.com/");
 
 		testServiceId = service?.id ?? "";
 	});
@@ -1070,7 +1070,7 @@ describe("EntityStorageIdentityConnector", () => {
 				TEST_CONTEXT,
 				undefined as unknown as string,
 				undefined as unknown as string,
-				undefined as unknown as string
+				undefined as unknown as Uint8Array
 			)
 		).rejects.toMatchObject({
 			name: "GuardError",
@@ -1092,7 +1092,7 @@ describe("EntityStorageIdentityConnector", () => {
 				TEST_CONTEXT,
 				"foo",
 				undefined as unknown as string,
-				undefined as unknown as string
+				undefined as unknown as Uint8Array
 			)
 		).rejects.toMatchObject({
 			name: "GuardError",
@@ -1110,10 +1110,10 @@ describe("EntityStorageIdentityConnector", () => {
 			vaultConnector
 		});
 		await expect(
-			identityConnector.createProof(TEST_CONTEXT, "foo", "foo", undefined as unknown as string)
+			identityConnector.createProof(TEST_CONTEXT, "foo", "foo", undefined as unknown as Uint8Array)
 		).rejects.toMatchObject({
 			name: "GuardError",
-			message: "guard.string",
+			message: "guard.uint8Array",
 			properties: {
 				property: "bytes",
 				value: "undefined"
@@ -1136,7 +1136,7 @@ describe("EntityStorageIdentityConnector", () => {
 			TEST_CONTEXT,
 			testIdentityDocument.id,
 			testDocumentVerificationMethodId,
-			Converter.bytesToBase64(bytes)
+			bytes
 		);
 		expect(proof.type).toEqual("Ed25519");
 
@@ -1146,7 +1146,7 @@ describe("EntityStorageIdentityConnector", () => {
 			Converter.base64UrlToBytes(testDocumentVerificationMethodKey.privateKey),
 			bytes
 		);
-		expect(proof.value).toEqual(Converter.bytesToBase64(sig));
+		expect(proof.value).toEqual(sig);
 	});
 
 	test("can fail to verify a proof with no document id", async () => {
@@ -1159,9 +1159,9 @@ describe("EntityStorageIdentityConnector", () => {
 				TEST_CONTEXT,
 				undefined as unknown as string,
 				undefined as unknown as string,
+				undefined as unknown as Uint8Array,
 				undefined as unknown as string,
-				undefined as unknown as string,
-				undefined as unknown as string
+				undefined as unknown as Uint8Array
 			)
 		).rejects.toMatchObject({
 			name: "GuardError",
@@ -1183,9 +1183,9 @@ describe("EntityStorageIdentityConnector", () => {
 				TEST_CONTEXT,
 				"foo",
 				undefined as unknown as string,
+				undefined as unknown as Uint8Array,
 				undefined as unknown as string,
-				undefined as unknown as string,
-				undefined as unknown as string
+				undefined as unknown as Uint8Array
 			)
 		).rejects.toMatchObject({
 			name: "GuardError",
@@ -1207,13 +1207,13 @@ describe("EntityStorageIdentityConnector", () => {
 				TEST_CONTEXT,
 				"foo",
 				"foo",
+				undefined as unknown as Uint8Array,
 				undefined as unknown as string,
-				undefined as unknown as string,
-				undefined as unknown as string
+				undefined as unknown as Uint8Array
 			)
 		).rejects.toMatchObject({
 			name: "GuardError",
-			message: "guard.string",
+			message: "guard.uint8Array",
 			properties: {
 				property: "bytes",
 				value: "undefined"
@@ -1231,9 +1231,9 @@ describe("EntityStorageIdentityConnector", () => {
 				TEST_CONTEXT,
 				"foo",
 				"foo",
-				"foo",
+				Converter.utf8ToBytes("foo"),
 				undefined as unknown as string,
-				undefined as unknown as string
+				undefined as unknown as Uint8Array
 			)
 		).rejects.toMatchObject({
 			name: "GuardError",
@@ -1255,13 +1255,13 @@ describe("EntityStorageIdentityConnector", () => {
 				TEST_CONTEXT,
 				"foo",
 				"foo",
+				Converter.utf8ToBytes("foo"),
 				"foo",
-				"foo",
-				undefined as unknown as string
+				undefined as unknown as Uint8Array
 			)
 		).rejects.toMatchObject({
 			name: "GuardError",
-			message: "guard.string",
+			message: "guard.uint8Array",
 			properties: {
 				property: "signatureValue",
 				value: "undefined"
@@ -1275,7 +1275,14 @@ describe("EntityStorageIdentityConnector", () => {
 			vaultConnector
 		});
 		await expect(
-			identityConnector.verifyProof(TEST_CONTEXT, "foo", "foo", "foo", "foo", "foo")
+			identityConnector.verifyProof(
+				TEST_CONTEXT,
+				"foo",
+				"foo",
+				Converter.utf8ToBytes("foo"),
+				"foo",
+				Converter.utf8ToBytes("foo")
+			)
 		).rejects.toMatchObject({
 			name: "GeneralError",
 			inner: {
@@ -1301,7 +1308,7 @@ describe("EntityStorageIdentityConnector", () => {
 			TEST_CONTEXT,
 			testIdentityDocument.id,
 			testDocumentVerificationMethodId,
-			Converter.bytesToBase64(new Uint8Array([0, 1, 2, 3, 4])),
+			new Uint8Array([0, 1, 2, 3, 4]),
 			"Ed25519",
 			testProof
 		);

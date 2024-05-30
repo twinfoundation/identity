@@ -2,7 +2,6 @@
 	"error": {
 		"entityStorageIdentityConnector": {
 			"createDocumentFailed": "Creating the document failed",
-			"privateAndPublic": "You must pass both the privateKey and publicKey to create a document",
 			"signatureVerificationFailed": "The document integrity check failed",
 			"resolveDocumentFailed": "Resolving the document failed",
 			"addVerificationMethodFailed": "Adding the verification method failed",
