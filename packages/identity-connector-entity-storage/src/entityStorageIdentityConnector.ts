@@ -4,6 +4,7 @@ import {
 	BitString,
 	Coerce,
 	Compression,
+	CompressionType,
 	Converter,
 	GeneralError,
 	Guards,
@@ -17,15 +18,15 @@ import type { IEntityStorageConnector } from "@gtsc/entity-storage-models";
 import type { IIdentityConnector } from "@gtsc/identity-models";
 import { nameof } from "@gtsc/nameof";
 import type { IRequestContext } from "@gtsc/services";
-import type {
+import {
 	DidVerificationMethodType,
-	IDidDocument,
-	IDidDocumentVerificationMethod,
-	IDidService,
-	IDidVerifiableCredential,
-	IDidVerifiablePresentation
+	type IDidDocument,
+	type IDidDocumentVerificationMethod,
+	type IDidService,
+	type IDidVerifiableCredential,
+	type IDidVerifiablePresentation
 } from "@gtsc/standards-w3c-did";
-import type { IVaultConnector } from "@gtsc/vault-models";
+import { VaultKeyType, type IVaultConnector } from "@gtsc/vault-models";
 import { Jwt, type IJwk, type IJwtHeader, type IJwtPayload } from "@gtsc/web";
 import type { IdentityDocument } from "./entities/identityDocument";
 import type { IEntityStorageIdentityConnectorConfig } from "./models/IEntityStorageIdentityConnectorConfig";
@@ -40,15 +41,15 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 	public static NAMESPACE: string = "entity-storage";
 
 	/**
-	 * The size of the revocation bitmap in bits (16Kb).
-	 */
-	public static REVOCATION_BITS_SIZE: number = 131072;
-
-	/**
 	 * Runtime name for the class.
 	 * @internal
 	 */
 	private static readonly _CLASS_NAME: string = nameof<EntityStorageIdentityConnector>();
+
+	/**
+	 * The size of the revocation bitmap in bits (16Kb).
+	 */
+	private static readonly _REVOCATION_BITS_SIZE: number = 131072;
 
 	/**
 	 * The entity storage for identities.
@@ -108,15 +109,9 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 	/**
 	 * Create a new document.
 	 * @param requestContext The context for the request.
-	 * @param privateKey The private key to use for the document in base64, if undefined a new key will be generated.
-	 * @param publicKey The public key to use for the document in base64, must be provided if privateKey is supplied.
 	 * @returns The created document.
 	 */
-	public async createDocument(
-		requestContext: IRequestContext,
-		privateKey?: string,
-		publicKey?: string
-	): Promise<IDidDocument> {
+	public async createDocument(requestContext: IRequestContext): Promise<IDidDocument> {
 		Guards.object<IRequestContext>(
 			EntityStorageIdentityConnector._CLASS_NAME,
 			nameof(requestContext),
@@ -132,33 +127,14 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 			nameof(requestContext.identity),
 			requestContext.identity
 		);
-		const hasPrivateKey = Is.stringValue(privateKey);
-		if (hasPrivateKey) {
-			Guards.stringBase64(
-				EntityStorageIdentityConnector._CLASS_NAME,
-				nameof(privateKey),
-				privateKey
-			);
-		}
-		const hasPublicKey = Is.stringValue(publicKey);
-		if (hasPublicKey) {
-			Guards.stringBase64(EntityStorageIdentityConnector._CLASS_NAME, nameof(publicKey), publicKey);
-		}
-		if (hasPrivateKey !== hasPublicKey) {
-			throw new GeneralError(EntityStorageIdentityConnector._CLASS_NAME, "privateAndPublic");
-		}
 
 		try {
 			const did = `did:${this._config.didMethod}:${Converter.bytesToHex(RandomHelper.generate(32), true)}`;
 
-			if (hasPrivateKey && hasPublicKey) {
-				await this._vaultConnector.addKey(requestContext, did, "Ed25519", privateKey, publicKey);
-			} else {
-				await this._vaultConnector.createKey(requestContext, did, "Ed25519");
-			}
+			await this._vaultConnector.createKey(requestContext, did, VaultKeyType.Ed25519);
 
-			const bitString = new BitString(EntityStorageIdentityConnector.REVOCATION_BITS_SIZE);
-			const compressed = await Compression.compress(bitString.getBits(), "gzip");
+			const bitString = new BitString(EntityStorageIdentityConnector._REVOCATION_BITS_SIZE);
+			const compressed = await Compression.compress(bitString.getBits(), CompressionType.Gzip);
 
 			const didDocument: IDidDocument = {
 				id: did,
@@ -269,18 +245,11 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 			requestContext.identity
 		);
 		Guards.stringValue(EntityStorageIdentityConnector._CLASS_NAME, nameof(documentId), documentId);
-		Guards.arrayOneOf(
+		Guards.arrayOneOf<DidVerificationMethodType>(
 			EntityStorageIdentityConnector._CLASS_NAME,
 			nameof(verificationMethodType),
 			verificationMethodType,
-			[
-				"verificationMethod",
-				"authentication",
-				"assertionMethod",
-				"keyAgreement",
-				"capabilityInvocation",
-				"capabilityDelegation"
-			]
+			Object.values(DidVerificationMethodType)
 		);
 
 		try {
@@ -303,14 +272,14 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 			const verificationPublicKey = await this._vaultConnector.createKey(
 				requestContext,
 				tempKeyId,
-				"Ed25519"
+				VaultKeyType.Ed25519
 			);
 
 			const jwkParams: IJwk = {
 				alg: "EdDSA",
 				kty: "OKP",
 				crv: "Ed25519",
-				x: Converter.bytesToBase64Url(Converter.base64ToBytes(verificationPublicKey))
+				x: Converter.bytesToBase64Url(verificationPublicKey)
 			};
 
 			const kid = Converter.bytesToBase64Url(
@@ -782,9 +751,9 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 					const sig = await this._vaultConnector.sign(
 						requestContext,
 						verificationMethodId,
-						Converter.bytesToBase64(payload)
+						payload
 					);
-					return Converter.base64ToBytes(sig);
+					return sig;
 				}
 			);
 
@@ -995,18 +964,21 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 				const revocationParts = revocationService.serviceEndpoint.split(",");
 				if (revocationParts.length === 2) {
 					const compressedRevocationBytes = Converter.base64UrlToBytes(revocationParts[1]);
-					const decompressed = await Compression.decompress(compressedRevocationBytes, "gzip");
+					const decompressed = await Compression.decompress(
+						compressedRevocationBytes,
+						CompressionType.Gzip
+					);
 
 					const bitString = BitString.fromBits(
 						decompressed,
-						EntityStorageIdentityConnector.REVOCATION_BITS_SIZE
+						EntityStorageIdentityConnector._REVOCATION_BITS_SIZE
 					);
 
 					for (const credentialIndex of credentialIndices) {
 						bitString.setBit(credentialIndex, true);
 					}
 
-					const compressed = await Compression.compress(bitString.getBits(), "gzip");
+					const compressed = await Compression.compress(bitString.getBits(), CompressionType.Gzip);
 					revocationService.serviceEndpoint = `data:application/octet-stream;base64,${Converter.bytesToBase64Url(compressed)}`;
 				}
 			}
@@ -1084,18 +1056,21 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 				const revocationParts = revocationService.serviceEndpoint.split(",");
 				if (revocationParts.length === 2) {
 					const compressedRevocationBytes = Converter.base64UrlToBytes(revocationParts[1]);
-					const decompressed = await Compression.decompress(compressedRevocationBytes, "gzip");
+					const decompressed = await Compression.decompress(
+						compressedRevocationBytes,
+						CompressionType.Gzip
+					);
 
 					const bitString = BitString.fromBits(
 						decompressed,
-						EntityStorageIdentityConnector.REVOCATION_BITS_SIZE
+						EntityStorageIdentityConnector._REVOCATION_BITS_SIZE
 					);
 
 					for (const credentialIndex of credentialIndices) {
 						bitString.setBit(credentialIndex, false);
 					}
 
-					const compressed = await Compression.compress(bitString.getBits(), "gzip");
+					const compressed = await Compression.compress(bitString.getBits(), CompressionType.Gzip);
 					revocationService.serviceEndpoint = `data:application/octet-stream;base64,${Converter.bytesToBase64Url(compressed)}`;
 				}
 			}
@@ -1258,9 +1233,9 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 					const sig = await this._vaultConnector.sign(
 						requestContext,
 						presentationMethodId,
-						Converter.bytesToBase64(payload)
+						payload
 					);
-					return Converter.base64ToBytes(sig);
+					return sig;
 				}
 			);
 
@@ -1410,17 +1385,17 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 	 * @param requestContext The context for the request.
 	 * @param documentId The id of the document signing the data.
 	 * @param verificationMethodId The verification method id to use.
-	 * @param bytes The data bytes to sign in base64.
-	 * @returns The proof signature type and value in base64.
+	 * @param bytes The data bytes to sign.
+	 * @returns The proof signature type and value.
 	 */
 	public async createProof(
 		requestContext: IRequestContext,
 		documentId: string,
 		verificationMethodId: string,
-		bytes: string
+		bytes: Uint8Array
 	): Promise<{
 		type: string;
-		value: string;
+		value: Uint8Array;
 	}> {
 		Guards.object<IRequestContext>(
 			EntityStorageIdentityConnector._CLASS_NAME,
@@ -1444,7 +1419,7 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 			verificationMethodId
 		);
 
-		Guards.string(EntityStorageIdentityConnector._CLASS_NAME, nameof(bytes), bytes);
+		Guards.uint8Array(EntityStorageIdentityConnector._CLASS_NAME, nameof(bytes), bytes);
 
 		try {
 			const didIdentityDocument = await this._didDocumentEntityStorage.get(
@@ -1503,18 +1478,18 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 	 * @param requestContext The context for the request.
 	 * @param documentId The id of the document verifying the data.
 	 * @param verificationMethodId The verification method id to use.
-	 * @param bytes The data bytes to verify in base64.
+	 * @param bytes The data bytes to verify.
 	 * @param signatureType The type of the signature for the proof.
-	 * @param signatureValue The value of the signature for the proof in base64.
+	 * @param signatureValue The value of the signature for the proof.
 	 * @returns True if the signature is valid.
 	 */
 	public async verifyProof(
 		requestContext: IRequestContext,
 		documentId: string,
 		verificationMethodId: string,
-		bytes: string,
+		bytes: Uint8Array,
 		signatureType: string,
-		signatureValue: string
+		signatureValue: Uint8Array
 	): Promise<boolean> {
 		Guards.object<IRequestContext>(
 			EntityStorageIdentityConnector._CLASS_NAME,
@@ -1537,13 +1512,13 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 			nameof(verificationMethodId),
 			verificationMethodId
 		);
-		Guards.string(EntityStorageIdentityConnector._CLASS_NAME, nameof(bytes), bytes);
+		Guards.uint8Array(EntityStorageIdentityConnector._CLASS_NAME, nameof(bytes), bytes);
 		Guards.stringValue(
 			EntityStorageIdentityConnector._CLASS_NAME,
 			nameof(signatureType),
 			signatureType
 		);
-		Guards.string(
+		Guards.uint8Array(
 			EntityStorageIdentityConnector._CLASS_NAME,
 			nameof(signatureValue),
 			signatureValue
@@ -1610,14 +1585,7 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 			method: Partial<IDidDocumentVerificationMethod>;
 		}[] = [];
 
-		const methodTypes: DidVerificationMethodType[] = [
-			"verificationMethod",
-			"authentication",
-			"assertionMethod",
-			"keyAgreement",
-			"capabilityInvocation",
-			"capabilityDelegation"
-		];
+		const methodTypes: DidVerificationMethodType[] = Object.values(DidVerificationMethodType);
 
 		for (const methodType of methodTypes) {
 			const mt = document[methodType];
@@ -1656,11 +1624,14 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 					const revocationParts = revocationService.serviceEndpoint.split(",");
 					if (revocationParts.length === 2) {
 						const compressedRevocationBytes = Converter.base64UrlToBytes(revocationParts[1]);
-						const decompressed = await Compression.decompress(compressedRevocationBytes, "gzip");
+						const decompressed = await Compression.decompress(
+							compressedRevocationBytes,
+							CompressionType.Gzip
+						);
 
 						const bitString = BitString.fromBits(
 							decompressed,
-							EntityStorageIdentityConnector.REVOCATION_BITS_SIZE
+							EntityStorageIdentityConnector._REVOCATION_BITS_SIZE
 						);
 
 						return bitString.getBit(revocationIndex);
@@ -1681,13 +1652,13 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 		didIdentityDocument: IdentityDocument
 	): Promise<void> {
 		const stringifiedDocument = didIdentityDocument.document;
-		const docBytes = Converter.bytesToBase64(Converter.utf8ToBytes(stringifiedDocument));
+		const docBytes = Converter.utf8ToBytes(stringifiedDocument);
 
 		const verified = await this._vaultConnector.verify(
 			requestContext,
 			didIdentityDocument.id,
 			docBytes,
-			didIdentityDocument.signature
+			Converter.base64ToBytes(didIdentityDocument.signature)
 		);
 
 		if (!verified) {
@@ -1708,14 +1679,14 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 		didDocument: IDidDocument
 	): Promise<void> {
 		const stringifiedDocument = JSON.stringify(didDocument);
-		const docBytes = Converter.bytesToBase64(Converter.utf8ToBytes(stringifiedDocument));
+		const docBytes = Converter.utf8ToBytes(stringifiedDocument);
 
 		const signature = await this._vaultConnector.sign(requestContext, didDocument.id, docBytes);
 
 		await this._didDocumentEntityStorage.set(requestContext, {
 			id: didDocument.id,
 			document: stringifiedDocument,
-			signature
+			signature: Converter.bytesToBase64(signature)
 		});
 	}
 }

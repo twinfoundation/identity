@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: Apache-2.0.
 
 import path from "node:path";
-import { Converter, Guards, Is } from "@gtsc/core";
-import { Bip39, Bip44, KeyType } from "@gtsc/crypto";
+import { Guards, Is } from "@gtsc/core";
+import { Bip39 } from "@gtsc/crypto";
 import { EntitySchemaHelper } from "@gtsc/entity";
 import { MemoryEntityStorageConnector } from "@gtsc/entity-storage-connector-memory";
 import type { IRequestContext } from "@gtsc/services";
@@ -25,8 +25,7 @@ Guards.stringValue("TestEnv", "TEST_NODE_ENDPOINT", process.env.TEST_NODE_ENDPOI
 Guards.stringValue("TestEnv", "TEST_FAUCET_ENDPOINT", process.env.TEST_FAUCET_ENDPOINT);
 Guards.stringValue("TestEnv", "TEST_BECH32_HRP", process.env.TEST_BECH32_HRP);
 Guards.stringValue("TestEnv", "TEST_COIN_TYPE", process.env.TEST_COIN_TYPE);
-Guards.stringValue("TestEnv", "TEST_EXPLORER_ADDRESS", process.env.TEST_EXPLORER_ADDRESS);
-Guards.stringValue("TestEnv", "TEST_EXPLORER_SEARCH", process.env.TEST_EXPLORER_SEARCH);
+Guards.stringValue("TestEnv", "TEST_EXPLORER_URL", process.env.TEST_EXPLORER_URL);
 if (!Is.stringValue(process.env.TEST_MNEMONIC)) {
 	// eslint-disable-next-line no-restricted-syntax
 	throw new Error(
@@ -39,32 +38,41 @@ export const TEST_TENANT_ID = "test-tenant";
 export const TEST_IDENTITY_ID = "test-identity";
 export const TEST_MNEMONIC_NAME = "test-mnemonic";
 
-export const TEST_VAULT: IVaultConnector = new EntityStorageVaultConnector({
-	vaultKeyEntityStorageConnector: new MemoryEntityStorageConnector<VaultKey>(
-		EntitySchemaHelper.getSchema(VaultKey)
-	),
-	vaultSecretEntityStorageConnector: new MemoryEntityStorageConnector<VaultSecret>(
-		EntitySchemaHelper.getSchema(VaultSecret),
-		{
-			initialValues: {
-				[TEST_TENANT_ID]: [
-					{
-						id: `${TEST_IDENTITY_ID}/${TEST_MNEMONIC_NAME}`,
-						data: JSON.stringify(process.env.TEST_MNEMONIC)
-					}
-				]
-			}
+export const TEST_VAULT_KEY_STORAGE = new MemoryEntityStorageConnector<VaultKey>(
+	EntitySchemaHelper.getSchema(VaultKey)
+);
+
+export const TEST_VAULT_SECRET_STORAGE = new MemoryEntityStorageConnector<VaultSecret>(
+	EntitySchemaHelper.getSchema(VaultSecret),
+	{
+		initialValues: {
+			[TEST_TENANT_ID]: [
+				{
+					id: `${TEST_IDENTITY_ID}/${TEST_MNEMONIC_NAME}`,
+					data: JSON.stringify(process.env.TEST_MNEMONIC)
+				}
+			]
 		}
-	)
+	}
+);
+
+export const TEST_VAULT_CONNECTOR: IVaultConnector = new EntityStorageVaultConnector({
+	vaultKeyEntityStorageConnector: TEST_VAULT_KEY_STORAGE,
+	vaultSecretEntityStorageConnector: TEST_VAULT_SECRET_STORAGE
 });
 
 export const TEST_CLIENT_OPTIONS: IClientOptions = {
 	nodes: [process.env.TEST_NODE_ENDPOINT],
 	localPow: true
 };
+
+export const TEST_SEED = Bip39.mnemonicToSeed(process.env.TEST_MNEMONIC);
+export const TEST_COIN_TYPE = Number.parseInt(process.env.TEST_COIN_TYPE, 10);
+export const TEST_BECH32_HRP = process.env.TEST_BECH32_HRP;
+
 export const TEST_WALLET_CONNECTOR = new IotaWalletConnector(
 	{
-		vaultConnector: TEST_VAULT,
+		vaultConnector: TEST_VAULT_CONNECTOR,
 		faucetConnector: new IotaFaucetConnector({
 			clientOptions: TEST_CLIENT_OPTIONS,
 			endpoint: process.env.TEST_FAUCET_ENDPOINT
@@ -72,33 +80,24 @@ export const TEST_WALLET_CONNECTOR = new IotaWalletConnector(
 	},
 	{
 		clientOptions: TEST_CLIENT_OPTIONS,
-		walletMnemonicId: TEST_MNEMONIC_NAME
+		walletMnemonicId: TEST_MNEMONIC_NAME,
+		coinType: TEST_COIN_TYPE,
+		bech32Hrp: TEST_BECH32_HRP
 	}
 );
-export const TEST_SEED = Bip39.mnemonicToSeed(process.env.TEST_MNEMONIC);
 
-const addressKeyPair = Bip44.addressBech32(
-	TEST_SEED,
-	KeyType.Ed25519,
-	process.env.TEST_BECH32_HRP,
-	Number.parseInt(process.env.TEST_COIN_TYPE, 10),
-	0,
-	false,
-	0
-);
-
-export const TEST_WALLET_PRIVATE_KEY = Converter.bytesToBase64(addressKeyPair.privateKey);
-export const TEST_WALLET_PUBLIC_KEY = Converter.bytesToBase64(addressKeyPair.publicKey);
-export const TEST_ADDRESS_BECH32 = addressKeyPair.address;
 export const TEST_CONTEXT: IRequestContext = {
 	tenantId: TEST_TENANT_ID,
 	identity: TEST_IDENTITY_ID
 };
 
+const addresses = await TEST_WALLET_CONNECTOR.getAddresses(TEST_CONTEXT, 0, 1);
+export const TEST_ADDRESS_BECH32 = addresses[0];
+
 /**
  * Setup the test environment.
  */
 export async function setupTestEnv(): Promise<void> {
-	console.log("Wallet Address", `${process.env.TEST_EXPLORER_ADDRESS}${TEST_ADDRESS_BECH32}`);
+	console.log("Wallet Address", `${process.env.TEST_EXPLORER_URL}addr/${TEST_ADDRESS_BECH32}`);
 	await TEST_WALLET_CONNECTOR.ensureBalance(TEST_CONTEXT, TEST_ADDRESS_BECH32, 1000000000n);
 }

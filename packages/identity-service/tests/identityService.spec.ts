@@ -182,7 +182,7 @@ describe("IdentityService", () => {
 
 		const vaultData = vaultKeyEntityStorageConnector.getStore(TEST_TENANT_ID);
 		expect(vaultData?.[0].id).toEqual(`${TEST_IDENTITY_ID}/${identityResult.identity}`);
-		expect(vaultData?.[0].type).toEqual("Ed25519");
+		expect(vaultData?.[0].type).toEqual(0);
 		expect(Is.stringBase64(vaultData?.[0].privateKey)).toEqual(true);
 		expect(Is.stringBase64(vaultData?.[0].publicKey)).toEqual(true);
 

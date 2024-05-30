@@ -5,15 +5,16 @@ import { Sha256 } from "@gtsc/crypto";
 import type { IIdentityConnector } from "@gtsc/identity-models";
 import { nameof } from "@gtsc/nameof";
 import type { IRequestContext } from "@gtsc/services";
-import type {
+import {
 	DidVerificationMethodType,
-	IDidDocument,
-	IDidDocumentVerificationMethod,
-	IDidService,
-	IDidVerifiableCredential,
-	IDidVerifiablePresentation
+	type IDidDocument,
+	type IDidDocumentVerificationMethod,
+	type IDidService,
+	type IDidVerifiableCredential,
+	type IDidVerifiablePresentation
 } from "@gtsc/standards-w3c-did";
-import type { IVaultConnector } from "@gtsc/vault-models";
+import { VaultKeyType, type IVaultConnector } from "@gtsc/vault-models";
+import type { IWalletConnector } from "@gtsc/wallet-models";
 import {
 	Credential,
 	Duration,
@@ -48,11 +49,8 @@ import {
 	verifyEd25519,
 	type IJwkParams
 } from "@iota/identity-wasm/node";
-import { Client, SecretManager, Utils, type PrivateKeySecretManager } from "@iota/sdk-wasm/node";
-import {
-	DEFAULT_IDENTITY_ACCOUNT_INDEX,
-	type IIotaIdentityConnectorConfig
-} from "./models/IIotaIdentityConnectorConfig";
+import { type Block, Client, CoinType, type IBuildBlockOptions, Utils } from "@iota/sdk-wasm/node";
+import type { IIotaIdentityConnectorConfig } from "./models/IIotaIdentityConnectorConfig";
 
 /**
  * Class for performing identity operations on IOTA.
@@ -70,6 +68,30 @@ export class IotaIdentityConnector implements IIdentityConnector {
 	private static readonly _CLASS_NAME: string = nameof<IotaIdentityConnector>();
 
 	/**
+	 * Default name for the mnemonic secret.
+	 * @internal
+	 */
+	private static readonly _DEFAULT_MNEMONIC_SECRET_NAME: string = "wallet-mnemonic";
+
+	/**
+	 * The default index to use for storing identities.
+	 * @internal
+	 */
+	private static readonly _DEFAULT_ADDRESS_INDEX = 1;
+
+	/**
+	 * Default coin type.
+	 * @internal
+	 */
+	private static readonly _DEFAULT_COIN_TYPE: number = CoinType.IOTA;
+
+	/**
+	 * The default length of time to wait for the inclusion of a transaction in seconds.
+	 * @internal
+	 */
+	private static readonly _DEFAULT_INCLUSION_TIMEOUT: number = 60;
+
+	/**
 	 * The configuration to use for tangle operations.
 	 * @internal
 	 */
@@ -82,6 +104,12 @@ export class IotaIdentityConnector implements IIdentityConnector {
 	private readonly _vaultConnector: IVaultConnector;
 
 	/**
+	 * Connector for wallet operations.
+	 * @internal
+	 */
+	private readonly _walletConnector: IWalletConnector;
+
+	/**
 	 * The IOTA Identity client.
 	 * @internal
 	 */
@@ -91,11 +119,13 @@ export class IotaIdentityConnector implements IIdentityConnector {
 	 * Create a new instance of IotaIdentityConnector.
 	 * @param dependencies The dependencies for the identity connector.
 	 * @param dependencies.vaultConnector The vault for the private keys.
+	 * @param dependencies.walletConnector The wallet connector.
 	 * @param config The configuration to use.
 	 */
 	constructor(
 		dependencies: {
 			vaultConnector: IVaultConnector;
+			walletConnector: IWalletConnector;
 		},
 		config: IIotaIdentityConnectorConfig
 	) {
@@ -109,7 +139,11 @@ export class IotaIdentityConnector implements IIdentityConnector {
 			nameof(dependencies.vaultConnector),
 			dependencies.vaultConnector
 		);
-		this._vaultConnector = dependencies.vaultConnector;
+		Guards.object<IWalletConnector>(
+			IotaIdentityConnector._CLASS_NAME,
+			nameof(dependencies.walletConnector),
+			dependencies.walletConnector
+		);
 
 		Guards.object<IIotaIdentityConnectorConfig>(
 			IotaIdentityConnector._CLASS_NAME,
@@ -122,22 +156,21 @@ export class IotaIdentityConnector implements IIdentityConnector {
 			config.clientOptions
 		);
 
+		this._vaultConnector = dependencies.vaultConnector;
+		this._walletConnector = dependencies.walletConnector;
 		this._config = config;
-		this._config.accountIndex = this._config.accountIndex ?? DEFAULT_IDENTITY_ACCOUNT_INDEX;
+		this._config.walletMnemonicId ??= IotaIdentityConnector._DEFAULT_MNEMONIC_SECRET_NAME;
+		this._config.addressIndex ??= IotaIdentityConnector._DEFAULT_ADDRESS_INDEX;
+		this._config.coinType ??= IotaIdentityConnector._DEFAULT_COIN_TYPE;
+		this._config.inclusionTimeoutSeconds ??= IotaIdentityConnector._DEFAULT_INCLUSION_TIMEOUT;
 	}
 
 	/**
 	 * Create a new document.
 	 * @param requestContext The context for the request.
-	 * @param privateKey The private key to use for the document in base64, if undefined a new key will be generated.
-	 * @param publicKey The public key to use for the document in base64, must be provided if privateKey is supplied.
 	 * @returns The created document.
 	 */
-	public async createDocument(
-		requestContext: IRequestContext,
-		privateKey?: string,
-		publicKey?: string
-	): Promise<IDidDocument> {
+	public async createDocument(requestContext: IRequestContext): Promise<IDidDocument> {
 		Guards.object<IRequestContext>(
 			IotaIdentityConnector._CLASS_NAME,
 			nameof(requestContext),
@@ -153,17 +186,6 @@ export class IotaIdentityConnector implements IIdentityConnector {
 			nameof(requestContext.identity),
 			requestContext.identity
 		);
-		const hasPrivateKey = Is.stringValue(privateKey);
-		if (hasPrivateKey) {
-			Guards.stringBase64(IotaIdentityConnector._CLASS_NAME, nameof(privateKey), privateKey);
-		}
-		const hasPublicKey = Is.stringValue(publicKey);
-		if (hasPublicKey) {
-			Guards.stringBase64(IotaIdentityConnector._CLASS_NAME, nameof(publicKey), publicKey);
-		}
-		if (hasPrivateKey !== hasPublicKey) {
-			throw new GeneralError(IotaIdentityConnector._CLASS_NAME, "privateAndPublic");
-		}
 
 		try {
 			const identityClient = await this.getIotaIdentityClient();
@@ -171,23 +193,13 @@ export class IotaIdentityConnector implements IIdentityConnector {
 
 			const document = new IotaDocument(networkHrp);
 
-			if (hasPrivateKey && hasPublicKey) {
-				await this._vaultConnector.addKey(
-					requestContext,
-					document.id().toString(),
-					"Ed25519",
-					privateKey,
-					publicKey
-				);
-			} else {
-				await this._vaultConnector.createKey(requestContext, document.id().toString(), "Ed25519");
-			}
-
 			const revocationBitmap = new RevocationBitmap();
 			const revocationServiceId = document.id().join("#revocation");
 			document.insertService(revocationBitmap.toService(revocationServiceId));
 
-			return await this.updateDocument(requestContext, document, false);
+			const newDocument = await this.updateDocument(requestContext, document, true);
+
+			return newDocument;
 		} catch (error) {
 			throw new GeneralError(
 				IotaIdentityConnector._CLASS_NAME,
@@ -275,18 +287,11 @@ export class IotaIdentityConnector implements IIdentityConnector {
 			requestContext.identity
 		);
 		Guards.stringValue(IotaIdentityConnector._CLASS_NAME, nameof(documentId), documentId);
-		Guards.arrayOneOf(
+		Guards.arrayOneOf<DidVerificationMethodType>(
 			IotaIdentityConnector._CLASS_NAME,
 			nameof(verificationMethodType),
 			verificationMethodType,
-			[
-				"verificationMethod",
-				"authentication",
-				"assertionMethod",
-				"keyAgreement",
-				"capabilityInvocation",
-				"capabilityDelegation"
-			]
+			Object.values(DidVerificationMethodType)
 		);
 
 		try {
@@ -301,14 +306,14 @@ export class IotaIdentityConnector implements IIdentityConnector {
 			const verificationPublicKey = await this._vaultConnector.createKey(
 				requestContext,
 				tempKeyId,
-				"Ed25519"
+				VaultKeyType.Ed25519
 			);
 
 			const jwkParams: IJwkParams = {
 				alg: JwsAlgorithm.EdDSA,
 				kty: JwkType.Okp,
 				crv: EdCurve.Ed25519,
-				x: Converter.bytesToBase64Url(Converter.base64ToBytes(verificationPublicKey))
+				x: Converter.bytesToBase64Url(verificationPublicKey)
 			};
 
 			const kid = Converter.bytesToBase64Url(
@@ -348,10 +353,10 @@ export class IotaIdentityConnector implements IIdentityConnector {
 			} else if (verificationMethodType === "capabilityDelegation") {
 				document.insertMethod(method, MethodScope.CapabilityDelegation());
 			} else if (verificationMethodType === "capabilityInvocation") {
-				document.insertMethod(method, MethodScope.CapabilityDelegation());
+				document.insertMethod(method, MethodScope.CapabilityInvocation());
 			}
 
-			await this.updateDocument(requestContext, document, true);
+			await this.updateDocument(requestContext, document, false);
 
 			return method.toJSON() as IDidDocumentVerificationMethod;
 		} catch (error) {
@@ -420,7 +425,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 
 			document.removeMethod(method.id());
 
-			await this.updateDocument(requestContext, document, true);
+			await this.updateDocument(requestContext, document, false);
 		} catch (error) {
 			throw new GeneralError(
 				IotaIdentityConnector._CLASS_NAME,
@@ -490,7 +495,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 			});
 			document.insertService(service);
 
-			await this.updateDocument(requestContext, document, true);
+			await this.updateDocument(requestContext, document, false);
 
 			return service.toJSON() as IDidService;
 		} catch (error) {
@@ -551,7 +556,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 
 			document.removeService(service.id());
 
-			await this.updateDocument(requestContext, document, true);
+			await this.updateDocument(requestContext, document, false);
 		} catch (error) {
 			throw new GeneralError(
 				IotaIdentityConnector._CLASS_NAME,
@@ -673,9 +678,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 				kid: didMethod.publicKeyJwk.kid,
 				crv: didMethod.publicKeyJwk.crv,
 				x: didMethod.publicKeyJwk.x,
-				d: Converter.bytesToBase64Url(
-					Converter.base64ToBytes(verificationMethodKey.privateKey).slice(0, 32)
-				)
+				d: Converter.bytesToBase64Url(verificationMethodKey.privateKey)
 			} as IJwkParams;
 
 			const jwkMemStore = new JwkMemStore();
@@ -845,7 +848,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 
 			issuerDocument.revokeCredentials("revocation", credentialIndices);
 
-			await this.updateDocument(requestContext, issuerDocument, true);
+			await this.updateDocument(requestContext, issuerDocument, false);
 		} catch (error) {
 			throw new GeneralError(
 				IotaIdentityConnector._CLASS_NAME,
@@ -908,7 +911,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 
 			issuerDocument.unrevokeCredentials("revocation", credentialIndices);
 
-			await this.updateDocument(requestContext, issuerDocument, true);
+			await this.updateDocument(requestContext, issuerDocument, false);
 		} catch (error) {
 			throw new GeneralError(
 				IotaIdentityConnector._CLASS_NAME,
@@ -1023,9 +1026,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 				kty: didMethod.publicKeyJwk.kty as JwkType,
 				crv: didMethod.publicKeyJwk.crv,
 				x: didMethod.publicKeyJwk.x,
-				d: Converter.bytesToBase64Url(
-					Converter.base64ToBytes(verificationMethodKey.privateKey).slice(0, 32)
-				)
+				d: Converter.bytesToBase64Url(verificationMethodKey.privateKey)
 			} as IJwkParams;
 
 			const jwkMemStore = new JwkMemStore();
@@ -1197,17 +1198,17 @@ export class IotaIdentityConnector implements IIdentityConnector {
 	 * @param requestContext The context for the request.
 	 * @param documentId The id of the document signing the data.
 	 * @param verificationMethodId The verification method id to use.
-	 * @param bytes The data bytes to sign in base64.
-	 * @returns The proof signature type and value in base64.
+	 * @param bytes The data bytes to sign.
+	 * @returns The proof signature type and value.
 	 */
 	public async createProof(
 		requestContext: IRequestContext,
 		documentId: string,
 		verificationMethodId: string,
-		bytes: string
+		bytes: Uint8Array
 	): Promise<{
 		type: string;
-		value: string;
+		value: Uint8Array;
 	}> {
 		Guards.object<IRequestContext>(
 			IotaIdentityConnector._CLASS_NAME,
@@ -1231,7 +1232,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 			verificationMethodId
 		);
 
-		Guards.string(IotaIdentityConnector._CLASS_NAME, nameof(bytes), bytes);
+		Guards.uint8Array(IotaIdentityConnector._CLASS_NAME, nameof(bytes), bytes);
 
 		try {
 			const identityClient = await this.getIotaIdentityClient();
@@ -1268,18 +1269,16 @@ export class IotaIdentityConnector implements IIdentityConnector {
 				kty: didMethod.publicKeyJwk.kty as JwkType,
 				crv: didMethod.publicKeyJwk.crv,
 				x: didMethod.publicKeyJwk.x,
-				d: Converter.bytesToBase64Url(
-					Converter.base64ToBytes(verificationMethodKey.privateKey).slice(0, 32)
-				)
+				d: Converter.bytesToBase64Url(verificationMethodKey.privateKey)
 			} as IJwkParams);
 
 			const keyId = await jwkMemStore.insert(jwk);
 
-			const signature = await jwkMemStore.sign(keyId, Converter.base64ToBytes(bytes), jwk);
+			const signature = await jwkMemStore.sign(keyId, bytes, jwk);
 
 			return {
 				type: "Ed25519",
-				value: Converter.bytesToBase64(signature)
+				value: signature
 			};
 		} catch (error) {
 			throw new GeneralError(
@@ -1296,18 +1295,18 @@ export class IotaIdentityConnector implements IIdentityConnector {
 	 * @param requestContext The context for the request.
 	 * @param documentId The id of the document verifying the data.
 	 * @param verificationMethodId The verification method id to use.
-	 * @param bytes The data bytes to verify in base64.
+	 * @param bytes The data bytes to verify.
 	 * @param signatureType The type of the signature for the proof.
-	 * @param signatureValue The value of the signature for the proof in base64.
+	 * @param signatureValue The value of the signature for the proof.
 	 * @returns True if the signature is valid.
 	 */
 	public async verifyProof(
 		requestContext: IRequestContext,
 		documentId: string,
 		verificationMethodId: string,
-		bytes: string,
+		bytes: Uint8Array,
 		signatureType: string,
-		signatureValue: string
+		signatureValue: Uint8Array
 	): Promise<boolean> {
 		Guards.object<IRequestContext>(
 			IotaIdentityConnector._CLASS_NAME,
@@ -1330,9 +1329,9 @@ export class IotaIdentityConnector implements IIdentityConnector {
 			nameof(verificationMethodId),
 			verificationMethodId
 		);
-		Guards.string(IotaIdentityConnector._CLASS_NAME, nameof(bytes), bytes);
+		Guards.uint8Array(IotaIdentityConnector._CLASS_NAME, nameof(bytes), bytes);
 		Guards.stringValue(IotaIdentityConnector._CLASS_NAME, nameof(signatureType), signatureType);
-		Guards.string(IotaIdentityConnector._CLASS_NAME, nameof(signatureValue), signatureValue);
+		Guards.uint8Array(IotaIdentityConnector._CLASS_NAME, nameof(signatureValue), signatureValue);
 
 		try {
 			const identityClient = await this.getIotaIdentityClient();
@@ -1350,12 +1349,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 			}
 
 			const jwk = method.data().tryPublicKeyJwk();
-			verifyEd25519(
-				JwsAlgorithm.EdDSA,
-				Converter.base64ToBytes(bytes),
-				Converter.base64ToBytes(signatureValue),
-				jwk
-			);
+			verifyEd25519(JwsAlgorithm.EdDSA, bytes, signatureValue, jwk);
 
 			return true;
 		} catch (error) {
@@ -1386,41 +1380,38 @@ export class IotaIdentityConnector implements IIdentityConnector {
 	 * Sign and publish a document.
 	 * @param requestContext The context for the request.
 	 * @param document The document to sign and publish.
-	 * @param isUpdate True if this is an update.
+	 * @param isNewDocument Is this a new document.
 	 * @returns The published document.
 	 * @internal
 	 */
 	private async updateDocument(
 		requestContext: IRequestContext,
 		document: IotaDocument,
-		isUpdate: boolean
+		isNewDocument: boolean
 	): Promise<IDidDocument> {
 		const identityClient = await this.getIotaIdentityClient();
-		const networkHrp = await identityClient.getNetworkHrp();
 
-		const key = await this._vaultConnector.getKey(requestContext, document.id().toString());
+		const identityAddressIndex =
+			this._config.addressIndex ?? IotaIdentityConnector._DEFAULT_ADDRESS_INDEX;
 
-		const privateSecretManager: PrivateKeySecretManager = {
-			privateKey: Converter.bytesToHex(Converter.base64ToBytes(key.privateKey), true)
-		};
+		const addresses = await this._walletConnector.getAddresses(
+			requestContext,
+			identityAddressIndex,
+			1
+		);
 
-		const secretManager = new SecretManager(privateSecretManager);
-		const walletAddressesBech32 = await secretManager.generateEd25519Addresses({
-			accountIndex: this._config.accountIndex,
-			range: {
-				start: 0,
-				end: 1
-			},
-			bech32Hrp: networkHrp
-		});
+		const identityAddress = addresses[0];
 
 		document.setMetadataUpdated(Timestamp.nowUTC());
-		const address = Utils.parseBech32Address(walletAddressesBech32[0]);
+		const address = Utils.parseBech32Address(identityAddress);
 
 		const rentStructure = await identityClient.getRentStructure();
 
 		let aliasOutput;
-		if (isUpdate) {
+		if (isNewDocument) {
+			// This is a new output so the amount for storage is calculated from the document.
+			aliasOutput = await identityClient.newDidOutput(address, document, rentStructure);
+		} else {
 			// If this is an update then get the current output and recalculate the
 			// storage deposit from the updated document.
 			aliasOutput = await identityClient.updateDidOutput(document);
@@ -1429,17 +1420,67 @@ export class IotaIdentityConnector implements IIdentityConnector {
 			// If this is an update then the alias output needs to be rebuilt with the new amount.
 			aliasOutput = await identityClient.client.buildAliasOutput({
 				...aliasOutput,
-				amount: updatedStorageDeposit,
-				aliasId: aliasOutput.getAliasId(),
-				unlockConditions: aliasOutput.getUnlockConditions()
+				amount: updatedStorageDeposit
 			});
-		} else {
-			// This is a new output so the amount for storage is calculated from the document.
-			aliasOutput = await identityClient.newDidOutput(address, document, rentStructure);
 		}
 
-		const published = await identityClient.publishDidOutput(privateSecretManager, aliasOutput);
+		const mnemonic = await this._vaultConnector.getSecret<string>(
+			requestContext,
+			this._config.walletMnemonicId ?? IotaIdentityConnector._DEFAULT_MNEMONIC_SECRET_NAME
+		);
 
-		return published.toJSON() as IDidDocument;
+		const blockDetails = await this.prepareAndPostTransaction(identityClient.client, mnemonic, {
+			outputs: [aliasOutput]
+		});
+
+		const networkHrp = await identityClient.getNetworkHrp();
+		const published = await IotaDocument.unpackFromBlock(networkHrp, blockDetails.block);
+
+		return published[0].toJSON() as IDidDocument;
+	}
+
+	/**
+	 * Prepare a transaction for sending, post and wait for inclusion.
+	 * @param client The client to use.
+	 * @param mnemonic The mnemonic to use.
+	 * @param options The options for the transaction.
+	 * @returns The block id and block.
+	 * @internal
+	 */
+	private async prepareAndPostTransaction(
+		client: Client,
+		mnemonic: string,
+		options: IBuildBlockOptions
+	): Promise<{ blockId: string; block: Block }> {
+		const prepared = await client.prepareTransaction(
+			{ mnemonic },
+			{
+				coinType: this._config.coinType ?? IotaIdentityConnector._DEFAULT_COIN_TYPE,
+				...options
+			}
+		);
+
+		const signed = await client.signTransaction({ mnemonic }, prepared);
+
+		const blockIdAndBlock = await client.postBlockPayload(signed);
+
+		try {
+			const timeoutSeconds =
+				this._config.inclusionTimeoutSeconds ?? IotaIdentityConnector._DEFAULT_INCLUSION_TIMEOUT;
+
+			await client.retryUntilIncluded(blockIdAndBlock[0], 2, Math.ceil(timeoutSeconds / 2));
+		} catch (error) {
+			throw new GeneralError(
+				IotaIdentityConnector._CLASS_NAME,
+				"inclusionFailed",
+				undefined,
+				error
+			);
+		}
+
+		return {
+			blockId: blockIdAndBlock[0],
+			block: blockIdAndBlock[1]
+		};
 	}
 }
