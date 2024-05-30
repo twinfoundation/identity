@@ -15,6 +15,7 @@ import {
 	TEST_BECH32_HRP,
 	TEST_CLIENT_OPTIONS,
 	TEST_CONTEXT,
+	TEST_IDENTITY_ADDRESS_INDEX,
 	TEST_IDENTITY_ID,
 	TEST_MNEMONIC_NAME,
 	TEST_TENANT_ID,
@@ -26,7 +27,6 @@ import {
 import { IotaIdentityConnector } from "../src/iotaIdentityConnector";
 import type { IIotaIdentityConnectorConfig } from "../src/models/IIotaIdentityConnectorConfig";
 
-const TEST_IDENTITY_ADDRESS_INDEX = 5;
 const TEST_REVOCATION_INDEX = 15;
 let testDocumentId: string;
 let testDocumentVerificationMethodId: string;

@@ -26,6 +26,7 @@ Guards.stringValue("TestEnv", "TEST_FAUCET_ENDPOINT", process.env.TEST_FAUCET_EN
 Guards.stringValue("TestEnv", "TEST_BECH32_HRP", process.env.TEST_BECH32_HRP);
 Guards.stringValue("TestEnv", "TEST_COIN_TYPE", process.env.TEST_COIN_TYPE);
 Guards.stringValue("TestEnv", "TEST_EXPLORER_URL", process.env.TEST_EXPLORER_URL);
+Guards.stringValue("TestEnv", "TEST_IDENTITY_ADDRESS_INDEX", process.env.TEST_IDENTITY_ADDRESS_INDEX);
 if (!Is.stringValue(process.env.TEST_MNEMONIC)) {
 	// eslint-disable-next-line no-restricted-syntax
 	throw new Error(
@@ -91,13 +92,15 @@ export const TEST_CONTEXT: IRequestContext = {
 	identity: TEST_IDENTITY_ID
 };
 
-const addresses = await TEST_WALLET_CONNECTOR.getAddresses(TEST_CONTEXT, 0, 1);
-export const TEST_ADDRESS_BECH32 = addresses[0];
+export const TEST_IDENTITY_ADDRESS_INDEX = Number.parseInt(process.env.TEST_IDENTITY_ADDRESS_INDEX, 10);
+
+const addresses = await TEST_WALLET_CONNECTOR.getAddresses(TEST_CONTEXT, TEST_IDENTITY_ADDRESS_INDEX, 1);
+export const TEST_IDENTITY_ADDRESS_BECH32 = addresses[0];
 
 /**
  * Setup the test environment.
  */
 export async function setupTestEnv(): Promise<void> {
-	console.log("Wallet Address", `${process.env.TEST_EXPLORER_URL}addr/${TEST_ADDRESS_BECH32}`);
-	await TEST_WALLET_CONNECTOR.ensureBalance(TEST_CONTEXT, TEST_ADDRESS_BECH32, 1000000000n);
+	console.log("Identity Address", `${process.env.TEST_EXPLORER_URL}addr/${TEST_IDENTITY_ADDRESS_BECH32}`);
+	await TEST_WALLET_CONNECTOR.ensureBalance(TEST_CONTEXT, TEST_IDENTITY_ADDRESS_BECH32, 1000000000n);
 }
