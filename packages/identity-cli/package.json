@@ -16,6 +16,7 @@
 	"scripts": {
 		"clean": "rimraf dist coverage",
 		"build": "tspc",
+		"merge-locales": "merge-locales",
 		"test": "vitest --run --config ./vitest.config.ts",
 		"coverage": "vitest --run --coverage --config ./vitest.config.ts",
 		"bundle:esm": "rollup --config rollup.config.mjs --environment MODULE:esm",
@@ -25,8 +26,7 @@
 		"docs:generate": "typedoc",
 		"docs:remove-header": "replace-in-files --regex='^.*overview.md.*?\\s\\s.*?\\s\\s' --string='docs/' --replacement='' docs/**/*.md",
 		"docs": "npm run docs:clean && npm run docs:generate && npm run docs:remove-header",
-		"dist": "npm run clean && npm run build && npm run test && npm run bundle && npm run docs",
-		"start": "npm run build && npm run bundle:esm && node bin/index.js mnemonic"
+		"dist": "npm run clean && npm run build && npm run merge-locales && npm run test && npm run bundle && npm run docs"
 	},
 	"dependencies": {
 		"@gtsc/core": "next",
@@ -38,7 +38,8 @@
 		"commander": "^12.1.0"
 	},
 	"devDependencies": {
-		"@gtsc/nameof-transformer": "0.0.4-next.6",
+		"@gtsc/merge-locales": "next",
+		"@gtsc/nameof-transformer": "next",
 		"@types/node": "^20.12.12",
 		"@vitest/coverage-v8": "^1.6.0",
 		"copyfiles": "^2.4.1",
@@ -67,6 +68,7 @@
 		"dist/cjs",
 		"dist/esm",
 		"dist/types",
+		"dist/locales",
 		"locales",
 		"docs"
 	],
