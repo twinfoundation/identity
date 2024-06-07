@@ -7,5 +7,4 @@ import { CLI } from '../dist/esm/index.mjs';
 
 const cli = new CLI();
 const result = await cli.run(process.argv);
-console.log('CLI result:', result);
 process.exit(result);
