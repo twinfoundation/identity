@@ -13,6 +13,11 @@ export interface IIdentityCreateRequest {
 	 */
 	body: {
 		/**
+		 * The controller for the identity.
+		 */
+		controller: string;
+
+		/**
 		 * The role for the identity.
 		 */
 		role: IdentityRole;

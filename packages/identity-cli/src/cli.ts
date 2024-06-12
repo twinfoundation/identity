@@ -1,96 +1,71 @@
 // Copyright 2024 IOTA Stiftung.
 // SPDX-License-Identifier: Apache-2.0.
-import chalk from "chalk";
-import { Command } from "commander";
-import { buildCommandMnemonic as mnemonicCommand } from "./commands/mnemonic";
-
-const CLI_ICON = "🌍";
-const CLI_TITLE = "GTSC Identity";
-const CLI_NAME = "gtsc-identity";
-const CLI_VERSION = "0.0.3-next.10";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import { CLIBase } from "@gtsc/cli-core";
+import { buildCommandAddress, buildCommandMnemonic } from "@gtsc/crypto-cli";
+import { buildCommandFaucet, buildCommandTransfer } from "@gtsc/wallet-cli";
+import type { Command } from "commander";
+import { buildCommandIdentityCreate } from "./commands/identityCreate";
+import { buildCommandIdentityResolve } from "./commands/identityResolve";
+import { buildCommandProofCreate } from "./commands/proofCreate";
+import { buildCommandProofVerify } from "./commands/proofVerify";
+import { buildCommandServiceAdd } from "./commands/serviceAdd";
+import { buildCommandServiceRemove } from "./commands/serviceRemove";
+import { buildCommandVerifiableCredentialCreate } from "./commands/verifiableCredentialCreate";
+import { buildCommandVerifiableCredentialRevoke } from "./commands/verifiableCredentialRevoke";
+import { buildCommandVerifiableCredentialUnrevoke } from "./commands/verifiableCredentialUnrevoke";
+import { buildCommandVerifiableCredentialVerify } from "./commands/verifiableCredentialVerify";
+import { buildCommandVerificationMethodAdd } from "./commands/verificationMethodAdd";
+import { buildCommandVerificationMethodRemove } from "./commands/verificationMethodRemove";
 
 /**
  * The main entry point for the CLI.
  */
-export class CLI {
+export class CLI extends CLIBase {
 	/**
 	 * Run the app.
 	 * @param argv The process arguments.
+	 * @param localesDirectory The directory for the locales, default to relative to the script.
 	 * @returns The exit code.
 	 */
-	public async run(argv: string[]): Promise<number> {
+	public async run(argv: string[], localesDirectory?: string): Promise<number> {
 		return this.execute(
 			{
-				appName: CLI_NAME,
-				title: CLI_TITLE,
-				version: CLI_VERSION,
-				icon: CLI_ICON
+				title: "GTSC Identity",
+				appName: "gtsc-identity",
+				version: "0.0.3-next.11",
+				icon: "🌍",
+				supportsEnvFiles: true
 			},
+			localesDirectory ?? path.join(path.dirname(fileURLToPath(import.meta.url)), "../locales"),
 			argv
 		);
 	}
 
 	/**
-	 * Execute the command line processing.
-	 * @param options The options for the CLI.
-	 * @param options.title The title of the CLI.
-	 * @param options.appName The name of the app.
-	 * @param options.version The version of the app.
-	 * @param options.icon The icon for the CLI.
-	 * @param argv The process arguments.
-	 * @returns The exit code.
+	 * Get the commands for the CLI.
+	 * @param program The main program to add the commands to.
+	 * @internal
 	 */
-	public async execute(
-		options: {
-			title: string;
-			appName: string;
-			version: string;
-			icon: string;
-		},
-		argv: string[]
-	): Promise<number> {
-		return new Promise<number>(resolve => {
-			try {
-				if (!argv.includes("--version") && !argv.includes("-v")) {
-					const title = `${options.title} v${options.version}`;
-					console.log(`${options.icon} ${chalk.underline.blue(title)}`);
-					console.log("");
-				}
-
-				const program = new Command();
-
-				program
-					.name(options.appName)
-					.version(options.version)
-					.usage("[command]")
-					.showHelpAfterError()
-					.configureOutput({
-						outputError: (str, write) => write(chalk.red(str))
-					})
-					.exitOverride(err => {
-						// By default commander still calls process.exit on exit
-						// which we don't want as we might have subsequent
-						// processing to handle, so instead we throw the exit code
-						// as a way to skip the process.exit call.
-						// If the error code is commander.help then we return 0 as
-						// we don't want displaying help to be an error.
-						// eslint-disable-next-line no-restricted-syntax
-						throw new Error(err.code === "commander.help" ? "0" : err.exitCode.toString());
-					});
-
-				program.addCommand(mnemonicCommand());
-
-				program.parse(argv);
-			} catch (err) {
-				if (err instanceof Error) {
-					// This error is the the exit code we errored with
-					// from the exitOverride so parse and resolve with it
-					resolve(Number.parseInt(err.message, 10));
-				} else {
-					console.error(chalk.red(err));
-					resolve(1);
-				}
-			}
-		});
+	protected getCommands(program: Command): Command[] {
+		return [
+			buildCommandMnemonic(),
+			buildCommandAddress(),
+			buildCommandFaucet(),
+			buildCommandTransfer(),
+			buildCommandIdentityCreate(),
+			buildCommandIdentityResolve(),
+			buildCommandVerificationMethodAdd(),
+			buildCommandVerificationMethodRemove(),
+			buildCommandServiceAdd(),
+			buildCommandServiceRemove(),
+			buildCommandVerifiableCredentialCreate(),
+			buildCommandVerifiableCredentialVerify(),
+			buildCommandVerifiableCredentialRevoke(),
+			buildCommandVerifiableCredentialUnrevoke(),
+			buildCommandProofCreate(),
+			buildCommandProofVerify()
+		];
 	}
 }

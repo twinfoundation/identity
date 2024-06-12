@@ -20,6 +20,7 @@
 	"words": [
 		"bech",
 		"Bitstring",
+		"Faucet",
 		"gtsc",
 		"Multibase",
 		"nameof",
@@ -28,5 +29,10 @@
 		"unrevoke",
 		"Unrevoking"
 	],
-	"ignoreRegExpList": ["/from\\s+(['\"]).*\\1/", "/eslint-disable.*/"]
+	"ignoreRegExpList": [
+		"/from\\s+(['\"]).*\\1/",
+		"/eslint-disable.*/",
+		"/tst1.*/",
+		"/^```(.|\\s)*?```\\s*$/gm"
+	]
 }

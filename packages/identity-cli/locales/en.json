@@ -1,0 +1,336 @@
+{
+	"error": {
+		"commands": {
+			"verifiable-credential-create": {
+				"subjectJsonFileNotFound": "The subject JSON file was not found."
+			}
+		}
+	},
+	"commands": {
+		"identity-create": {
+			"summary": "Create a Decentralized Identifier (DID).",
+			"description": "Creates a Decentralized Identifier (DID).",
+			"options": {
+				"seed": {
+					"param": "--seed '<'seed'>'",
+					"description": "The seed for the controller address in hex or base64 used to create the DID, or start with ! to read environment variable."
+				},
+				"controller": {
+					"param": "--controller '<'controller'>'",
+					"description": "The address which controls the identity in bech32 format, or start with ! to read environment variable."
+				}
+			},
+			"progress": {
+				"creatingIdentity": "Creating identity"
+			},
+			"labels": {
+				"controller": "Controller",
+				"identity": "Identity"
+			}
+		},
+		"identity-resolve": {
+			"summary": "Resolve a Decentralized Identifier (DID).",
+			"description": "Resolve a Decentralized Identifier (DID).",
+			"options": {
+				"did": {
+					"param": "--did '<'did'>'",
+					"description": "The identifier to resolve, or start with ! to read environment variable."
+				}
+			},
+			"progress": {
+				"resolvingIdentity": "Resolving identity"
+			},
+			"labels": {
+				"didDocument": "DID Document"
+			}
+		},
+		"verification-method-add": {
+			"summary": "Add a verification method to a DID.",
+			"description": "Add a verification method to a DID.",
+			"options": {
+				"seed": {
+					"param": "--seed '<'seed'>'",
+					"description": "The seed for the private key for the controller address of the document in hex or base64, or start with ! to read environment variable."
+				},
+				"did": {
+					"param": "--did '<'did'>'",
+					"description": "The identifier to add the verification method to, or start with ! to read environment variable."
+				},
+				"type": {
+					"param": "--type '<'type'>'",
+					"description": "The type of verification method to add."
+				},
+				"id": {
+					"param": "--id '<'id'>'",
+					"description": "The optional id of verification method to add, if not provided one will be generated."
+				}
+			},
+			"progress": {
+				"addingVerificationMethod": "Adding Verification Method"
+			},
+			"labels": {
+				"verificationMethodType": "Verification Method Type",
+				"verificationMethodId": "Verification Method Id",
+				"privateKey": "Private Key",
+				"publicKey": "Public Key"
+			}
+		},
+		"verification-method-remove": {
+			"summary": "Remove a verification method from a DID.",
+			"description": "Remove a verification method from a DID.",
+			"options": {
+				"seed": {
+					"param": "--seed '<'seed'>'",
+					"description": "The seed for the private key for the controller address of the document in hex or base64, or start with ! to read environment variable."
+				},
+				"did": {
+					"param": "--did '<'did'>'",
+					"description": "The identifier to remove the verification method from, or start with ! to read environment variable."
+				},
+				"id": {
+					"param": "--id '<'id'>'",
+					"description": "The id of verification method to remove."
+				}
+			},
+			"progress": {
+				"removingVerificationMethod": "Removing Verification Method"
+			},
+			"labels": {
+				"verificationMethodId": "Verification Method Id"
+			}
+		},
+		"service-add": {
+			"summary": "Add a service to a DID.",
+			"description": "Add a service to a DID.",
+			"options": {
+				"seed": {
+					"param": "--seed '<'seed'>'",
+					"description": "The seed for the private key for the controller address of the document in hex or base64, or start with ! to read environment variable."
+				},
+				"did": {
+					"param": "--did '<'did'>'",
+					"description": "The identifier to add the service to, or start with ! to read environment variable."
+				},
+				"id": {
+					"param": "--id '<'id'>'",
+					"description": "The id of service to add, if not provided one will be generated."
+				},
+				"type": {
+					"param": "--type '<'type'>'",
+					"description": "The type of service to add."
+				},
+				"endpoint": {
+					"param": "--endpoint '<'endpoint'>'",
+					"description": "The service endpoint to add."
+				}
+			},
+			"progress": {
+				"addingService": "Adding Service"
+			},
+			"labels": {
+				"serviceId": "Service Id",
+				"serviceType": "Service Type",
+				"serviceEndpoint": "Service Endpoint"
+			}
+		},
+		"service-remove": {
+			"summary": "Remove a service from a DID.",
+			"description": "Remove a service from a DID.",
+			"options": {
+				"seed": {
+					"param": "--seed '<'seed'>'",
+					"description": "The seed for the private key for the controller address of the document in hex or base64, or start with ! to read environment variable."
+				},
+				"id": {
+					"param": "--id '<'id'>'",
+					"description": "The id of service to remove."
+				}
+			},
+			"progress": {
+				"removingService": "Removing Service"
+			},
+			"labels": {
+				"serviceId": "Service Id"
+			}
+		},
+		"verifiable-credential-create": {
+			"summary": "Create a verifiable credential.",
+			"description": "Create a verifiable credential.",
+			"options": {
+				"id": {
+					"param": "--id '<'id'>'",
+					"description": "The full verification method id including did, or start with ! to read environment variable."
+				},
+				"private-key": {
+					"param": "--private-key '<'private-key'>'",
+					"description": "The private key for the verification method id, in either hex or base64 form, or start with ! to read environment variable."
+				},
+				"credential-id": {
+					"param": "--credential-id '<'credential-id'>'",
+					"description": "The credential id which uniquely identifies the credential."
+				},
+				"schema-types": {
+					"param": "--schema-types [schema-types...]",
+					"description": "The list of schema-types to include in the verifiable credential."
+				},
+				"subject-json": {
+					"param": "--subject-json '<'subject-json'>'",
+					"description": "A JSON file to read which includes the data for the verifiable credential."
+				},
+				"revocation-index": {
+					"param": "--revocation-index '<'revocation-index'>'",
+					"description": "The revocation index in the issuing document to use if revoking the credential."
+				}
+			},
+			"progress": {
+				"creatingVerifiableCredential": "Creating Verifiable Credential",
+				"loadingSubjectData": "Loading Subject Data"
+			},
+			"labels": {
+				"verificationMethodId": "Verification Method Id",
+				"credentialId": "Credential Id",
+				"schemaTypes": "Schema Types",
+				"subjectJson": "Subject JSON",
+				"revocationIndex": "Revocation Index",
+				"verifiableCredential": "Verifiable Credential"
+			}
+		},
+		"verifiable-credential-verify": {
+			"summary": "Verify a verifiable credential.",
+			"description": "Verify a verifiable credential.",
+			"options": {
+				"jwt": {
+					"param": "--jwt '<'jwt'>'",
+					"description": "The verifiable credential as a JSON web token to verify, or start with ! to read environment variable."
+				}
+			},
+			"progress": {
+				"verifyingCredential": "Verifying Credential"
+			},
+			"labels": {
+				"jwt": "JWT",
+				"isVerified": "Is Verified",
+				"isRevoked": "Is Revoked"
+			}
+		},
+		"verifiable-credential-revoke": {
+			"summary": "Revoke a verifiable credential.",
+			"description": "Revoke a verifiable credential.",
+			"options": {
+				"seed": {
+					"param": "--seed '<'seed'>'",
+					"description": "The seed for the private key for the controller address of the document in hex or base64, or start with ! to read environment variable."
+				},
+				"did": {
+					"param": "--did '<'did'>'",
+					"description": "The did of the document to revoke the index from, or start with ! to read environment variable."
+				},
+				"revocation-index": {
+					"param": "--revocation-index '<'revocation-index'>'",
+					"description": "The revocation index of the credential revoke."
+				}
+			},
+			"progress": {
+				"revokingCredential": "Revoking Credential Index"
+			},
+			"labels": {
+				"revocationIndex": "Revocation Index"
+			}
+		},
+		"verifiable-credential-unrevoke": {
+			"summary": "Unrevoke a verifiable credential.",
+			"description": "Unrevoke a verifiable credential.",
+			"options": {
+				"seed": {
+					"param": "--seed '<'seed'>'",
+					"description": "The seed for the private key for the controller address of the document in hex or base64, or start with ! to read environment variable."
+				},
+				"did": {
+					"param": "--did '<'did'>'",
+					"description": "The did of the document to unrevoke the index from, or start with ! to read environment variable."
+				},
+				"revocation-index": {
+					"param": "--revocation-index '<'revocation-index'>'",
+					"description": "The revocation index of the credential unrevoke."
+				}
+			},
+			"progress": {
+				"unrevokingCredential": "Unrevoking Credential Index"
+			},
+			"labels": {
+				"revocationIndex": "Revocation Index"
+			}
+		},
+		"proof-create": {
+			"summary": "Create a proof for some data using a verification method.",
+			"description": "Create a proof for some data using a verification method.",
+			"options": {
+				"id": {
+					"param": "--id '<'id'>'",
+					"description": "The full verification method id including did, or start with ! to read environment variable."
+				},
+				"private-key": {
+					"param": "--private-key '<'private-key'>'",
+					"description": "The private key for the verification method id, in either hex or base64 form, or start with ! to read environment variable."
+				},
+				"data": {
+					"param": "--data '<'data'>'",
+					"description": "The base64 or hex encoded data to create the proof for, or start with ! to read environment variable."
+				}
+			},
+			"progress": {
+				"creatingProof": "Creating Proof"
+			},
+			"labels": {
+				"verificationMethodId": "Verification Method Id",
+				"type": "Proof Type",
+				"value": "Proof Value"
+			}
+		},
+		"proof-verify": {
+			"summary": "Verify a proof for some data using a verification method.",
+			"description": "Verify a proof for some data using a verification method.",
+			"options": {
+				"id": {
+					"param": "--id '<'id'>'",
+					"description": "The full verification method id including did, or start with ! to read environment variable."
+				},
+				"data": {
+					"param": "--data '<'data'>'",
+					"description": "The base64 or hex encoded data to verify the proof for, or start with ! to read environment variable."
+				},
+				"type": {
+					"param": "--type '<'type'>'",
+					"description": "The type of the proof, or start with ! to read environment variable."
+				},
+				"value": {
+					"param": "--value '<'value'>'",
+					"description": "The base64 or hex encoded data to use for verifying the proof, or start with ! to read environment variable."
+				}
+			},
+			"progress": {
+				"verifyingProof": "Verifying Proof"
+			},
+			"labels": {
+				"verificationMethodId": "Verification Method Id",
+				"type": "Proof Type",
+				"value": "Proof Value",
+				"isVerified": "Is Verified"
+			}
+		},
+		"common": {
+			"options": {
+				"node": {
+					"param": "--node '<'url'>'",
+					"description": "The url for the node endpoint, or an environment variable name containing the url."
+				}
+			},
+			"labels": {
+				"did": "DID",
+				"node": "Node",
+				"explorer": "Explorer",
+				"explore": "Explore"
+			}
+		}
+	}
+}

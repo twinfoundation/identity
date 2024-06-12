@@ -17,9 +17,10 @@ export interface IIdentityConnector extends IService {
 	/**
 	 * Create a new document.
 	 * @param requestContext The context for the request.
+	 * @param controller The controller for the document.
 	 * @returns The created document.
 	 */
-	createDocument(requestContext: IRequestContext): Promise<IDidDocument>;
+	createDocument(requestContext: IRequestContext, controller: string): Promise<IDidDocument>;
 
 	/**
 	 * Resolve a document from its id.
@@ -50,7 +51,6 @@ export interface IIdentityConnector extends IService {
 	/**
 	 * Remove a verification method from the document.
 	 * @param requestContext The context for the request.
-	 * @param documentId The id of the document to remove the verification method from.
 	 * @param verificationMethodId The id of the verification method.
 	 * @returns Nothing.
 	 * @throws NotFoundError if the id can not be resolved.
@@ -58,7 +58,6 @@ export interface IIdentityConnector extends IService {
 	 */
 	removeVerificationMethod(
 		requestContext: IRequestContext,
-		documentId: string,
 		verificationMethodId: string
 	): Promise<void>;
 
@@ -83,21 +82,15 @@ export interface IIdentityConnector extends IService {
 	/**
 	 * Remove a service from the document.
 	 * @param requestContext The context for the request.
-	 * @param documentId The id of the document to remove the service from.
 	 * @param serviceId The id of the service.
 	 * @returns Nothing.
 	 * @throws NotFoundError if the id can not be resolved.
 	 */
-	removeService(
-		requestContext: IRequestContext,
-		documentId: string,
-		serviceId: string
-	): Promise<void>;
+	removeService(requestContext: IRequestContext, serviceId: string): Promise<void>;
 
 	/**
 	 * Create a verifiable credential for a verification method.
 	 * @param requestContext The context for the request.
-	 * @param issuerDocumentId The id of the document issuing the verifiable credential.
 	 * @param verificationMethodId The verification method id to use.
 	 * @param credentialId The id of the credential.
 	 * @param schemaTypes The type of the schemas for the data stored in the verifiable credential.
@@ -108,7 +101,6 @@ export interface IIdentityConnector extends IService {
 	 */
 	createVerifiableCredential<T extends { id?: string }>(
 		requestContext: IRequestContext,
-		issuerDocumentId: string,
 		verificationMethodId: string,
 		credentialId: string,
 		schemaTypes: string | string[],
@@ -162,7 +154,6 @@ export interface IIdentityConnector extends IService {
 	/**
 	 * Create a verifiable presentation from the supplied verifiable credentials.
 	 * @param requestContext The context for the request.
-	 * @param holderDocumentId The id of the document creating the verifiable presentation.
 	 * @param presentationMethodId The method to associate with the presentation.
 	 * @param schemaTypes The type of the schemas for the data stored in the verifiable credential.
 	 * @param verifiableCredentials The credentials to use for creating the presentation in jwt format.
@@ -172,7 +163,6 @@ export interface IIdentityConnector extends IService {
 	 */
 	createVerifiablePresentation(
 		requestContext: IRequestContext,
-		holderDocumentId: string,
 		presentationMethodId: string,
 		schemaTypes: string | string[],
 		verifiableCredentials: string[],
@@ -200,14 +190,12 @@ export interface IIdentityConnector extends IService {
 	/**
 	 * Create a proof for arbitrary data with the specified verification method.
 	 * @param requestContext The context for the request.
-	 * @param documentId The id of the document signing the data.
 	 * @param verificationMethodId The verification method id to use.
 	 * @param bytes The data bytes to sign.
 	 * @returns The proof signature type and value.
 	 */
 	createProof(
 		requestContext: IRequestContext,
-		documentId: string,
 		verificationMethodId: string,
 		bytes: Uint8Array
 	): Promise<{
@@ -218,7 +206,6 @@ export interface IIdentityConnector extends IService {
 	/**
 	 * Verify proof for arbitrary data with the specified verification method.
 	 * @param requestContext The context for the request.
-	 * @param documentId The id of the document verifying the data.
 	 * @param verificationMethodId The verification method id to use.
 	 * @param bytes The data bytes to verify.
 	 * @param signatureType The type of the signature for the proof.
@@ -227,7 +214,6 @@ export interface IIdentityConnector extends IService {
 	 */
 	verifyProof(
 		requestContext: IRequestContext,
-		documentId: string,
 		verificationMethodId: string,
 		bytes: Uint8Array,
 		signatureType: string,

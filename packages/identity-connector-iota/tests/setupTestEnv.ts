@@ -14,7 +14,7 @@ import {
 } from "@gtsc/vault-connector-entity-storage";
 import type { IVaultConnector } from "@gtsc/vault-models";
 import { IotaFaucetConnector, IotaWalletConnector } from "@gtsc/wallet-connector-iota";
-import type { IClientOptions } from "@iota/sdk-wasm/node";
+import type { IClientOptions } from "@iota/sdk-wasm/node/lib/index.js";
 import * as dotenv from "dotenv";
 
 process.stdout.write("Setting up test environment from .env and .env.dev files\n");
@@ -85,7 +85,7 @@ export const TEST_WALLET_CONNECTOR = new IotaWalletConnector(
 	},
 	{
 		clientOptions: TEST_CLIENT_OPTIONS,
-		walletMnemonicId: TEST_MNEMONIC_NAME,
+		vaultMnemonicId: TEST_MNEMONIC_NAME,
 		coinType: TEST_COIN_TYPE,
 		bech32Hrp: TEST_BECH32_HRP
 	}

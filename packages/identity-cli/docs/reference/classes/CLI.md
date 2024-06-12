@@ -2,6 +2,10 @@
 
 The main entry point for the CLI.
 
+## Extends
+
+- `CLIBase`
+
 ## Constructors
 
 ### new CLI()
@@ -12,15 +16,27 @@ The main entry point for the CLI.
 
 [`CLI`](CLI.md)
 
+#### Inherited from
+
+`CLIBase.constructor`
+
 ## Methods
 
-### run()
+### execute()
 
-> **run**(`argv`): `Promise`\<`number`\>
+> **execute**(`options`, `localesDirectory`, `argv`): `Promise`\<`number`\>
 
-Run the app.
+Execute the command line processing.
 
 #### Parameters
+
+• **options**: `ICliOptions`
+
+The options for the CLI.
+
+• **localesDirectory**: `string`
+
+The path to load the locales from.
 
 • **argv**: `string`[]
 
@@ -32,39 +48,49 @@ The process arguments.
 
 The exit code.
 
+#### Inherited from
+
+`CLIBase.execute`
+
 ***
 
-### execute()
+### configureRoot()
 
-> **execute**(`options`, `argv`): `Promise`\<`number`\>
+> `protected` **configureRoot**(`program`): `void`
 
-Execute the command line processing.
+Configure any options or actions at the root program level.
 
 #### Parameters
 
-• **options**
+• **program**: `Command`
 
-The options for the CLI.
+The root program command.
 
-• **options.title**: `string`
+#### Returns
 
-The title of the CLI.
+`void`
 
-• **options.appName**: `string`
+#### Inherited from
 
-The name of the app.
+`CLIBase.configureRoot`
 
-• **options.version**: `string`
+***
 
-The version of the app.
+### run()
 
-• **options.icon**: `string`
+> **run**(`argv`, `localesDirectory`?): `Promise`\<`number`\>
 
-The icon for the CLI.
+Run the app.
+
+#### Parameters
 
 • **argv**: `string`[]
 
 The process arguments.
+
+• **localesDirectory?**: `string`
+
+The directory for the locales, default to relative to the script.
 
 #### Returns
 

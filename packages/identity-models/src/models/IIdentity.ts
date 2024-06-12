@@ -11,12 +11,14 @@ export interface IIdentity extends IService {
 	/**
 	 * Create a new identity.
 	 * @param requestContext The context for the request.
+	 * @param controller The controller for the identity.
 	 * @param role The role for the identity.
 	 * @param properties The profile properties.
 	 * @returns The created identity details.
 	 */
 	identityCreate(
 		requestContext: IRequestContext,
+		controller: string,
 		role: IdentityRole,
 		properties?: IProperty[]
 	): Promise<{

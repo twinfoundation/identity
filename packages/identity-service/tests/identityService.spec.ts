@@ -23,6 +23,7 @@ import { IdentityService } from "../src/identityService";
 
 export const TEST_TENANT_ID = "test-tenant";
 export const TEST_IDENTITY_ID = "test-identity";
+export const TEST_CONTROLLER = "test-controller";
 export const TEST_CONTEXT: IRequestContext = {
 	tenantId: TEST_TENANT_ID,
 	identity: TEST_IDENTITY_ID
@@ -148,7 +149,7 @@ describe("IdentityService", () => {
 		PropertyHelper.setText(properties, "name", "Test Identity");
 
 		expect(
-			service.identityCreate(TEST_CONTEXT, IdentityRole.Node, properties)
+			service.identityCreate(TEST_CONTEXT, TEST_CONTROLLER, IdentityRole.Node, properties)
 		).rejects.toMatchObject(
 			expect.objectContaining({
 				name: "GeneralError",
@@ -174,6 +175,7 @@ describe("IdentityService", () => {
 
 		const identityResult = await service.identityCreate(
 			TEST_CONTEXT,
+			TEST_CONTROLLER,
 			IdentityRole.Node,
 			properties
 		);
@@ -262,6 +264,7 @@ describe("IdentityService", () => {
 		PropertyHelper.setText(properties, "name", "Test Identity");
 		const identityResult = await service.identityCreate(
 			TEST_CONTEXT,
+			TEST_CONTROLLER,
 			IdentityRole.Node,
 			properties
 		);
@@ -355,6 +358,7 @@ describe("IdentityService", () => {
 		PropertyHelper.setText(properties, "name", "Test Identity");
 		const identityResult = await service.identityCreate(
 			TEST_CONTEXT,
+			TEST_CONTROLLER,
 			IdentityRole.Node,
 			properties
 		);
@@ -413,13 +417,13 @@ describe("IdentityService", () => {
 		for (let i = 0; i < 3; i++) {
 			const properties: IProperty[] = [];
 			PropertyHelper.setText(properties, "name", `Test Node Identity ${i}`);
-			await service.identityCreate(TEST_CONTEXT, IdentityRole.Node, properties);
+			await service.identityCreate(TEST_CONTEXT, TEST_CONTROLLER, IdentityRole.Node, properties);
 		}
 
 		for (let i = 0; i < 7; i++) {
 			const properties: IProperty[] = [];
 			PropertyHelper.setText(properties, "name", `Test User Identity ${i}`);
-			await service.identityCreate(TEST_CONTEXT, IdentityRole.User, properties);
+			await service.identityCreate(TEST_CONTEXT, TEST_CONTROLLER, IdentityRole.User, properties);
 		}
 
 		const identitiesNode = await service.identityList(TEST_CONTEXT, IdentityRole.Node);
