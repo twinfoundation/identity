@@ -13,4 +13,4 @@ export * from "./commands/verifiableCredentialUnrevoke";
 export * from "./commands/verifiableCredentialVerify";
 export * from "./commands/verificationMethodAdd";
 export * from "./commands/verificationMethodRemove";
-export * from "./utils";
+export * from "./identityCliUtils";

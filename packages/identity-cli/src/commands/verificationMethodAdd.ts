@@ -12,7 +12,7 @@ import {
 	VaultSecret
 } from "@gtsc/vault-connector-entity-storage";
 import { Command, Option } from "commander";
-import { IdentityCliUtils } from "../utils";
+import { IdentityCliUtils } from "../identityCliUtils";
 
 /**
  * Build the verification method add command to the CLI.
