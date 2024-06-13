@@ -1,16 +1,16 @@
-# Class: IdentityCliUtils
+# Class: IotaIdentityUtils
 
-Utility functions for the identity CLI.
+Utility functions for the iota identity.
 
 ## Constructors
 
-### new IdentityCliUtils()
+### new IotaIdentityUtils()
 
-> **new IdentityCliUtils**(): [`IdentityCliUtils`](IdentityCliUtils.md)
+> **new IotaIdentityUtils**(): [`IotaIdentityUtils`](IotaIdentityUtils.md)
 
 #### Returns
 
-[`IdentityCliUtils`](IdentityCliUtils.md)
+[`IotaIdentityUtils`](IotaIdentityUtils.md)
 
 ## Methods
 

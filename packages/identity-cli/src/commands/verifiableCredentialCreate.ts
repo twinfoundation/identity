@@ -15,7 +15,7 @@ import { VaultKeyType } from "@gtsc/vault-models";
 import { Command } from "commander";
 
 /**
- * Build the verifiable credential create command to the CLI.
+ * Build the verifiable credential create command for the CLI.
  * @returns The command.
  */
 export function buildCommandVerifiableCredentialCreate(): Command {

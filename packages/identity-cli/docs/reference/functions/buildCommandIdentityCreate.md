@@ -2,7 +2,7 @@
 
 > **buildCommandIdentityCreate**(): `Command`
 
-Build the identity create command to the CLI.
+Build the identity create command for the CLI.
 
 ## Returns
 

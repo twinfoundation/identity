@@ -2,7 +2,7 @@
 
 > **buildCommandVerificationMethodRemove**(): `Command`
 
-Build the verification method remove command to the CLI.
+Build the verification method remove command for the CLI.
 
 ## Returns
 

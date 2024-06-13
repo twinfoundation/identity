@@ -3,7 +3,6 @@
 ## Classes
 
 - [CLI](classes/CLI.md)
-- [IdentityCliUtils](classes/IdentityCliUtils.md)
 
 ## Functions
 

@@ -2,7 +2,7 @@
 
 > **buildCommandProofVerify**(): `Command`
 
-Build the proof verify command to the CLI.
+Build the proof verify command for the CLI.
 
 ## Returns
 

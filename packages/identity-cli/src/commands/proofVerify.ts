@@ -13,7 +13,7 @@ import {
 import { Command } from "commander";
 
 /**
- * Build the proof verify command to the CLI.
+ * Build the proof verify command for the CLI.
  * @returns The command.
  */
 export function buildCommandProofVerify(): Command {

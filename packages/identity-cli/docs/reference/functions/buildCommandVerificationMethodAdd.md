@@ -2,7 +2,7 @@
 
 > **buildCommandVerificationMethodAdd**(): `Command`
 
-Build the verification method add command to the CLI.
+Build the verification method add command for the CLI.
 
 ## Returns
 
