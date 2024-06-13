@@ -59,12 +59,14 @@ export class IdentityService implements IIdentity {
 	/**
 	 * Create a new identity.
 	 * @param requestContext The context for the request.
+	 * @param controller The controller for the identity.
 	 * @param role The role for the identity.
 	 * @param properties The profile properties.
 	 * @returns The created identity details.
 	 */
 	public async identityCreate(
 		requestContext: IRequestContext,
+		controller: string,
 		role: IdentityRole,
 		properties?: IProperty[]
 	): Promise<{
@@ -88,10 +90,11 @@ export class IdentityService implements IIdentity {
 			nameof(requestContext.identity),
 			requestContext.identity
 		);
+		Guards.stringValue(IdentityService._CLASS_NAME, nameof(controller), controller);
 		Guards.arrayOneOf(IdentityService._CLASS_NAME, nameof(role), role, Object.values(IdentityRole));
 
 		try {
-			const document = await this._identityConnector.createDocument(requestContext);
+			const document = await this._identityConnector.createDocument(requestContext, controller);
 
 			await this._profileEntityStorage.set(requestContext, {
 				identity: document.id,

@@ -14,10 +14,10 @@ import {
 } from "@gtsc/vault-connector-entity-storage";
 import type { IVaultConnector } from "@gtsc/vault-models";
 import { IotaFaucetConnector, IotaWalletConnector } from "@gtsc/wallet-connector-iota";
-import type { IClientOptions } from "@iota/sdk-wasm/node";
+import type { IClientOptions } from "@iota/sdk-wasm/node/lib/index.js";
 import * as dotenv from "dotenv";
 
-console.log("Setting up test environment from .env and .env.dev files");
+process.stdout.write("Setting up test environment from .env and .env.dev files\n");
 
 dotenv.config({ path: [path.join(__dirname, ".env"), path.join(__dirname, ".env.dev")] });
 
@@ -85,7 +85,7 @@ export const TEST_WALLET_CONNECTOR = new IotaWalletConnector(
 	},
 	{
 		clientOptions: TEST_CLIENT_OPTIONS,
-		walletMnemonicId: TEST_MNEMONIC_NAME,
+		vaultMnemonicId: TEST_MNEMONIC_NAME,
 		coinType: TEST_COIN_TYPE,
 		bech32Hrp: TEST_BECH32_HRP
 	}
@@ -112,9 +112,8 @@ export const TEST_IDENTITY_ADDRESS_BECH32 = addresses[0];
  * Setup the test environment.
  */
 export async function setupTestEnv(): Promise<void> {
-	console.log(
-		"Identity Address",
-		`${process.env.TEST_EXPLORER_URL}addr/${TEST_IDENTITY_ADDRESS_BECH32}`
+	process.stdout.write(
+		`Identity Address: ${process.env.TEST_EXPLORER_URL}addr/${TEST_IDENTITY_ADDRESS_BECH32}\n`
 	);
 	await TEST_WALLET_CONNECTOR.ensureBalance(
 		TEST_CONTEXT,

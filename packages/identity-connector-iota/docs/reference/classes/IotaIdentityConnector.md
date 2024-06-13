@@ -24,10 +24,6 @@ The dependencies for the identity connector.
 
 The vault for the private keys.
 
-• **dependencies.walletConnector**: `IWalletConnector`
-
-The wallet connector.
-
 • **config**: [`IIotaIdentityConnectorConfig`](../interfaces/IIotaIdentityConnectorConfig.md)
 
 The configuration to use.
@@ -44,11 +40,19 @@ The configuration to use.
 
 The namespace supported by the identity connector.
 
+***
+
+### \_DEFAULT\_SEED\_SECRET\_NAME
+
+> `static` `private` `readonly` **\_DEFAULT\_SEED\_SECRET\_NAME**: `string` = `"seed"`
+
+Default name for the seed secret.
+
 ## Methods
 
 ### createDocument()
 
-> **createDocument**(`requestContext`): `Promise`\<`IDidDocument`\>
+> **createDocument**(`requestContext`, `controller`): `Promise`\<`IDidDocument`\>
 
 Create a new document.
 
@@ -57,6 +61,10 @@ Create a new document.
 • **requestContext**: `IRequestContext`
 
 The context for the request.
+
+• **controller**: `string`
+
+The controller for the document.
 
 #### Returns
 
@@ -148,7 +156,7 @@ NotSupportedError if the platform does not support multiple keys.
 
 ### removeVerificationMethod()
 
-> **removeVerificationMethod**(`requestContext`, `documentId`, `verificationMethodId`): `Promise`\<`void`\>
+> **removeVerificationMethod**(`requestContext`, `verificationMethodId`): `Promise`\<`void`\>
 
 Remove a verification method from the document.
 
@@ -157,10 +165,6 @@ Remove a verification method from the document.
 • **requestContext**: `IRequestContext`
 
 The context for the request.
-
-• **documentId**: `string`
-
-The id of the document to remove the verification method from.
 
 • **verificationMethodId**: `string`
 
@@ -232,7 +236,7 @@ NotFoundError if the id can not be resolved.
 
 ### removeService()
 
-> **removeService**(`requestContext`, `documentId`, `serviceId`): `Promise`\<`void`\>
+> **removeService**(`requestContext`, `serviceId`): `Promise`\<`void`\>
 
 Remove a service from the document.
 
@@ -241,10 +245,6 @@ Remove a service from the document.
 • **requestContext**: `IRequestContext`
 
 The context for the request.
-
-• **documentId**: `string`
-
-The id of the document to remove the service from.
 
 • **serviceId**: `string`
 
@@ -268,7 +268,7 @@ NotFoundError if the id can not be resolved.
 
 ### createVerifiableCredential()
 
-> **createVerifiableCredential**\<`T`\>(`requestContext`, `issuerDocumentId`, `verificationMethodId`, `credentialId`, `schemaTypes`, `subject`, `revocationIndex`): `Promise`\<`object`\>
+> **createVerifiableCredential**\<`T`\>(`requestContext`, `verificationMethodId`, `credentialId`, `schemaTypes`, `subject`, `revocationIndex`): `Promise`\<`object`\>
 
 Create a verifiable credential for a verification method.
 
@@ -281,10 +281,6 @@ Create a verifiable credential for a verification method.
 • **requestContext**: `IRequestContext`
 
 The context for the request.
-
-• **issuerDocumentId**: `string`
-
-The id of the document issuing the verifiable credential.
 
 • **verificationMethodId**: `string`
 
@@ -436,7 +432,7 @@ Nothing.
 
 ### createVerifiablePresentation()
 
-> **createVerifiablePresentation**(`requestContext`, `holderDocumentId`, `presentationMethodId`, `schemaTypes`, `verifiableCredentials`, `expiresInMinutes`?): `Promise`\<`object`\>
+> **createVerifiablePresentation**(`requestContext`, `presentationMethodId`, `schemaTypes`, `verifiableCredentials`, `expiresInMinutes`?): `Promise`\<`object`\>
 
 Create a verifiable presentation from the supplied verifiable credentials.
 
@@ -445,10 +441,6 @@ Create a verifiable presentation from the supplied verifiable credentials.
 • **requestContext**: `IRequestContext`
 
 The context for the request.
-
-• **holderDocumentId**: `string`
-
-The id of the document creating the verifiable presentation.
 
 • **presentationMethodId**: `string`
 
@@ -532,7 +524,7 @@ The presentation stored in the jwt and the revocation status.
 
 ### createProof()
 
-> **createProof**(`requestContext`, `documentId`, `verificationMethodId`, `bytes`): `Promise`\<`object`\>
+> **createProof**(`requestContext`, `verificationMethodId`, `bytes`): `Promise`\<`object`\>
 
 Create a proof for arbitrary data with the specified verification method.
 
@@ -541,10 +533,6 @@ Create a proof for arbitrary data with the specified verification method.
 • **requestContext**: `IRequestContext`
 
 The context for the request.
-
-• **documentId**: `string`
-
-The id of the document signing the data.
 
 • **verificationMethodId**: `string`
 
@@ -576,7 +564,7 @@ The proof signature type and value.
 
 ### verifyProof()
 
-> **verifyProof**(`requestContext`, `documentId`, `verificationMethodId`, `bytes`, `signatureType`, `signatureValue`): `Promise`\<`boolean`\>
+> **verifyProof**(`requestContext`, `verificationMethodId`, `bytes`, `signatureType`, `signatureValue`): `Promise`\<`boolean`\>
 
 Verify proof for arbitrary data with the specified verification method.
 
@@ -585,10 +573,6 @@ Verify proof for arbitrary data with the specified verification method.
 • **requestContext**: `IRequestContext`
 
 The context for the request.
-
-• **documentId**: `string`
-
-The id of the document verifying the data.
 
 • **verificationMethodId**: `string`
 
@@ -615,3 +599,23 @@ True if the signature is valid.
 #### Implementation of
 
 `IIdentityConnector.verifyProof`
+
+***
+
+### extractPayloadError()
+
+> `private` **extractPayloadError**(`error`): `IError`
+
+Extract error from SDK payload.
+
+#### Parameters
+
+• **error**: `unknown`
+
+The error to extract.
+
+#### Returns
+
+`IError`
+
+The extracted error.

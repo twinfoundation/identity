@@ -28,8 +28,20 @@ const plugins = [
 ];
 
 const globs = {};
-for (const dep in packageDetails.dependencies) {
-	globs[dep] = dep;
+if (packageDetails.dependencies) {
+	for (const dep in packageDetails.dependencies) {
+		globs[dep] = dep;
+	}
+}
+if (packageDetails.peerDependencies) {
+	for (const dep in packageDetails.peerDependencies) {
+		globs[dep] = dep;
+	}
+}
+if (packageDetails.devDependencies) {
+	for (const dep in packageDetails.devDependencies) {
+		globs[dep] = dep;
+	}
 }
 
 export default {
@@ -49,7 +61,7 @@ export default {
 	external: [/^node:.*/].concat(Object.keys(globs).map(g => new RegExp(`^${g}`))),
 	onwarn: message => {
 		if (!['EMPTY_BUNDLE', 'CIRCULAR_DEPENDENCY'].includes(message.code)) {
-			console.error(message);
+			process.stderr.write(`${message}\n`);
 			// eslint-disable-next-line unicorn/no-process-exit
 			process.exit(1);
 		}

@@ -1,6 +1,6 @@
 // Copyright 2024 IOTA Stiftung.
 // SPDX-License-Identifier: Apache-2.0.
-import type { IClientOptions } from "@iota/sdk-wasm/node";
+import type { IClientOptions } from "@iota/sdk-wasm/node/lib/index.js";
 
 /**
  * Configuration for the IOTA Identity Connector.
@@ -12,16 +12,16 @@ export interface IIotaIdentityConnectorConfig {
 	clientOptions: IClientOptions;
 
 	/**
-	 * The id of the entry in the vault containing the wallet mnemonic.
-	 * @default wallet-mnemonic
+	 * The id of the entry in the vault containing the seed.
+	 * @default seed
 	 */
-	walletMnemonicId?: string;
+	vaultSeedId?: string;
 
 	/**
-	 * The address index of the account to use for storing identities.
-	 * @default 1
+	 * The id of the entry in the vault containing the mnemonic.
+	 * @default mnemonic
 	 */
-	addressIndex?: number;
+	vaultMnemonicId?: string;
 
 	/**
 	 * The coin type.

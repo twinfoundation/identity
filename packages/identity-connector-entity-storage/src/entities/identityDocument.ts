@@ -25,4 +25,10 @@ export class IdentityDocument {
 	 */
 	@property({ type: "string" })
 	public signature!: string;
+
+	/**
+	 * The controller of the document.
+	 */
+	@property({ type: "string" })
+	public controller!: string;
 }

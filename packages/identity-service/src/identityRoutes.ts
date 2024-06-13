@@ -60,6 +60,7 @@ export function generateRestRoutes(routeName: string, serviceName: string): IRes
 					id: "identityCreateRequestExample",
 					request: {
 						body: {
+							controller: "tst1qrtks2qycm4al8lqw4wxxcvz8sdsrkf7xdxlvgtpcf8ve8gwzsvux44jd7n",
 							role: IdentityRole.User,
 							properties: [
 								{
@@ -270,13 +271,14 @@ export async function identityCreate(
 	request: IIdentityCreateRequest,
 	body?: unknown
 ): Promise<ICreatedResponse> {
-	Guards.object<IIdentityCreateRequest>(ROUTES_SOURCE, nameof(request.body), request.body);
+	Guards.object<IIdentityCreateRequest>(ROUTES_SOURCE, nameof(request), request);
 	Guards.object<IIdentityCreateRequest["body"]>(ROUTES_SOURCE, nameof(request.body), request.body);
 
 	const service = ServiceFactory.get<IIdentity>(serviceName);
 
 	const result = await service.identityCreate(
 		requestContext,
+		request.body.controller,
 		request.body.role,
 		request.body.properties
 	);
@@ -303,7 +305,7 @@ export async function identityUpdate(
 	request: IIdentityUpdateRequest,
 	body?: unknown
 ): Promise<void> {
-	Guards.object<IIdentityUpdateRequest>(ROUTES_SOURCE, nameof(request.body), request.body);
+	Guards.object<IIdentityUpdateRequest>(ROUTES_SOURCE, nameof(request), request);
 	Guards.object<IIdentityUpdateRequest["path"]>(ROUTES_SOURCE, nameof(request.path), request.path);
 	Guards.object<IIdentityUpdateRequest["body"]>(ROUTES_SOURCE, nameof(request.body), request.body);
 	const service = ServiceFactory.get<IIdentity>(serviceName);

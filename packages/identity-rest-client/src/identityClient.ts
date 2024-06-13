@@ -41,12 +41,14 @@ export class IdentityClient extends BaseRestClient implements IIdentity {
 	/**
 	 * Create a new identity.
 	 * @param requestContext The context for the request.
+	 * @param controller The controller for the identity.
 	 * @param role The role for the identity.
 	 * @param properties The profile properties.
 	 * @returns The created identity details.
 	 */
 	public async identityCreate(
 		requestContext: IRequestContext,
+		controller: string,
 		role: IdentityRole,
 		properties?: IProperty[]
 	): Promise<{
@@ -55,6 +57,7 @@ export class IdentityClient extends BaseRestClient implements IIdentity {
 		 */
 		identity: string;
 	}> {
+		Guards.stringValue(IdentityClient._CLASS_NAME, nameof(controller), controller);
 		Guards.arrayOneOf(IdentityClient._CLASS_NAME, nameof(role), role, Object.values(IdentityRole));
 
 		const response = await this.fetch<IIdentityCreateRequest, ICreatedResponse>(
@@ -63,6 +66,7 @@ export class IdentityClient extends BaseRestClient implements IIdentity {
 			"POST",
 			{
 				body: {
+					controller,
 					role,
 					properties
 				}

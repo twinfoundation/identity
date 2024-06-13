@@ -9,19 +9,17 @@ import type {
 	IDidService
 } from "@gtsc/standards-w3c-did";
 import type { IVaultConnector } from "@gtsc/vault-models";
-import type { IWalletConnector } from "@gtsc/wallet-models";
-import { Utils } from "@iota/sdk-wasm/node";
+import { Utils } from "@iota/sdk-wasm/node/lib/index.js";
 import {
 	TEST_BECH32_HRP,
 	TEST_CLIENT_OPTIONS,
 	TEST_CONTEXT,
-	TEST_IDENTITY_ADDRESS_INDEX,
+	TEST_IDENTITY_ADDRESS_BECH32,
 	TEST_IDENTITY_ID,
 	TEST_MNEMONIC_NAME,
 	TEST_TENANT_ID,
 	TEST_VAULT_CONNECTOR,
 	TEST_VAULT_KEY_STORAGE,
-	TEST_WALLET_CONNECTOR,
 	setupTestEnv
 } from "./setupTestEnv";
 import { IotaIdentityConnector } from "../src/iotaIdentityConnector";
@@ -31,7 +29,6 @@ const TEST_REVOCATION_INDEX = 15;
 let testDocumentId: string;
 let testDocumentVerificationMethodId: string;
 let testServiceId: string;
-let holderDocumentId: string;
 let holderDocumentVerificationMethodId: string;
 let testVcJwt: string;
 let testVpJwt: string;
@@ -66,7 +63,6 @@ describe("IotaIdentityConnector", () => {
 				new IotaIdentityConnector(
 					undefined as unknown as {
 						vaultConnector: IVaultConnector;
-						walletConnector: IWalletConnector;
 					},
 					undefined as unknown as IIotaIdentityConnectorConfig
 				)
@@ -88,7 +84,6 @@ describe("IotaIdentityConnector", () => {
 				new IotaIdentityConnector(
 					{} as unknown as {
 						vaultConnector: IVaultConnector;
-						walletConnector: IWalletConnector;
 					},
 					undefined as unknown as IIotaIdentityConnectorConfig
 				)
@@ -108,7 +103,7 @@ describe("IotaIdentityConnector", () => {
 		expect(
 			() =>
 				new IotaIdentityConnector(
-					{ vaultConnector: TEST_VAULT_CONNECTOR, walletConnector: TEST_WALLET_CONNECTOR },
+					{ vaultConnector: TEST_VAULT_CONNECTOR },
 					undefined as unknown as IIotaIdentityConnectorConfig
 				)
 		).toThrow(
@@ -127,7 +122,7 @@ describe("IotaIdentityConnector", () => {
 		expect(
 			() =>
 				new IotaIdentityConnector(
-					{ vaultConnector: TEST_VAULT_CONNECTOR, walletConnector: TEST_WALLET_CONNECTOR },
+					{ vaultConnector: TEST_VAULT_CONNECTOR },
 					{} as IIotaIdentityConnectorConfig
 				)
 		).toThrow(
@@ -144,15 +139,17 @@ describe("IotaIdentityConnector", () => {
 
 	test("can fail to create a document with no request context", async () => {
 		const identityConnector = new IotaIdentityConnector(
-			{ vaultConnector: TEST_VAULT_CONNECTOR, walletConnector: TEST_WALLET_CONNECTOR },
+			{ vaultConnector: TEST_VAULT_CONNECTOR },
 			{
 				clientOptions: TEST_CLIENT_OPTIONS,
-				walletMnemonicId: TEST_MNEMONIC_NAME,
-				addressIndex: TEST_IDENTITY_ADDRESS_INDEX
+				vaultMnemonicId: TEST_MNEMONIC_NAME
 			}
 		);
 		await expect(
-			identityConnector.createDocument(undefined as unknown as IRequestContext)
+			identityConnector.createDocument(
+				undefined as unknown as IRequestContext,
+				TEST_IDENTITY_ADDRESS_BECH32
+			)
 		).rejects.toMatchObject({
 			name: "GuardError",
 			message: "guard.objectUndefined",
@@ -165,34 +162,34 @@ describe("IotaIdentityConnector", () => {
 
 	test("can create a document", async () => {
 		const identityConnector = new IotaIdentityConnector(
-			{ vaultConnector: TEST_VAULT_CONNECTOR, walletConnector: TEST_WALLET_CONNECTOR },
+			{ vaultConnector: TEST_VAULT_CONNECTOR },
 			{
 				clientOptions: TEST_CLIENT_OPTIONS,
-				walletMnemonicId: TEST_MNEMONIC_NAME,
-				addressIndex: TEST_IDENTITY_ADDRESS_INDEX
+				vaultMnemonicId: TEST_MNEMONIC_NAME
 			}
 		);
 
-		const testDocument = await identityConnector.createDocument(TEST_CONTEXT);
+		const testDocument = await identityConnector.createDocument(
+			TEST_CONTEXT,
+			TEST_IDENTITY_ADDRESS_BECH32
+		);
 		testDocumentId = testDocument.id;
 
 		expect(testDocument.id.slice(0, 15)).toEqual(`did:iota:${process.env.TEST_BECH32_HRP}:0x`);
 		expect(testDocument.service).toBeDefined();
 		expect((testDocument.service?.[0] as IDidService)?.id).toEqual(`${testDocument.id}#revocation`);
 
-		console.log(
-			"DID Document",
-			`${process.env.TEST_EXPLORER_URL}addr/${Utils.aliasIdToBech32(testDocument.id.slice(13), TEST_BECH32_HRP)}?tab=DID`
+		process.stdout.write(
+			`DID Document: ${process.env.TEST_EXPLORER_URL}addr/${Utils.aliasIdToBech32(testDocument.id.slice(13), TEST_BECH32_HRP)}?tab=DID\n`
 		);
 	});
 
 	test("can fail to resolve a document with no id", async () => {
 		const identityConnector = new IotaIdentityConnector(
-			{ vaultConnector: TEST_VAULT_CONNECTOR, walletConnector: TEST_WALLET_CONNECTOR },
+			{ vaultConnector: TEST_VAULT_CONNECTOR },
 			{
 				clientOptions: TEST_CLIENT_OPTIONS,
-				walletMnemonicId: TEST_MNEMONIC_NAME,
-				addressIndex: TEST_IDENTITY_ADDRESS_INDEX
+				vaultMnemonicId: TEST_MNEMONIC_NAME
 			}
 		);
 		await expect(
@@ -209,11 +206,10 @@ describe("IotaIdentityConnector", () => {
 
 	test("can resolve a document id", async () => {
 		const identityConnector = new IotaIdentityConnector(
-			{ vaultConnector: TEST_VAULT_CONNECTOR, walletConnector: TEST_WALLET_CONNECTOR },
+			{ vaultConnector: TEST_VAULT_CONNECTOR },
 			{
 				clientOptions: TEST_CLIENT_OPTIONS,
-				walletMnemonicId: TEST_MNEMONIC_NAME,
-				addressIndex: TEST_IDENTITY_ADDRESS_INDEX
+				vaultMnemonicId: TEST_MNEMONIC_NAME
 			}
 		);
 
@@ -225,11 +221,10 @@ describe("IotaIdentityConnector", () => {
 
 	test("can fail to add a verification method with no document id", async () => {
 		const identityConnector = new IotaIdentityConnector(
-			{ vaultConnector: TEST_VAULT_CONNECTOR, walletConnector: TEST_WALLET_CONNECTOR },
+			{ vaultConnector: TEST_VAULT_CONNECTOR },
 			{
 				clientOptions: TEST_CLIENT_OPTIONS,
-				walletMnemonicId: TEST_MNEMONIC_NAME,
-				addressIndex: TEST_IDENTITY_ADDRESS_INDEX
+				vaultMnemonicId: TEST_MNEMONIC_NAME
 			}
 		);
 		await expect(
@@ -251,11 +246,10 @@ describe("IotaIdentityConnector", () => {
 
 	test("can fail to add a verification method with no document verification method type", async () => {
 		const identityConnector = new IotaIdentityConnector(
-			{ vaultConnector: TEST_VAULT_CONNECTOR, walletConnector: TEST_WALLET_CONNECTOR },
+			{ vaultConnector: TEST_VAULT_CONNECTOR },
 			{
 				clientOptions: TEST_CLIENT_OPTIONS,
-				walletMnemonicId: TEST_MNEMONIC_NAME,
-				addressIndex: TEST_IDENTITY_ADDRESS_INDEX
+				vaultMnemonicId: TEST_MNEMONIC_NAME
 			}
 		);
 		await expect(
@@ -277,11 +271,10 @@ describe("IotaIdentityConnector", () => {
 
 	test("can add a verification method", async () => {
 		const identityConnector = new IotaIdentityConnector(
-			{ vaultConnector: TEST_VAULT_CONNECTOR, walletConnector: TEST_WALLET_CONNECTOR },
+			{ vaultConnector: TEST_VAULT_CONNECTOR },
 			{
 				clientOptions: TEST_CLIENT_OPTIONS,
-				walletMnemonicId: TEST_MNEMONIC_NAME,
-				addressIndex: TEST_IDENTITY_ADDRESS_INDEX
+				vaultMnemonicId: TEST_MNEMONIC_NAME
 			}
 		);
 
@@ -300,46 +293,16 @@ describe("IotaIdentityConnector", () => {
 		expect(keyStore?.[0].id).toEqual(`${TEST_IDENTITY_ID}/${testDocumentId}#my-verification-id`);
 	});
 
-	test("can fail to remove a verification method with no document id", async () => {
-		const identityConnector = new IotaIdentityConnector(
-			{ vaultConnector: TEST_VAULT_CONNECTOR, walletConnector: TEST_WALLET_CONNECTOR },
-			{
-				clientOptions: TEST_CLIENT_OPTIONS,
-				walletMnemonicId: TEST_MNEMONIC_NAME,
-				addressIndex: TEST_IDENTITY_ADDRESS_INDEX
-			}
-		);
-		await expect(
-			identityConnector.removeVerificationMethod(
-				TEST_CONTEXT,
-				undefined as unknown as string,
-				undefined as unknown as string
-			)
-		).rejects.toMatchObject({
-			name: "GuardError",
-			message: "guard.string",
-			properties: {
-				property: "documentId",
-				value: "undefined"
-			}
-		});
-	});
-
 	test("can fail to remove a verification method with no verification method id", async () => {
 		const identityConnector = new IotaIdentityConnector(
-			{ vaultConnector: TEST_VAULT_CONNECTOR, walletConnector: TEST_WALLET_CONNECTOR },
+			{ vaultConnector: TEST_VAULT_CONNECTOR },
 			{
 				clientOptions: TEST_CLIENT_OPTIONS,
-				walletMnemonicId: TEST_MNEMONIC_NAME,
-				addressIndex: TEST_IDENTITY_ADDRESS_INDEX
+				vaultMnemonicId: TEST_MNEMONIC_NAME
 			}
 		);
 		await expect(
-			identityConnector.removeVerificationMethod(
-				TEST_CONTEXT,
-				"foo",
-				undefined as unknown as string
-			)
+			identityConnector.removeVerificationMethod(TEST_CONTEXT, undefined as unknown as string)
 		).rejects.toMatchObject({
 			name: "GuardError",
 			message: "guard.string",
@@ -352,11 +315,10 @@ describe("IotaIdentityConnector", () => {
 
 	test("can remove a verification method", async () => {
 		const identityConnector = new IotaIdentityConnector(
-			{ vaultConnector: TEST_VAULT_CONNECTOR, walletConnector: TEST_WALLET_CONNECTOR },
+			{ vaultConnector: TEST_VAULT_CONNECTOR },
 			{
 				clientOptions: TEST_CLIENT_OPTIONS,
-				walletMnemonicId: TEST_MNEMONIC_NAME,
-				addressIndex: TEST_IDENTITY_ADDRESS_INDEX
+				vaultMnemonicId: TEST_MNEMONIC_NAME
 			}
 		);
 
@@ -374,7 +336,7 @@ describe("IotaIdentityConnector", () => {
 			(doc.authentication?.[0] as IDidDocumentVerificationMethod).id.endsWith("test-method")
 		).toEqual(true);
 
-		await identityConnector.removeVerificationMethod(TEST_CONTEXT, testDocumentId, vm.id);
+		await identityConnector.removeVerificationMethod(TEST_CONTEXT, vm.id);
 
 		doc = await identityConnector.resolveDocument(TEST_CONTEXT, testDocumentId);
 		expect(doc.authentication).toBeUndefined();
@@ -382,11 +344,10 @@ describe("IotaIdentityConnector", () => {
 
 	test("can fail to add a service with no document id", async () => {
 		const identityConnector = new IotaIdentityConnector(
-			{ vaultConnector: TEST_VAULT_CONNECTOR, walletConnector: TEST_WALLET_CONNECTOR },
+			{ vaultConnector: TEST_VAULT_CONNECTOR },
 			{
 				clientOptions: TEST_CLIENT_OPTIONS,
-				walletMnemonicId: TEST_MNEMONIC_NAME,
-				addressIndex: TEST_IDENTITY_ADDRESS_INDEX
+				vaultMnemonicId: TEST_MNEMONIC_NAME
 			}
 		);
 		await expect(
@@ -409,11 +370,10 @@ describe("IotaIdentityConnector", () => {
 
 	test("can fail to add a service with no service id", async () => {
 		const identityConnector = new IotaIdentityConnector(
-			{ vaultConnector: TEST_VAULT_CONNECTOR, walletConnector: TEST_WALLET_CONNECTOR },
+			{ vaultConnector: TEST_VAULT_CONNECTOR },
 			{
 				clientOptions: TEST_CLIENT_OPTIONS,
-				walletMnemonicId: TEST_MNEMONIC_NAME,
-				addressIndex: TEST_IDENTITY_ADDRESS_INDEX
+				vaultMnemonicId: TEST_MNEMONIC_NAME
 			}
 		);
 		await expect(
@@ -436,11 +396,10 @@ describe("IotaIdentityConnector", () => {
 
 	test("can fail to add a service with no service type", async () => {
 		const identityConnector = new IotaIdentityConnector(
-			{ vaultConnector: TEST_VAULT_CONNECTOR, walletConnector: TEST_WALLET_CONNECTOR },
+			{ vaultConnector: TEST_VAULT_CONNECTOR },
 			{
 				clientOptions: TEST_CLIENT_OPTIONS,
-				walletMnemonicId: TEST_MNEMONIC_NAME,
-				addressIndex: TEST_IDENTITY_ADDRESS_INDEX
+				vaultMnemonicId: TEST_MNEMONIC_NAME
 			}
 		);
 		await expect(
@@ -463,11 +422,10 @@ describe("IotaIdentityConnector", () => {
 
 	test("can fail to add a service with no service endpoint", async () => {
 		const identityConnector = new IotaIdentityConnector(
-			{ vaultConnector: TEST_VAULT_CONNECTOR, walletConnector: TEST_WALLET_CONNECTOR },
+			{ vaultConnector: TEST_VAULT_CONNECTOR },
 			{
 				clientOptions: TEST_CLIENT_OPTIONS,
-				walletMnemonicId: TEST_MNEMONIC_NAME,
-				addressIndex: TEST_IDENTITY_ADDRESS_INDEX
+				vaultMnemonicId: TEST_MNEMONIC_NAME
 			}
 		);
 		await expect(
@@ -490,18 +448,17 @@ describe("IotaIdentityConnector", () => {
 
 	test("can add a service", async () => {
 		const identityConnector = new IotaIdentityConnector(
-			{ vaultConnector: TEST_VAULT_CONNECTOR, walletConnector: TEST_WALLET_CONNECTOR },
+			{ vaultConnector: TEST_VAULT_CONNECTOR },
 			{
 				clientOptions: TEST_CLIENT_OPTIONS,
-				walletMnemonicId: TEST_MNEMONIC_NAME,
-				addressIndex: TEST_IDENTITY_ADDRESS_INDEX
+				vaultMnemonicId: TEST_MNEMONIC_NAME
 			}
 		);
 
 		const service = await identityConnector.addService(
 			TEST_CONTEXT,
 			testDocumentId,
-			`${testDocumentId}#linked-domain`,
+			"linked-domain",
 			"LinkedDomains",
 			"https://bar.example.com/"
 		);
@@ -513,42 +470,16 @@ describe("IotaIdentityConnector", () => {
 		testServiceId = service?.id ?? "";
 	});
 
-	test("can fail to remove a service with no document id", async () => {
-		const identityConnector = new IotaIdentityConnector(
-			{ vaultConnector: TEST_VAULT_CONNECTOR, walletConnector: TEST_WALLET_CONNECTOR },
-			{
-				clientOptions: TEST_CLIENT_OPTIONS,
-				walletMnemonicId: TEST_MNEMONIC_NAME,
-				addressIndex: TEST_IDENTITY_ADDRESS_INDEX
-			}
-		);
-		await expect(
-			identityConnector.removeService(
-				TEST_CONTEXT,
-				undefined as unknown as string,
-				undefined as unknown as string
-			)
-		).rejects.toMatchObject({
-			name: "GuardError",
-			message: "guard.string",
-			properties: {
-				property: "documentId",
-				value: "undefined"
-			}
-		});
-	});
-
 	test("can fail to remove a service with no service id", async () => {
 		const identityConnector = new IotaIdentityConnector(
-			{ vaultConnector: TEST_VAULT_CONNECTOR, walletConnector: TEST_WALLET_CONNECTOR },
+			{ vaultConnector: TEST_VAULT_CONNECTOR },
 			{
 				clientOptions: TEST_CLIENT_OPTIONS,
-				walletMnemonicId: TEST_MNEMONIC_NAME,
-				addressIndex: TEST_IDENTITY_ADDRESS_INDEX
+				vaultMnemonicId: TEST_MNEMONIC_NAME
 			}
 		);
 		await expect(
-			identityConnector.removeService(TEST_CONTEXT, "foo", undefined as unknown as string)
+			identityConnector.removeService(TEST_CONTEXT, undefined as unknown as string)
 		).rejects.toMatchObject({
 			name: "GuardError",
 			message: "guard.string",
@@ -561,60 +492,28 @@ describe("IotaIdentityConnector", () => {
 
 	test("can remove a service", async () => {
 		const identityConnector = new IotaIdentityConnector(
-			{ vaultConnector: TEST_VAULT_CONNECTOR, walletConnector: TEST_WALLET_CONNECTOR },
+			{ vaultConnector: TEST_VAULT_CONNECTOR },
 			{
 				clientOptions: TEST_CLIENT_OPTIONS,
-				walletMnemonicId: TEST_MNEMONIC_NAME,
-				addressIndex: TEST_IDENTITY_ADDRESS_INDEX
+				vaultMnemonicId: TEST_MNEMONIC_NAME
 			}
 		);
 
-		await identityConnector.removeService(TEST_CONTEXT, testDocumentId, testServiceId);
-	});
-
-	test("can fail to create a verifiable credential with no issuer document id", async () => {
-		const identityConnector = new IotaIdentityConnector(
-			{ vaultConnector: TEST_VAULT_CONNECTOR, walletConnector: TEST_WALLET_CONNECTOR },
-			{
-				clientOptions: TEST_CLIENT_OPTIONS,
-				walletMnemonicId: TEST_MNEMONIC_NAME,
-				addressIndex: TEST_IDENTITY_ADDRESS_INDEX
-			}
-		);
-		await expect(
-			identityConnector.createVerifiableCredential<IDegree>(
-				TEST_CONTEXT,
-				undefined as unknown as string,
-				undefined as unknown as string,
-				undefined as unknown as string,
-				undefined as unknown as string[],
-				undefined as unknown as IDegree,
-				undefined as unknown as number
-			)
-		).rejects.toMatchObject({
-			name: "GuardError",
-			message: "guard.string",
-			properties: {
-				property: "issuerDocumentId",
-				value: "undefined"
-			}
-		});
+		await identityConnector.removeService(TEST_CONTEXT, testServiceId);
 	});
 
 	test("can fail to create a verifiable credential with no verification method id", async () => {
 		const identityConnector = new IotaIdentityConnector(
-			{ vaultConnector: TEST_VAULT_CONNECTOR, walletConnector: TEST_WALLET_CONNECTOR },
+			{ vaultConnector: TEST_VAULT_CONNECTOR },
 			{
 				clientOptions: TEST_CLIENT_OPTIONS,
-				walletMnemonicId: TEST_MNEMONIC_NAME,
-				addressIndex: TEST_IDENTITY_ADDRESS_INDEX
+				vaultMnemonicId: TEST_MNEMONIC_NAME
 			}
 		);
 
 		await expect(
 			identityConnector.createVerifiableCredential<IDegree>(
 				TEST_CONTEXT,
-				"foo",
 				undefined as unknown as string,
 				undefined as unknown as string,
 				undefined as unknown as string,
@@ -633,17 +532,15 @@ describe("IotaIdentityConnector", () => {
 
 	test("can fail to create a verifiable credential with no credential id", async () => {
 		const identityConnector = new IotaIdentityConnector(
-			{ vaultConnector: TEST_VAULT_CONNECTOR, walletConnector: TEST_WALLET_CONNECTOR },
+			{ vaultConnector: TEST_VAULT_CONNECTOR },
 			{
 				clientOptions: TEST_CLIENT_OPTIONS,
-				walletMnemonicId: TEST_MNEMONIC_NAME,
-				addressIndex: TEST_IDENTITY_ADDRESS_INDEX
+				vaultMnemonicId: TEST_MNEMONIC_NAME
 			}
 		);
 		await expect(
 			identityConnector.createVerifiableCredential<IDegree>(
 				TEST_CONTEXT,
-				"foo",
 				"foo",
 				undefined as unknown as string,
 				undefined as unknown as string[],
@@ -662,17 +559,15 @@ describe("IotaIdentityConnector", () => {
 
 	test("can fail to create a verifiable credential with no schema types", async () => {
 		const identityConnector = new IotaIdentityConnector(
-			{ vaultConnector: TEST_VAULT_CONNECTOR, walletConnector: TEST_WALLET_CONNECTOR },
+			{ vaultConnector: TEST_VAULT_CONNECTOR },
 			{
 				clientOptions: TEST_CLIENT_OPTIONS,
-				walletMnemonicId: TEST_MNEMONIC_NAME,
-				addressIndex: TEST_IDENTITY_ADDRESS_INDEX
+				vaultMnemonicId: TEST_MNEMONIC_NAME
 			}
 		);
 		await expect(
 			identityConnector.createVerifiableCredential<IDegree>(
 				TEST_CONTEXT,
-				"foo",
 				"foo",
 				"foo",
 				undefined as unknown as string,
@@ -691,17 +586,15 @@ describe("IotaIdentityConnector", () => {
 
 	test("can fail to create a verifiable credential with no subject", async () => {
 		const identityConnector = new IotaIdentityConnector(
-			{ vaultConnector: TEST_VAULT_CONNECTOR, walletConnector: TEST_WALLET_CONNECTOR },
+			{ vaultConnector: TEST_VAULT_CONNECTOR },
 			{
 				clientOptions: TEST_CLIENT_OPTIONS,
-				walletMnemonicId: TEST_MNEMONIC_NAME,
-				addressIndex: TEST_IDENTITY_ADDRESS_INDEX
+				vaultMnemonicId: TEST_MNEMONIC_NAME
 			}
 		);
 		await expect(
 			identityConnector.createVerifiableCredential<IDegree>(
 				TEST_CONTEXT,
-				"foo",
 				"foo",
 				"foo",
 				"UniversityDegreeCredential",
@@ -720,18 +613,16 @@ describe("IotaIdentityConnector", () => {
 
 	test("can fail to create a verifiable credential with no revocation index", async () => {
 		const identityConnector = new IotaIdentityConnector(
-			{ vaultConnector: TEST_VAULT_CONNECTOR, walletConnector: TEST_WALLET_CONNECTOR },
+			{ vaultConnector: TEST_VAULT_CONNECTOR },
 			{
 				clientOptions: TEST_CLIENT_OPTIONS,
-				walletMnemonicId: TEST_MNEMONIC_NAME,
-				addressIndex: TEST_IDENTITY_ADDRESS_INDEX
+				vaultMnemonicId: TEST_MNEMONIC_NAME
 			}
 		);
 
 		await expect(
 			identityConnector.createVerifiableCredential<IDegree>(
 				TEST_CONTEXT,
-				"foo",
 				"foo",
 				"foo",
 				"UniversityDegreeCredential",
@@ -754,27 +645,27 @@ describe("IotaIdentityConnector", () => {
 
 	test("can create a verifiable credential", async () => {
 		const identityConnector = new IotaIdentityConnector(
-			{ vaultConnector: TEST_VAULT_CONNECTOR, walletConnector: TEST_WALLET_CONNECTOR },
+			{ vaultConnector: TEST_VAULT_CONNECTOR },
 			{
 				clientOptions: TEST_CLIENT_OPTIONS,
-				walletMnemonicId: TEST_MNEMONIC_NAME,
-				addressIndex: TEST_IDENTITY_ADDRESS_INDEX
+				vaultMnemonicId: TEST_MNEMONIC_NAME
 			}
 		);
 
-		const holderDocument = await identityConnector.createDocument(TEST_CONTEXT);
+		const holderDocument = await identityConnector.createDocument(
+			TEST_CONTEXT,
+			TEST_IDENTITY_ADDRESS_BECH32
+		);
 		const holderVm = await identityConnector.addVerificationMethod(
 			TEST_CONTEXT,
 			holderDocument.id,
 			"assertionMethod",
 			"my-presentation-id"
 		);
-		holderDocumentId = holderDocument.id;
 		holderDocumentVerificationMethodId = holderVm.id;
 
 		const result = await identityConnector.createVerifiableCredential(
 			TEST_CONTEXT,
-			testDocumentId,
 			testDocumentVerificationMethodId,
 			"https://example.edu/credentials/3732",
 			"UniversityDegreeCredential",
@@ -813,11 +704,10 @@ describe("IotaIdentityConnector", () => {
 
 	test("can fail to validate a verifiable credential with no jwt", async () => {
 		const identityConnector = new IotaIdentityConnector(
-			{ vaultConnector: TEST_VAULT_CONNECTOR, walletConnector: TEST_WALLET_CONNECTOR },
+			{ vaultConnector: TEST_VAULT_CONNECTOR },
 			{
 				clientOptions: TEST_CLIENT_OPTIONS,
-				walletMnemonicId: TEST_MNEMONIC_NAME,
-				addressIndex: TEST_IDENTITY_ADDRESS_INDEX
+				vaultMnemonicId: TEST_MNEMONIC_NAME
 			}
 		);
 
@@ -835,11 +725,10 @@ describe("IotaIdentityConnector", () => {
 
 	test("can validate a verifiable credential", async () => {
 		const identityConnector = new IotaIdentityConnector(
-			{ vaultConnector: TEST_VAULT_CONNECTOR, walletConnector: TEST_WALLET_CONNECTOR },
+			{ vaultConnector: TEST_VAULT_CONNECTOR },
 			{
 				clientOptions: TEST_CLIENT_OPTIONS,
-				walletMnemonicId: TEST_MNEMONIC_NAME,
-				addressIndex: TEST_IDENTITY_ADDRESS_INDEX
+				vaultMnemonicId: TEST_MNEMONIC_NAME
 			}
 		);
 
@@ -873,11 +762,10 @@ describe("IotaIdentityConnector", () => {
 
 	test("can fail to revoke a verifiable credential with no documentId", async () => {
 		const identityConnector = new IotaIdentityConnector(
-			{ vaultConnector: TEST_VAULT_CONNECTOR, walletConnector: TEST_WALLET_CONNECTOR },
+			{ vaultConnector: TEST_VAULT_CONNECTOR },
 			{
 				clientOptions: TEST_CLIENT_OPTIONS,
-				walletMnemonicId: TEST_MNEMONIC_NAME,
-				addressIndex: TEST_IDENTITY_ADDRESS_INDEX
+				vaultMnemonicId: TEST_MNEMONIC_NAME
 			}
 		);
 
@@ -899,11 +787,10 @@ describe("IotaIdentityConnector", () => {
 
 	test("can fail to revoke a verifiable credential with no credentialIndices", async () => {
 		const identityConnector = new IotaIdentityConnector(
-			{ vaultConnector: TEST_VAULT_CONNECTOR, walletConnector: TEST_WALLET_CONNECTOR },
+			{ vaultConnector: TEST_VAULT_CONNECTOR },
 			{
 				clientOptions: TEST_CLIENT_OPTIONS,
-				walletMnemonicId: TEST_MNEMONIC_NAME,
-				addressIndex: TEST_IDENTITY_ADDRESS_INDEX
+				vaultMnemonicId: TEST_MNEMONIC_NAME
 			}
 		);
 
@@ -925,11 +812,10 @@ describe("IotaIdentityConnector", () => {
 
 	test("can revoke a verifiable credential", async () => {
 		const identityConnector = new IotaIdentityConnector(
-			{ vaultConnector: TEST_VAULT_CONNECTOR, walletConnector: TEST_WALLET_CONNECTOR },
+			{ vaultConnector: TEST_VAULT_CONNECTOR },
 			{
 				clientOptions: TEST_CLIENT_OPTIONS,
-				walletMnemonicId: TEST_MNEMONIC_NAME,
-				addressIndex: TEST_IDENTITY_ADDRESS_INDEX
+				vaultMnemonicId: TEST_MNEMONIC_NAME
 			}
 		);
 
@@ -946,11 +832,10 @@ describe("IotaIdentityConnector", () => {
 
 	test("can fail to unrevoke a verifiable credential with no documentId", async () => {
 		const identityConnector = new IotaIdentityConnector(
-			{ vaultConnector: TEST_VAULT_CONNECTOR, walletConnector: TEST_WALLET_CONNECTOR },
+			{ vaultConnector: TEST_VAULT_CONNECTOR },
 			{
 				clientOptions: TEST_CLIENT_OPTIONS,
-				walletMnemonicId: TEST_MNEMONIC_NAME,
-				addressIndex: TEST_IDENTITY_ADDRESS_INDEX
+				vaultMnemonicId: TEST_MNEMONIC_NAME
 			}
 		);
 
@@ -972,11 +857,10 @@ describe("IotaIdentityConnector", () => {
 
 	test("can fail to unrevoke a verifiable credential with no credentialIndices", async () => {
 		const identityConnector = new IotaIdentityConnector(
-			{ vaultConnector: TEST_VAULT_CONNECTOR, walletConnector: TEST_WALLET_CONNECTOR },
+			{ vaultConnector: TEST_VAULT_CONNECTOR },
 			{
 				clientOptions: TEST_CLIENT_OPTIONS,
-				walletMnemonicId: TEST_MNEMONIC_NAME,
-				addressIndex: TEST_IDENTITY_ADDRESS_INDEX
+				vaultMnemonicId: TEST_MNEMONIC_NAME
 			}
 		);
 
@@ -998,11 +882,10 @@ describe("IotaIdentityConnector", () => {
 
 	test("can unrevoke a verifiable credential", async () => {
 		const identityConnector = new IotaIdentityConnector(
-			{ vaultConnector: TEST_VAULT_CONNECTOR, walletConnector: TEST_WALLET_CONNECTOR },
+			{ vaultConnector: TEST_VAULT_CONNECTOR },
 			{
 				clientOptions: TEST_CLIENT_OPTIONS,
-				walletMnemonicId: TEST_MNEMONIC_NAME,
-				addressIndex: TEST_IDENTITY_ADDRESS_INDEX
+				vaultMnemonicId: TEST_MNEMONIC_NAME
 			}
 		);
 
@@ -1017,47 +900,18 @@ describe("IotaIdentityConnector", () => {
 		expect(result.revoked).toBeFalsy();
 	});
 
-	test("can fail to create a verifiable presentation with no holder document id", async () => {
+	test("can fail to create a verifiable presentation with no presentation method id", async () => {
 		const identityConnector = new IotaIdentityConnector(
-			{ vaultConnector: TEST_VAULT_CONNECTOR, walletConnector: TEST_WALLET_CONNECTOR },
+			{ vaultConnector: TEST_VAULT_CONNECTOR },
 			{
 				clientOptions: TEST_CLIENT_OPTIONS,
-				walletMnemonicId: TEST_MNEMONIC_NAME,
-				addressIndex: TEST_IDENTITY_ADDRESS_INDEX
-			}
-		);
-		await expect(
-			identityConnector.createVerifiablePresentation(
-				TEST_CONTEXT,
-				undefined as unknown as string,
-				undefined as unknown as string,
-				undefined as unknown as string[],
-				undefined as unknown as string[]
-			)
-		).rejects.toMatchObject({
-			name: "GuardError",
-			message: "guard.string",
-			properties: {
-				property: "holderDocumentId",
-				value: "undefined"
-			}
-		});
-	});
-
-	test("can fail to create a verifiable presentation with no assertion method id", async () => {
-		const identityConnector = new IotaIdentityConnector(
-			{ vaultConnector: TEST_VAULT_CONNECTOR, walletConnector: TEST_WALLET_CONNECTOR },
-			{
-				clientOptions: TEST_CLIENT_OPTIONS,
-				walletMnemonicId: TEST_MNEMONIC_NAME,
-				addressIndex: TEST_IDENTITY_ADDRESS_INDEX
+				vaultMnemonicId: TEST_MNEMONIC_NAME
 			}
 		);
 
 		await expect(
 			identityConnector.createVerifiablePresentation(
 				TEST_CONTEXT,
-				"foo",
 				undefined as unknown as string,
 				undefined as unknown as string[],
 				undefined as unknown as string[]
@@ -1074,17 +928,15 @@ describe("IotaIdentityConnector", () => {
 
 	test("can fail to create a verifiable presentation with no types", async () => {
 		const identityConnector = new IotaIdentityConnector(
-			{ vaultConnector: TEST_VAULT_CONNECTOR, walletConnector: TEST_WALLET_CONNECTOR },
+			{ vaultConnector: TEST_VAULT_CONNECTOR },
 			{
 				clientOptions: TEST_CLIENT_OPTIONS,
-				walletMnemonicId: TEST_MNEMONIC_NAME,
-				addressIndex: TEST_IDENTITY_ADDRESS_INDEX
+				vaultMnemonicId: TEST_MNEMONIC_NAME
 			}
 		);
 		await expect(
 			identityConnector.createVerifiablePresentation(
 				TEST_CONTEXT,
-				"foo",
 				"foo",
 				undefined as unknown as string[],
 				undefined as unknown as string[]
@@ -1101,17 +953,15 @@ describe("IotaIdentityConnector", () => {
 
 	test("can fail to create a verifiable presentation with no verifiable credentials", async () => {
 		const identityConnector = new IotaIdentityConnector(
-			{ vaultConnector: TEST_VAULT_CONNECTOR, walletConnector: TEST_WALLET_CONNECTOR },
+			{ vaultConnector: TEST_VAULT_CONNECTOR },
 			{
 				clientOptions: TEST_CLIENT_OPTIONS,
-				walletMnemonicId: TEST_MNEMONIC_NAME,
-				addressIndex: TEST_IDENTITY_ADDRESS_INDEX
+				vaultMnemonicId: TEST_MNEMONIC_NAME
 			}
 		);
 		await expect(
 			identityConnector.createVerifiablePresentation(
 				TEST_CONTEXT,
-				"foo",
 				"foo",
 				["vp"],
 				undefined as unknown as string[]
@@ -1128,18 +978,16 @@ describe("IotaIdentityConnector", () => {
 
 	test("can fail to create a verifiable presentation with invalid expiry", async () => {
 		const identityConnector = new IotaIdentityConnector(
-			{ vaultConnector: TEST_VAULT_CONNECTOR, walletConnector: TEST_WALLET_CONNECTOR },
+			{ vaultConnector: TEST_VAULT_CONNECTOR },
 			{
 				clientOptions: TEST_CLIENT_OPTIONS,
-				walletMnemonicId: TEST_MNEMONIC_NAME,
-				addressIndex: TEST_IDENTITY_ADDRESS_INDEX
+				vaultMnemonicId: TEST_MNEMONIC_NAME
 			}
 		);
 
 		await expect(
 			identityConnector.createVerifiablePresentation(
 				TEST_CONTEXT,
-				"foo",
 				"foo",
 				["vp"],
 				["jwt"],
@@ -1157,17 +1005,15 @@ describe("IotaIdentityConnector", () => {
 
 	test("can create a verifiable presentation", async () => {
 		const identityConnector = new IotaIdentityConnector(
-			{ vaultConnector: TEST_VAULT_CONNECTOR, walletConnector: TEST_WALLET_CONNECTOR },
+			{ vaultConnector: TEST_VAULT_CONNECTOR },
 			{
 				clientOptions: TEST_CLIENT_OPTIONS,
-				walletMnemonicId: TEST_MNEMONIC_NAME,
-				addressIndex: TEST_IDENTITY_ADDRESS_INDEX
+				vaultMnemonicId: TEST_MNEMONIC_NAME
 			}
 		);
 
 		const result = await identityConnector.createVerifiablePresentation(
 			TEST_CONTEXT,
-			holderDocumentId,
 			holderDocumentVerificationMethodId,
 			["ExamplePresentation"],
 			[testVcJwt],
@@ -1190,11 +1036,10 @@ describe("IotaIdentityConnector", () => {
 
 	test("can fail to validate a verifiable presentation with no jwt", async () => {
 		const identityConnector = new IotaIdentityConnector(
-			{ vaultConnector: TEST_VAULT_CONNECTOR, walletConnector: TEST_WALLET_CONNECTOR },
+			{ vaultConnector: TEST_VAULT_CONNECTOR },
 			{
 				clientOptions: TEST_CLIENT_OPTIONS,
-				walletMnemonicId: TEST_MNEMONIC_NAME,
-				addressIndex: TEST_IDENTITY_ADDRESS_INDEX
+				vaultMnemonicId: TEST_MNEMONIC_NAME
 			}
 		);
 
@@ -1212,11 +1057,10 @@ describe("IotaIdentityConnector", () => {
 
 	test("can validate a verifiable presentation", async () => {
 		const identityConnector = new IotaIdentityConnector(
-			{ vaultConnector: TEST_VAULT_CONNECTOR, walletConnector: TEST_WALLET_CONNECTOR },
+			{ vaultConnector: TEST_VAULT_CONNECTOR },
 			{
 				clientOptions: TEST_CLIENT_OPTIONS,
-				walletMnemonicId: TEST_MNEMONIC_NAME,
-				addressIndex: TEST_IDENTITY_ADDRESS_INDEX
+				vaultMnemonicId: TEST_MNEMONIC_NAME
 			}
 		);
 
@@ -1237,45 +1081,17 @@ describe("IotaIdentityConnector", () => {
 		expect(result.issuers?.[0].id).toEqual(testDocumentId);
 	});
 
-	test("can fail to create a proof with no document id", async () => {
-		const identityConnector = new IotaIdentityConnector(
-			{ vaultConnector: TEST_VAULT_CONNECTOR, walletConnector: TEST_WALLET_CONNECTOR },
-			{
-				clientOptions: TEST_CLIENT_OPTIONS,
-				walletMnemonicId: TEST_MNEMONIC_NAME,
-				addressIndex: TEST_IDENTITY_ADDRESS_INDEX
-			}
-		);
-		await expect(
-			identityConnector.createProof(
-				TEST_CONTEXT,
-				undefined as unknown as string,
-				undefined as unknown as string,
-				undefined as unknown as Uint8Array
-			)
-		).rejects.toMatchObject({
-			name: "GuardError",
-			message: "guard.string",
-			properties: {
-				property: "documentId",
-				value: "undefined"
-			}
-		});
-	});
-
 	test("can fail to create a proof with no verificationMethodId", async () => {
 		const identityConnector = new IotaIdentityConnector(
-			{ vaultConnector: TEST_VAULT_CONNECTOR, walletConnector: TEST_WALLET_CONNECTOR },
+			{ vaultConnector: TEST_VAULT_CONNECTOR },
 			{
 				clientOptions: TEST_CLIENT_OPTIONS,
-				walletMnemonicId: TEST_MNEMONIC_NAME,
-				addressIndex: TEST_IDENTITY_ADDRESS_INDEX
+				vaultMnemonicId: TEST_MNEMONIC_NAME
 			}
 		);
 		await expect(
 			identityConnector.createProof(
 				TEST_CONTEXT,
-				"foo",
 				undefined as unknown as string,
 				undefined as unknown as Uint8Array
 			)
@@ -1291,15 +1107,14 @@ describe("IotaIdentityConnector", () => {
 
 	test("can fail to create a proof with no bytes", async () => {
 		const identityConnector = new IotaIdentityConnector(
-			{ vaultConnector: TEST_VAULT_CONNECTOR, walletConnector: TEST_WALLET_CONNECTOR },
+			{ vaultConnector: TEST_VAULT_CONNECTOR },
 			{
 				clientOptions: TEST_CLIENT_OPTIONS,
-				walletMnemonicId: TEST_MNEMONIC_NAME,
-				addressIndex: TEST_IDENTITY_ADDRESS_INDEX
+				vaultMnemonicId: TEST_MNEMONIC_NAME
 			}
 		);
 		await expect(
-			identityConnector.createProof(TEST_CONTEXT, "foo", "foo", undefined as unknown as Uint8Array)
+			identityConnector.createProof(TEST_CONTEXT, "foo", undefined as unknown as Uint8Array)
 		).rejects.toMatchObject({
 			name: "GuardError",
 			message: "guard.uint8Array",
@@ -1312,16 +1127,14 @@ describe("IotaIdentityConnector", () => {
 
 	test("can create a proof", async () => {
 		const identityConnector = new IotaIdentityConnector(
-			{ vaultConnector: TEST_VAULT_CONNECTOR, walletConnector: TEST_WALLET_CONNECTOR },
+			{ vaultConnector: TEST_VAULT_CONNECTOR },
 			{
 				clientOptions: TEST_CLIENT_OPTIONS,
-				walletMnemonicId: TEST_MNEMONIC_NAME,
-				addressIndex: TEST_IDENTITY_ADDRESS_INDEX
+				vaultMnemonicId: TEST_MNEMONIC_NAME
 			}
 		);
 		const proof = await identityConnector.createProof(
 			TEST_CONTEXT,
-			testDocumentId,
 			testDocumentVerificationMethodId,
 			new Uint8Array([0, 1, 2, 3, 4])
 		);
@@ -1331,47 +1144,17 @@ describe("IotaIdentityConnector", () => {
 		testProofSignature = proof.value;
 	});
 
-	test("can fail to verify a proof with no document id", async () => {
-		const identityConnector = new IotaIdentityConnector(
-			{ vaultConnector: TEST_VAULT_CONNECTOR, walletConnector: TEST_WALLET_CONNECTOR },
-			{
-				clientOptions: TEST_CLIENT_OPTIONS,
-				walletMnemonicId: TEST_MNEMONIC_NAME,
-				addressIndex: TEST_IDENTITY_ADDRESS_INDEX
-			}
-		);
-		await expect(
-			identityConnector.verifyProof(
-				TEST_CONTEXT,
-				undefined as unknown as string,
-				undefined as unknown as string,
-				undefined as unknown as Uint8Array,
-				undefined as unknown as string,
-				undefined as unknown as Uint8Array
-			)
-		).rejects.toMatchObject({
-			name: "GuardError",
-			message: "guard.string",
-			properties: {
-				property: "documentId",
-				value: "undefined"
-			}
-		});
-	});
-
 	test("can fail to verify a proof with no verificationMethodId", async () => {
 		const identityConnector = new IotaIdentityConnector(
-			{ vaultConnector: TEST_VAULT_CONNECTOR, walletConnector: TEST_WALLET_CONNECTOR },
+			{ vaultConnector: TEST_VAULT_CONNECTOR },
 			{
 				clientOptions: TEST_CLIENT_OPTIONS,
-				walletMnemonicId: TEST_MNEMONIC_NAME,
-				addressIndex: TEST_IDENTITY_ADDRESS_INDEX
+				vaultMnemonicId: TEST_MNEMONIC_NAME
 			}
 		);
 		await expect(
 			identityConnector.verifyProof(
 				TEST_CONTEXT,
-				"foo",
 				undefined as unknown as string,
 				undefined as unknown as Uint8Array,
 				undefined as unknown as string,
@@ -1389,17 +1172,15 @@ describe("IotaIdentityConnector", () => {
 
 	test("can fail to verify a proof with no bytes", async () => {
 		const identityConnector = new IotaIdentityConnector(
-			{ vaultConnector: TEST_VAULT_CONNECTOR, walletConnector: TEST_WALLET_CONNECTOR },
+			{ vaultConnector: TEST_VAULT_CONNECTOR },
 			{
 				clientOptions: TEST_CLIENT_OPTIONS,
-				walletMnemonicId: TEST_MNEMONIC_NAME,
-				addressIndex: TEST_IDENTITY_ADDRESS_INDEX
+				vaultMnemonicId: TEST_MNEMONIC_NAME
 			}
 		);
 		await expect(
 			identityConnector.verifyProof(
 				TEST_CONTEXT,
-				"foo",
 				"foo",
 				undefined as unknown as Uint8Array,
 				undefined as unknown as string,
@@ -1417,17 +1198,15 @@ describe("IotaIdentityConnector", () => {
 
 	test("can fail to verify a proof with no signatureType", async () => {
 		const identityConnector = new IotaIdentityConnector(
-			{ vaultConnector: TEST_VAULT_CONNECTOR, walletConnector: TEST_WALLET_CONNECTOR },
+			{ vaultConnector: TEST_VAULT_CONNECTOR },
 			{
 				clientOptions: TEST_CLIENT_OPTIONS,
-				walletMnemonicId: TEST_MNEMONIC_NAME,
-				addressIndex: TEST_IDENTITY_ADDRESS_INDEX
+				vaultMnemonicId: TEST_MNEMONIC_NAME
 			}
 		);
 		await expect(
 			identityConnector.verifyProof(
 				TEST_CONTEXT,
-				"foo",
 				"foo",
 				Converter.utf8ToBytes("foo"),
 				undefined as unknown as string,
@@ -1445,17 +1224,15 @@ describe("IotaIdentityConnector", () => {
 
 	test("can fail to verify a proof with no signatureValue", async () => {
 		const identityConnector = new IotaIdentityConnector(
-			{ vaultConnector: TEST_VAULT_CONNECTOR, walletConnector: TEST_WALLET_CONNECTOR },
+			{ vaultConnector: TEST_VAULT_CONNECTOR },
 			{
 				clientOptions: TEST_CLIENT_OPTIONS,
-				walletMnemonicId: TEST_MNEMONIC_NAME,
-				addressIndex: TEST_IDENTITY_ADDRESS_INDEX
+				vaultMnemonicId: TEST_MNEMONIC_NAME
 			}
 		);
 		await expect(
 			identityConnector.verifyProof(
 				TEST_CONTEXT,
-				"foo",
 				"foo",
 				Converter.utf8ToBytes("foo"),
 				"foo",
@@ -1473,16 +1250,14 @@ describe("IotaIdentityConnector", () => {
 
 	test("can verify a proof", async () => {
 		const identityConnector = new IotaIdentityConnector(
-			{ vaultConnector: TEST_VAULT_CONNECTOR, walletConnector: TEST_WALLET_CONNECTOR },
+			{ vaultConnector: TEST_VAULT_CONNECTOR },
 			{
 				clientOptions: TEST_CLIENT_OPTIONS,
-				walletMnemonicId: TEST_MNEMONIC_NAME,
-				addressIndex: TEST_IDENTITY_ADDRESS_INDEX
+				vaultMnemonicId: TEST_MNEMONIC_NAME
 			}
 		);
 		const verified = await identityConnector.verifyProof(
 			TEST_CONTEXT,
-			testDocumentId,
 			testDocumentVerificationMethodId,
 			new Uint8Array([0, 1, 2, 3, 4]),
 			"Ed25519",
