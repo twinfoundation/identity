@@ -180,7 +180,8 @@ describe("IotaIdentityConnector", () => {
 		expect((testDocument.service?.[0] as IDidService)?.id).toEqual(`${testDocument.id}#revocation`);
 
 		console.debug(
-			"DID Document", `${process.env.TEST_EXPLORER_URL}addr/${Utils.aliasIdToBech32(testDocument.id.slice(13), TEST_BECH32_HRP)}?tab=DID`
+			"DID Document",
+			`${process.env.TEST_EXPLORER_URL}addr/${Utils.aliasIdToBech32(testDocument.id.slice(13), TEST_BECH32_HRP)}?tab=DID`
 		);
 	});
 

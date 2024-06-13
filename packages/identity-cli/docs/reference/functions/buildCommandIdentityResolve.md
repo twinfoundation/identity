@@ -2,7 +2,7 @@
 
 > **buildCommandIdentityResolve**(): `Command`
 
-Build the identity resolve command to the CLI.
+Build the identity resolve command for the CLI.
 
 ## Returns
 

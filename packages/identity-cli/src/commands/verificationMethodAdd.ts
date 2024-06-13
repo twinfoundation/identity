@@ -4,7 +4,7 @@ import { CLIDisplay, CLIOptions, CLIParam, CLIUtils } from "@gtsc/cli-core";
 import { Converter, I18n, Is, StringHelper } from "@gtsc/core";
 import { EntitySchemaHelper } from "@gtsc/entity";
 import { MemoryEntityStorageConnector } from "@gtsc/entity-storage-connector-memory";
-import { IotaIdentityConnector } from "@gtsc/identity-connector-iota";
+import { IotaIdentityConnector, IotaIdentityUtils } from "@gtsc/identity-connector-iota";
 import { DidVerificationMethodType } from "@gtsc/standards-w3c-did";
 import {
 	EntityStorageVaultConnector,
@@ -12,10 +12,9 @@ import {
 	VaultSecret
 } from "@gtsc/vault-connector-entity-storage";
 import { Command, Option } from "commander";
-import { IdentityCliUtils } from "../identityCliUtils";
 
 /**
- * Build the verification method add command to the CLI.
+ * Build the verification method add command for the CLI.
  * @returns The command.
  */
 export function buildCommandVerificationMethodAdd(): Command {
@@ -207,7 +206,7 @@ export async function actionCommandVerificationMethodAdd(opts: {
 
 	CLIDisplay.value(
 		I18n.formatMessage("commands.common.labels.explore"),
-		`${StringHelper.trimTrailingSlashes(explorerEndpoint)}/addr/${IdentityCliUtils.didToAddress(did)}?tab=DID`
+		`${StringHelper.trimTrailingSlashes(explorerEndpoint)}/addr/${IotaIdentityUtils.didToAddress(did)}?tab=DID`
 	);
 
 	CLIDisplay.break();

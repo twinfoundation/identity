@@ -4,17 +4,16 @@ import { CLIDisplay, CLIOptions, CLIParam } from "@gtsc/cli-core";
 import { Converter, I18n, StringHelper } from "@gtsc/core";
 import { EntitySchemaHelper } from "@gtsc/entity";
 import { MemoryEntityStorageConnector } from "@gtsc/entity-storage-connector-memory";
-import { IotaIdentityConnector } from "@gtsc/identity-connector-iota";
+import { IotaIdentityConnector, IotaIdentityUtils } from "@gtsc/identity-connector-iota";
 import {
 	EntityStorageVaultConnector,
 	VaultKey,
 	VaultSecret
 } from "@gtsc/vault-connector-entity-storage";
 import { Command } from "commander";
-import { IdentityCliUtils } from "../identityCliUtils";
 
 /**
- * Build the service remove command to the CLI.
+ * Build the service remove command for the CLI.
  * @returns The command.
  */
 export function buildCommandServiceRemove(): Command {
@@ -118,7 +117,7 @@ export async function actionCommandServiceRemove(opts: {
 
 	CLIDisplay.value(
 		I18n.formatMessage("commands.common.labels.explore"),
-		`${StringHelper.trimTrailingSlashes(explorerEndpoint)}/addr/${IdentityCliUtils.didToAddress(id.split("#")[0])}?tab=DID`
+		`${StringHelper.trimTrailingSlashes(explorerEndpoint)}/addr/${IotaIdentityUtils.didToAddress(id.split("#")[0])}?tab=DID`
 	);
 
 	CLIDisplay.break();

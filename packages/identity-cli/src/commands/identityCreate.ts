@@ -4,17 +4,16 @@ import { CLIDisplay, CLIOptions, CLIParam, CLIUtils } from "@gtsc/cli-core";
 import { Converter, I18n, Is, StringHelper } from "@gtsc/core";
 import { EntitySchemaHelper } from "@gtsc/entity";
 import { MemoryEntityStorageConnector } from "@gtsc/entity-storage-connector-memory";
-import { IotaIdentityConnector } from "@gtsc/identity-connector-iota";
+import { IotaIdentityConnector, IotaIdentityUtils } from "@gtsc/identity-connector-iota";
 import {
 	EntityStorageVaultConnector,
 	VaultKey,
 	VaultSecret
 } from "@gtsc/vault-connector-entity-storage";
 import { Command } from "commander";
-import { IdentityCliUtils } from "../identityCliUtils";
 
 /**
- * Build the identity create command to the CLI.
+ * Build the identity create command for the CLI.
  * @returns The command.
  */
 export function buildCommandIdentityCreate(): Command {
@@ -140,7 +139,7 @@ export async function actionCommandIdentityCreate(opts: {
 
 	CLIDisplay.value(
 		I18n.formatMessage("commands.common.labels.explore"),
-		`${StringHelper.trimTrailingSlashes(explorerEndpoint)}/addr/${IdentityCliUtils.didToAddress(document.id)}?tab=DID`
+		`${StringHelper.trimTrailingSlashes(explorerEndpoint)}/addr/${IotaIdentityUtils.didToAddress(document.id)}?tab=DID`
 	);
 	CLIDisplay.break();
 

@@ -14,7 +14,7 @@ import { VaultKeyType } from "@gtsc/vault-models";
 import { Command } from "commander";
 
 /**
- * Build the proof create command to the CLI.
+ * Build the proof create command for the CLI.
  * @returns The command.
  */
 export function buildCommandProofCreate(): Command {

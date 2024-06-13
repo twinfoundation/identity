@@ -13,7 +13,7 @@ import {
 import { Command } from "commander";
 
 /**
- * Build the verifiable credential unrevoke command to the CLI.
+ * Build the verifiable credential unrevoke command for the CLI.
  * @returns The command.
  */
 export function buildCommandVerifiableCredentialUnrevoke(): Command {

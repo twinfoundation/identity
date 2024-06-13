@@ -2,7 +2,7 @@
 
 > **buildCommandVerifiableCredentialCreate**(): `Command`
 
-Build the verifiable credential create command to the CLI.
+Build the verifiable credential create command for the CLI.
 
 ## Returns
 

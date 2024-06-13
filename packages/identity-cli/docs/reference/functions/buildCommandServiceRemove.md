@@ -2,7 +2,7 @@
 
 > **buildCommandServiceRemove**(): `Command`
 
-Build the service remove command to the CLI.
+Build the service remove command for the CLI.
 
 ## Returns
 

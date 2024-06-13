@@ -113,7 +113,8 @@ export const TEST_IDENTITY_ADDRESS_BECH32 = addresses[0];
  */
 export async function setupTestEnv(): Promise<void> {
 	console.debug(
-		"Identity Address", `${process.env.TEST_EXPLORER_URL}addr/${TEST_IDENTITY_ADDRESS_BECH32}`
+		"Identity Address",
+		`${process.env.TEST_EXPLORER_URL}addr/${TEST_IDENTITY_ADDRESS_BECH32}`
 	);
 	await TEST_WALLET_CONNECTOR.ensureBalance(
 		TEST_CONTEXT,

@@ -2,7 +2,7 @@
 
 > **buildCommandProofCreate**(): `Command`
 
-Build the proof create command to the CLI.
+Build the proof create command for the CLI.
 
 ## Returns
 

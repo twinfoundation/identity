@@ -2,7 +2,7 @@
 
 > **buildCommandServiceAdd**(): `Command`
 
-Build the service add command to the CLI.
+Build the service add command for the CLI.
 
 ## Returns
 
