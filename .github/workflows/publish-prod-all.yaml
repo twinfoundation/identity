@@ -21,7 +21,7 @@ jobs:
             identity-connector-iota,
             identity-service,
             identity-rest-client,
-            identity-rest-cli
+            identity-cli
           ]
 
     steps:
