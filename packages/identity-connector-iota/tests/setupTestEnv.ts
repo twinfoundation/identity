@@ -17,7 +17,7 @@ import { IotaFaucetConnector, IotaWalletConnector } from "@gtsc/wallet-connector
 import type { IClientOptions } from "@iota/sdk-wasm/node/lib/index.js";
 import * as dotenv from "dotenv";
 
-process.stdout.write("Setting up test environment from .env and .env.dev files\n");
+console.debug("Setting up test environment from .env and .env.dev files");
 
 dotenv.config({ path: [path.join(__dirname, ".env"), path.join(__dirname, ".env.dev")] });
 
@@ -112,8 +112,8 @@ export const TEST_IDENTITY_ADDRESS_BECH32 = addresses[0];
  * Setup the test environment.
  */
 export async function setupTestEnv(): Promise<void> {
-	process.stdout.write(
-		`Identity Address: ${process.env.TEST_EXPLORER_URL}addr/${TEST_IDENTITY_ADDRESS_BECH32}\n`
+	console.debug(
+		"Identity Address", `${process.env.TEST_EXPLORER_URL}addr/${TEST_IDENTITY_ADDRESS_BECH32}`
 	);
 	await TEST_WALLET_CONNECTOR.ensureBalance(
 		TEST_CONTEXT,
