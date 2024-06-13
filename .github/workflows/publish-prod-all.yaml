@@ -20,7 +20,8 @@ jobs:
             identity-connector-entity-storage,
             identity-connector-iota,
             identity-service,
-            identity-rest-client
+            identity-rest-client,
+            identity-rest-cli
           ]
 
     steps:

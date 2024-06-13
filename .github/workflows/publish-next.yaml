@@ -13,6 +13,7 @@ on:
           - identity-connector-iota
           - identity-service
           - identity-rest-client
+          - identity-rest-cli
 
 jobs:
   publish:
