@@ -117,12 +117,6 @@ export class IotaIdentityConnector implements IIdentityConnector {
 	private readonly _vaultConnector: IVaultConnector;
 
 	/**
-	 * The IOTA Identity client.
-	 * @internal
-	 */
-	private _identityClient?: IotaIdentityClient;
-
-	/**
 	 * Create a new instance of IotaIdentityConnector.
 	 * @param dependencies The dependencies for the identity connector.
 	 * @param dependencies.vaultConnector The vault for the private keys.
@@ -192,7 +186,8 @@ export class IotaIdentityConnector implements IIdentityConnector {
 		Guards.stringValue(IotaIdentityConnector._CLASS_NAME, nameof(controller), controller);
 
 		try {
-			const identityClient = await this.getIotaIdentityClient();
+			const identityClient = new IotaIdentityClient(new Client(this._config.clientOptions));
+
 			const networkHrp = await identityClient.getNetworkHrp();
 
 			const document = new IotaDocument(networkHrp);
@@ -243,7 +238,8 @@ export class IotaIdentityConnector implements IIdentityConnector {
 		Guards.stringValue(IotaIdentityConnector._CLASS_NAME, nameof(documentId), documentId);
 
 		try {
-			const identityClient = await this.getIotaIdentityClient();
+			const identityClient = new IotaIdentityClient(new Client(this._config.clientOptions));
+
 			const document = await identityClient.resolveDid(IotaDID.parse(documentId));
 			if (Is.undefined(document)) {
 				throw new NotFoundError(IotaIdentityConnector._CLASS_NAME, "documentNotFound", documentId);
@@ -299,7 +295,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 		);
 
 		try {
-			const identityClient = await this.getIotaIdentityClient();
+			const identityClient = new IotaIdentityClient(new Client(this._config.clientOptions));
 			const document = await identityClient.resolveDid(IotaDID.parse(documentId));
 
 			if (Is.undefined(document)) {
@@ -427,7 +423,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 
 			const documentId = verificationMethodId.slice(0, hashIndex);
 
-			const identityClient = await this.getIotaIdentityClient();
+			const identityClient = new IotaIdentityClient(new Client(this._config.clientOptions));
 			const document = await identityClient.resolveDid(IotaDID.parse(documentId));
 
 			if (Is.undefined(document)) {
@@ -504,7 +500,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 		Guards.stringValue(IotaIdentityConnector._CLASS_NAME, nameof(serviceEndpoint), serviceEndpoint);
 
 		try {
-			const identityClient = await this.getIotaIdentityClient();
+			const identityClient = new IotaIdentityClient(new Client(this._config.clientOptions));
 			const document = await identityClient.resolveDid(IotaDID.parse(documentId));
 
 			if (Is.undefined(document)) {
@@ -581,7 +577,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 			}
 
 			const documentId = serviceId.slice(0, hashIndex);
-			const identityClient = await this.getIotaIdentityClient();
+			const identityClient = new IotaIdentityClient(new Client(this._config.clientOptions));
 			const document = await identityClient.resolveDid(IotaDID.parse(documentId));
 
 			if (Is.undefined(document)) {
@@ -683,7 +679,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 			}
 
 			const issuerDocumentId = verificationMethodId.slice(0, hashIndex);
-			const identityClient = await this.getIotaIdentityClient();
+			const identityClient = new IotaIdentityClient(new Client(this._config.clientOptions));
 			const issuerDocument = await identityClient.resolveDid(IotaDID.parse(issuerDocumentId));
 
 			if (Is.undefined(issuerDocument)) {
@@ -803,7 +799,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 		Guards.stringValue(IotaIdentityConnector._CLASS_NAME, nameof(credentialJwt), credentialJwt);
 
 		try {
-			const identityClient = await this.getIotaIdentityClient();
+			const identityClient = new IotaIdentityClient(new Client(this._config.clientOptions));
 			const resolver = await new Resolver({ client: identityClient });
 
 			const jwt = new Jwt(credentialJwt);
@@ -888,7 +884,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 		);
 
 		try {
-			const identityClient = await this.getIotaIdentityClient();
+			const identityClient = new IotaIdentityClient(new Client(this._config.clientOptions));
 			const issuerDocument = await identityClient.resolveDid(IotaDID.parse(issuerDocumentId));
 
 			if (Is.undefined(issuerDocument)) {
@@ -960,7 +956,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 		);
 
 		try {
-			const identityClient = await this.getIotaIdentityClient();
+			const identityClient = new IotaIdentityClient(new Client(this._config.clientOptions));
 			const issuerDocument = await identityClient.resolveDid(IotaDID.parse(issuerDocumentId));
 
 			if (Is.undefined(issuerDocument)) {
@@ -1059,7 +1055,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 
 			const holderDocumentId = presentationMethodId.slice(0, hashIndex);
 
-			const identityClient = await this.getIotaIdentityClient();
+			const identityClient = new IotaIdentityClient(new Client(this._config.clientOptions));
 			const issuerDocument = await identityClient.resolveDid(IotaDID.parse(holderDocumentId));
 
 			if (Is.undefined(issuerDocument)) {
@@ -1178,7 +1174,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 		Guards.stringValue(IotaIdentityConnector._CLASS_NAME, nameof(presentationJwt), presentationJwt);
 
 		try {
-			const identityClient = await this.getIotaIdentityClient();
+			const identityClient = new IotaIdentityClient(new Client(this._config.clientOptions));
 			const resolver = await new Resolver({ client: identityClient });
 
 			const jwt = new Jwt(presentationJwt);
@@ -1317,7 +1313,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 
 			const documentId = verificationMethodId.slice(0, hashIndex);
 
-			const identityClient = await this.getIotaIdentityClient();
+			const identityClient = new IotaIdentityClient(new Client(this._config.clientOptions));
 			const document = await identityClient.resolveDid(IotaDID.parse(documentId));
 
 			if (Is.undefined(document)) {
@@ -1424,7 +1420,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 
 			const documentId = verificationMethodId.slice(0, hashIndex);
 
-			const identityClient = await this.getIotaIdentityClient();
+			const identityClient = new IotaIdentityClient(new Client(this._config.clientOptions));
 			const document = await identityClient.resolveDid(IotaDID.parse(documentId));
 
 			if (Is.undefined(document)) {
@@ -1453,20 +1449,6 @@ export class IotaIdentityConnector implements IIdentityConnector {
 	}
 
 	/**
-	 * Create the iota identity client.
-	 * @returns The client.
-	 * @internal
-	 */
-	private async getIotaIdentityClient(): Promise<IotaIdentityClient> {
-		if (!this._identityClient) {
-			const iotaClient = new Client(this._config.clientOptions);
-			this._identityClient = new IotaIdentityClient(iotaClient);
-		}
-
-		return this._identityClient;
-	}
-
-	/**
 	 * Sign and publish a document.
 	 * @param requestContext The context for the request.
 	 * @param document The document to sign and publish.
@@ -1481,7 +1463,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 		isNewDocument: boolean,
 		controller: string
 	): Promise<IDidDocument> {
-		const identityClient = await this.getIotaIdentityClient();
+		const identityClient = new IotaIdentityClient(new Client(this._config.clientOptions));
 
 		document.setMetadataUpdated(Timestamp.nowUTC());
 		const address = Utils.parseBech32Address(controller);
