@@ -9,9 +9,7 @@ import type {
 	IDidService
 } from "@gtsc/standards-w3c-did";
 import type { IVaultConnector } from "@gtsc/vault-models";
-import { Utils } from "@iota/sdk-wasm/node/lib/index.js";
 import {
-	TEST_BECH32_HRP,
 	TEST_CLIENT_OPTIONS,
 	TEST_CONTEXT,
 	TEST_IDENTITY_ADDRESS_BECH32,
@@ -23,6 +21,7 @@ import {
 	setupTestEnv
 } from "./setupTestEnv";
 import { IotaIdentityConnector } from "../src/iotaIdentityConnector";
+import { IotaIdentityUtils } from "../src/iotaIdentityUtils";
 import type { IIotaIdentityConnectorConfig } from "../src/models/IIotaIdentityConnectorConfig";
 
 const TEST_REVOCATION_INDEX = 15;
@@ -181,7 +180,7 @@ describe("IotaIdentityConnector", () => {
 
 		console.debug(
 			"DID Document",
-			`${process.env.TEST_EXPLORER_URL}addr/${Utils.aliasIdToBech32(testDocument.id.slice(13), TEST_BECH32_HRP)}?tab=DID`
+			`${process.env.TEST_EXPLORER_URL}addr/${IotaIdentityUtils.didToAddress(testDocument.id)}?tab=DID`
 		);
 	});
 
