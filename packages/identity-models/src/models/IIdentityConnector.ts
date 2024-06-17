@@ -99,7 +99,7 @@ export interface IIdentityConnector extends IService {
 	 * @returns The created verifiable credential and its token.
 	 * @throws NotFoundError if the id can not be resolved.
 	 */
-	createVerifiableCredential<T extends { id?: string }>(
+	createVerifiableCredential<T>(
 		requestContext: IRequestContext,
 		verificationMethodId: string,
 		credentialId: string,
@@ -117,7 +117,7 @@ export interface IIdentityConnector extends IService {
 	 * @param credentialJwt The credential to verify.
 	 * @returns The credential stored in the jwt and the revocation status.
 	 */
-	checkVerifiableCredential<T extends { id?: string }>(
+	checkVerifiableCredential<T>(
 		requestContext: IRequestContext,
 		credentialJwt: string
 	): Promise<{
