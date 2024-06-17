@@ -612,7 +612,7 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 	 * @returns The created verifiable credential and its token.
 	 * @throws NotFoundError if the id can not be resolved.
 	 */
-	public async createVerifiableCredential<T extends { id?: string }>(
+	public async createVerifiableCredential<T>(
 		requestContext: IRequestContext,
 		verificationMethodId: string,
 		credentialId: string,
@@ -750,18 +750,20 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 
 			if (Is.array(jwtVc.credentialSubject)) {
 				jwtVc.credentialSubject = jwtVc.credentialSubject.map(c => {
-					delete c.id;
+					ObjectHelper.propertyDelete(c, "id");
 					return c;
 				});
 			} else {
-				delete jwtVc.credentialSubject?.id;
+				ObjectHelper.propertyDelete(jwtVc.credentialSubject, "id");
 			}
 
 			const jwtPayload: IJwtPayload = {
 				iss: issuerDocumentId,
 				nbf: Math.floor(Date.now() / 1000),
 				jti: verifiableCredential.id,
-				sub: Is.array(subject) ? subject[0].id : subject.id,
+				sub: Is.array(subject)
+					? ObjectHelper.propertyGet<string>(subject[0], "id")
+					: ObjectHelper.propertyGet<string>(subject, "id"),
 				vc: jwtVc
 			};
 
@@ -799,7 +801,7 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 	 * @param credentialJwt The credential to verify.
 	 * @returns The credential stored in the jwt and the revocation status.
 	 */
-	public async checkVerifiableCredential<T extends { id?: string }>(
+	public async checkVerifiableCredential<T>(
 		requestContext: IRequestContext,
 		credentialJwt: string
 	): Promise<{

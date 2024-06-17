@@ -278,7 +278,7 @@ Create a verifiable credential for a verification method.
 
 #### Type parameters
 
-• **T** *extends* `object`
+• **T**
 
 #### Parameters
 
@@ -338,7 +338,7 @@ Check a verifiable credential is valid.
 
 #### Type parameters
 
-• **T** *extends* `object`
+• **T**
 
 #### Parameters
 

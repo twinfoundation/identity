@@ -34,7 +34,7 @@ export class CLI extends CLIBase {
 			{
 				title: "GTSC Identity",
 				appName: "gtsc-identity",
-				version: "0.0.3-next.13",
+				version: "0.0.3-next.14",
 				icon: "🌍",
 				supportsEnvFiles: true
 			},

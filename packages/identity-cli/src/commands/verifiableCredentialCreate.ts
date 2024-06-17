@@ -170,7 +170,7 @@ export async function actionCommandVerifiableCredentialCreate(opts: {
 	);
 	CLIDisplay.break();
 
-	const jsonData = await CLIUtils.readJsonFile<{ id?: string }>(subjectJson);
+	const jsonData = await CLIUtils.readJsonFile(subjectJson);
 	if (Is.undefined(jsonData)) {
 		throw new GeneralError(
 			"commands",

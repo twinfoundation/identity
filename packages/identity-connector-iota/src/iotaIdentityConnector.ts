@@ -5,10 +5,10 @@ import {
 	Converter,
 	GeneralError,
 	Guards,
-	type IError,
 	Is,
 	NotFoundError,
-	RandomHelper
+	RandomHelper,
+	type IError
 } from "@gtsc/core";
 import { Bip39, Sha256 } from "@gtsc/crypto";
 import type { IIdentityConnector } from "@gtsc/identity-models";
@@ -55,14 +55,15 @@ import {
 	Timestamp,
 	VerificationMethod,
 	verifyEd25519,
-	type IJwkParams
+	type IJwkParams,
+	type Subject
 } from "@iota/identity-wasm/node/index.js";
 import {
-	type Block,
 	Client,
 	CoinType,
-	type IBuildBlockOptions,
-	Utils
+	Utils,
+	type Block,
+	type IBuildBlockOptions
 } from "@iota/sdk-wasm/node/lib/index.js";
 import type { IIotaIdentityConnectorConfig } from "./models/IIotaIdentityConnectorConfig";
 
@@ -624,7 +625,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 	 * @returns The created verifiable credential and its token.
 	 * @throws NotFoundError if the id can not be resolved.
 	 */
-	public async createVerifiableCredential<T extends { id?: string }>(
+	public async createVerifiableCredential<T>(
 		requestContext: IRequestContext,
 		verificationMethodId: string,
 		credentialId: string,
@@ -705,7 +706,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 				id: credentialId,
 				type: schemaTypes,
 				issuer: issuerDocumentId,
-				credentialSubject: subject,
+				credentialSubject: subject as Subject,
 				credentialStatus: {
 					id: `${issuerDocument.id().toString()}#revocation`,
 					type: RevocationBitmap.type(),
@@ -774,7 +775,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 	 * @param credentialJwt The credential to verify.
 	 * @returns The credential stored in the jwt and the revocation status.
 	 */
-	public async checkVerifiableCredential<T extends { id?: string }>(
+	public async checkVerifiableCredential<T>(
 		requestContext: IRequestContext,
 		credentialJwt: string
 	): Promise<{
