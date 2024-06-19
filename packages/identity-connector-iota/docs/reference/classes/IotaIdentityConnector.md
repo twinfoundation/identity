@@ -268,7 +268,7 @@ NotFoundError if the id can not be resolved.
 
 ### createVerifiableCredential()
 
-> **createVerifiableCredential**\<`T`\>(`requestContext`, `verificationMethodId`, `credentialId`, `types`, `subject`, `contexts`, `revocationIndex`): `Promise`\<`object`\>
+> **createVerifiableCredential**\<`T`\>(`requestContext`, `verificationMethodId`, `credentialId`, `types`, `subject`, `contexts`?, `revocationIndex`?): `Promise`\<`object`\>
 
 Create a verifiable credential for a verification method.
 
@@ -298,11 +298,11 @@ The type for the data stored in the verifiable credential.
 
 The subject data to store for the credential.
 
-• **contexts**: `undefined` \| `string` \| `string`[]
+• **contexts?**: `string` \| `string`[]
 
 Additional contexts to include in the credential.
 
-• **revocationIndex**: `undefined` \| `number`
+• **revocationIndex?**: `number`
 
 The bitmap revocation index of the credential, if undefined will not have revocation status.
 
@@ -436,7 +436,7 @@ Nothing.
 
 ### createVerifiablePresentation()
 
-> **createVerifiablePresentation**(`requestContext`, `presentationMethodId`, `types`, `verifiableCredentials`, `contexts`, `expiresInMinutes`?): `Promise`\<`object`\>
+> **createVerifiablePresentation**(`requestContext`, `presentationMethodId`, `types`, `verifiableCredentials`, `contexts`?, `expiresInMinutes`?): `Promise`\<`object`\>
 
 Create a verifiable presentation from the supplied verifiable credentials.
 
@@ -458,7 +458,7 @@ The types for the data stored in the verifiable credential.
 
 The credentials to use for creating the presentation in jwt format.
 
-• **contexts**: `undefined` \| `string` \| `string`[]
+• **contexts?**: `string` \| `string`[]
 
 Additional contexts to include in the presentation.
 
