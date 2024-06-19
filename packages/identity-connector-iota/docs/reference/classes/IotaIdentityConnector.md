@@ -268,7 +268,7 @@ NotFoundError if the id can not be resolved.
 
 ### createVerifiableCredential()
 
-> **createVerifiableCredential**\<`T`\>(`requestContext`, `verificationMethodId`, `credentialId`, `schemaTypes`, `subject`, `revocationIndex`): `Promise`\<`object`\>
+> **createVerifiableCredential**\<`T`\>(`requestContext`, `verificationMethodId`, `credentialId`, `types`, `subject`, `contexts`, `revocationIndex`): `Promise`\<`object`\>
 
 Create a verifiable credential for a verification method.
 
@@ -286,21 +286,25 @@ The context for the request.
 
 The verification method id to use.
 
-• **credentialId**: `string`
+• **credentialId**: `undefined` \| `string`
 
 The id of the credential.
 
-• **schemaTypes**: `string` \| `string`[]
+• **types**: `undefined` \| `string` \| `string`[]
 
-The type of the schemas for the data stored in the verifiable credential.
+The type for the data stored in the verifiable credential.
 
 • **subject**: `T` \| `T`[]
 
 The subject data to store for the credential.
 
-• **revocationIndex**: `number`
+• **contexts**: `undefined` \| `string` \| `string`[]
 
-The bitmap revocation index of the credential.
+Additional contexts to include in the credential.
+
+• **revocationIndex**: `undefined` \| `number`
+
+The bitmap revocation index of the credential, if undefined will not have revocation status.
 
 #### Returns
 
@@ -432,7 +436,7 @@ Nothing.
 
 ### createVerifiablePresentation()
 
-> **createVerifiablePresentation**(`requestContext`, `presentationMethodId`, `schemaTypes`, `verifiableCredentials`, `expiresInMinutes`?): `Promise`\<`object`\>
+> **createVerifiablePresentation**(`requestContext`, `presentationMethodId`, `types`, `verifiableCredentials`, `contexts`, `expiresInMinutes`?): `Promise`\<`object`\>
 
 Create a verifiable presentation from the supplied verifiable credentials.
 
@@ -446,13 +450,17 @@ The context for the request.
 
 The method to associate with the presentation.
 
-• **schemaTypes**: `string` \| `string`[]
+• **types**: `undefined` \| `string` \| `string`[]
 
-The type of the schemas for the data stored in the verifiable credential.
+The types for the data stored in the verifiable credential.
 
 • **verifiableCredentials**: `string`[]
 
 The credentials to use for creating the presentation in jwt format.
+
+• **contexts**: `undefined` \| `string` \| `string`[]
+
+Additional contexts to include in the presentation.
 
 • **expiresInMinutes?**: `number`
 

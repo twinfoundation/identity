@@ -426,6 +426,7 @@ describe("EntityStorageIdentityConnector", () => {
 				undefined as unknown as string,
 				undefined as unknown as string,
 				undefined as unknown as IDegree,
+				undefined as unknown as string,
 				undefined as unknown as number
 			)
 		).rejects.toMatchObject({
@@ -433,54 +434,6 @@ describe("EntityStorageIdentityConnector", () => {
 			message: "guard.string",
 			properties: {
 				property: "verificationMethodId",
-				value: "undefined"
-			}
-		});
-	});
-
-	test("can fail to create a verifiable credential with no credential id", async () => {
-		const identityConnector = new EntityStorageIdentityConnector({
-			didDocumentEntityStorage,
-			vaultConnector
-		});
-		await expect(
-			identityConnector.createVerifiableCredential<IDegree>(
-				TEST_CONTEXT,
-				"foo",
-				undefined as unknown as string,
-				undefined as unknown as string[],
-				undefined as unknown as IDegree,
-				undefined as unknown as number
-			)
-		).rejects.toMatchObject({
-			name: "GuardError",
-			message: "guard.string",
-			properties: {
-				property: "credentialId",
-				value: "undefined"
-			}
-		});
-	});
-
-	test("can fail to create a verifiable credential with no schema types", async () => {
-		const identityConnector = new EntityStorageIdentityConnector({
-			didDocumentEntityStorage,
-			vaultConnector
-		});
-		await expect(
-			identityConnector.createVerifiableCredential<IDegree>(
-				TEST_CONTEXT,
-				"foo",
-				"foo",
-				undefined as unknown as string,
-				undefined as unknown as IDegree,
-				undefined as unknown as number
-			)
-		).rejects.toMatchObject({
-			name: "GuardError",
-			message: "guard.string",
-			properties: {
-				property: "schemaTypes",
 				value: "undefined"
 			}
 		});
@@ -498,6 +451,7 @@ describe("EntityStorageIdentityConnector", () => {
 				"foo",
 				"UniversityDegreeCredential",
 				undefined as unknown as IDegree,
+				undefined as unknown as string,
 				undefined as unknown as number
 			)
 		).rejects.toMatchObject({
@@ -505,35 +459,6 @@ describe("EntityStorageIdentityConnector", () => {
 			message: "guard.objectUndefined",
 			properties: {
 				property: "subject",
-				value: "undefined"
-			}
-		});
-	});
-
-	test("can fail to create a verifiable credential with no revocation index", async () => {
-		const identityConnector = new EntityStorageIdentityConnector({
-			didDocumentEntityStorage,
-			vaultConnector
-		});
-
-		await expect(
-			identityConnector.createVerifiableCredential<IDegree>(
-				TEST_CONTEXT,
-				"foo",
-				"foo",
-				"UniversityDegreeCredential",
-				{
-					id: "foo",
-					name: "Alice",
-					degreeName: "Bachelor of Science and Arts"
-				},
-				undefined as unknown as number
-			)
-		).rejects.toMatchObject({
-			name: "GuardError",
-			message: "guard.number",
-			properties: {
-				property: "revocationIndex",
 				value: "undefined"
 			}
 		});
@@ -561,12 +486,14 @@ describe("EntityStorageIdentityConnector", () => {
 				name: "Alice",
 				degreeName: "Bachelor of Science and Arts"
 			},
+			["https://example.com/my-schema"],
 			5
 		);
 
-		expect(result.verifiableCredential["@context"]).toEqual(
-			"https://www.w3.org/2018/credentials/v1"
-		);
+		expect(result.verifiableCredential["@context"]).toEqual([
+			"https://www.w3.org/2018/credentials/v1",
+			"https://example.com/my-schema"
+		]);
 		expect(result.verifiableCredential.id).toEqual("https://example.edu/credentials/3732");
 		expect(result.verifiableCredential.type).toContain("VerifiableCredential");
 		expect(result.verifiableCredential.type).toContain("UniversityDegreeCredential");
@@ -577,7 +504,7 @@ describe("EntityStorageIdentityConnector", () => {
 		expect(subject.id.startsWith("did:gtsc")).toBeTruthy();
 		expect(subject.degreeName).toEqual("Bachelor of Science and Arts");
 		expect(subject.name).toEqual("Alice");
-		expect(result.verifiableCredential.issuer.startsWith("did:gtsc")).toBeTruthy();
+		expect(result.verifiableCredential.issuer?.startsWith("did:gtsc")).toBeTruthy();
 		expect(result.verifiableCredential.issuanceDate).toBeDefined();
 		expect(result.verifiableCredential.credentialStatus?.id?.startsWith("did:gtsc")).toBeTruthy();
 		expect(result.verifiableCredential.credentialStatus?.type).toEqual("BitstringStatusList");
@@ -619,9 +546,10 @@ describe("EntityStorageIdentityConnector", () => {
 		);
 
 		expect(result.revoked).toBeFalsy();
-		expect(result.verifiableCredential?.["@context"]).toEqual(
-			"https://www.w3.org/2018/credentials/v1"
-		);
+		expect(result.verifiableCredential?.["@context"]).toEqual([
+			"https://www.w3.org/2018/credentials/v1",
+			"https://example.com/my-schema"
+		]);
 		expect(result.verifiableCredential?.id).toEqual("https://example.edu/credentials/3732");
 		expect(result.verifiableCredential?.type).toContain("VerifiableCredential");
 		expect(result.verifiableCredential?.type).toContain("UniversityDegreeCredential");
@@ -631,7 +559,7 @@ describe("EntityStorageIdentityConnector", () => {
 		expect(subject?.id.startsWith("did:gtsc")).toBeTruthy();
 		expect(subject?.degreeName).toEqual("Bachelor of Science and Arts");
 		expect(subject?.name).toEqual("Alice");
-		expect(result.verifiableCredential?.issuer.startsWith("did:gtsc")).toBeTruthy();
+		expect(result.verifiableCredential?.issuer?.startsWith("did:gtsc")).toBeTruthy();
 		expect(result.verifiableCredential?.issuanceDate).toBeDefined();
 		expect(result.verifiableCredential?.credentialStatus?.id?.startsWith("did:gtsc")).toBeTruthy();
 		expect(result.verifiableCredential?.credentialStatus?.type).toEqual("BitstringStatusList");
@@ -800,27 +728,6 @@ describe("EntityStorageIdentityConnector", () => {
 				TEST_CONTEXT,
 				undefined as unknown as string,
 				undefined as unknown as string[],
-				undefined as unknown as string[]
-			)
-		).rejects.toMatchObject({
-			name: "GuardError",
-			message: "guard.string",
-			properties: {
-				property: "presentationMethodId",
-				value: "undefined"
-			}
-		});
-	});
-
-	test("can fail to create a verifiable presentation with no types", async () => {
-		const identityConnector = new EntityStorageIdentityConnector({
-			didDocumentEntityStorage,
-			vaultConnector
-		});
-		await expect(
-			identityConnector.createVerifiablePresentation(
-				TEST_CONTEXT,
-				"foo",
 				undefined as unknown as string[],
 				undefined as unknown as string[]
 			)
@@ -828,7 +735,7 @@ describe("EntityStorageIdentityConnector", () => {
 			name: "GuardError",
 			message: "guard.string",
 			properties: {
-				property: "schemaTypes",
+				property: "presentationMethodId",
 				value: "undefined"
 			}
 		});
@@ -844,6 +751,7 @@ describe("EntityStorageIdentityConnector", () => {
 				TEST_CONTEXT,
 				"foo",
 				["vp"],
+				undefined as unknown as string[],
 				undefined as unknown as string[]
 			)
 		).rejects.toMatchObject({
@@ -868,6 +776,7 @@ describe("EntityStorageIdentityConnector", () => {
 				"foo",
 				["vp"],
 				["jwt"],
+				undefined as unknown as string[],
 				"foo" as unknown as number
 			)
 		).rejects.toMatchObject({
@@ -895,12 +804,14 @@ describe("EntityStorageIdentityConnector", () => {
 			testDocumentVerificationMethodId,
 			["ExamplePresentation"],
 			[testVcJwt],
+			["https://example.com/my-schema"],
 			14400
 		);
 
-		expect(result.verifiablePresentation["@context"]).toEqual(
-			"https://www.w3.org/2018/credentials/v1"
-		);
+		expect(result.verifiablePresentation["@context"]).toEqual([
+			"https://www.w3.org/2018/credentials/v1",
+			"https://example.com/my-schema"
+		]);
 		expect(result.verifiablePresentation.type).toEqual([
 			"VerifiablePresentation",
 			"ExamplePresentation"
@@ -941,9 +852,10 @@ describe("EntityStorageIdentityConnector", () => {
 		const result = await identityConnector.checkVerifiablePresentation(TEST_CONTEXT, testVpJwt);
 
 		expect(result.revoked).toBeFalsy();
-		expect(result.verifiablePresentation?.["@context"]).toEqual(
-			"https://www.w3.org/2018/credentials/v1"
-		);
+		expect(result.verifiablePresentation?.["@context"]).toEqual([
+			"https://www.w3.org/2018/credentials/v1",
+			"https://example.com/my-schema"
+		]);
 		expect(result.verifiablePresentation?.type).toEqual([
 			"VerifiablePresentation",
 			"ExamplePresentation"

@@ -619,19 +619,21 @@ export class IotaIdentityConnector implements IIdentityConnector {
 	 * @param requestContext The context for the request.
 	 * @param verificationMethodId The verification method id to use.
 	 * @param credentialId The id of the credential.
-	 * @param schemaTypes The type of the schemas for the data stored in the verifiable credential.
+	 * @param types The type for the data stored in the verifiable credential.
 	 * @param subject The subject data to store for the credential.
-	 * @param revocationIndex The bitmap revocation index of the credential.
+	 * @param contexts Additional contexts to include in the credential.
+	 * @param revocationIndex The bitmap revocation index of the credential, if undefined will not have revocation status.
 	 * @returns The created verifiable credential and its token.
 	 * @throws NotFoundError if the id can not be resolved.
 	 */
 	public async createVerifiableCredential<T>(
 		requestContext: IRequestContext,
 		verificationMethodId: string,
-		credentialId: string,
-		schemaTypes: string | string[],
+		credentialId: string | undefined,
+		types: string | string[] | undefined,
 		subject: T | T[],
-		revocationIndex: number
+		contexts: string | string[] | undefined,
+		revocationIndex: number | undefined
 	): Promise<{
 		verifiableCredential: IDidVerifiableCredential<T>;
 		jwt: string;
@@ -657,17 +659,24 @@ export class IotaIdentityConnector implements IIdentityConnector {
 			verificationMethodId
 		);
 		Guards.stringValue(IotaIdentityConnector._CLASS_NAME, nameof(credentialId), credentialId);
-		if (Is.array(schemaTypes)) {
-			Guards.arrayValue(IotaIdentityConnector._CLASS_NAME, nameof(schemaTypes), schemaTypes);
-		} else {
-			Guards.stringValue(IotaIdentityConnector._CLASS_NAME, nameof(schemaTypes), schemaTypes);
+		if (Is.array(types)) {
+			Guards.arrayValue(IotaIdentityConnector._CLASS_NAME, nameof(types), types);
+		} else if (Is.stringValue(types)) {
+			Guards.stringValue(IotaIdentityConnector._CLASS_NAME, nameof(types), types);
 		}
 		if (Is.array(subject)) {
 			Guards.arrayValue<T>(IotaIdentityConnector._CLASS_NAME, nameof(subject), subject);
 		} else {
 			Guards.object<T>(IotaIdentityConnector._CLASS_NAME, nameof(subject), subject);
 		}
-		Guards.number(IotaIdentityConnector._CLASS_NAME, nameof(revocationIndex), revocationIndex);
+		if (Is.array(contexts)) {
+			Guards.arrayValue(IotaIdentityConnector._CLASS_NAME, nameof(contexts), contexts);
+		} else if (Is.stringValue(types)) {
+			Guards.stringValue(IotaIdentityConnector._CLASS_NAME, nameof(contexts), contexts);
+		}
+		if (!Is.undefined(revocationIndex)) {
+			Guards.number(IotaIdentityConnector._CLASS_NAME, nameof(revocationIndex), revocationIndex);
+		}
 
 		try {
 			const hashIndex = verificationMethodId.indexOf("#");
@@ -702,16 +711,33 @@ export class IotaIdentityConnector implements IIdentityConnector {
 				throw new GeneralError(IotaIdentityConnector._CLASS_NAME, "publicKeyJwkMissing");
 			}
 
+			const finalTypes = [];
+			if (Is.array(types)) {
+				finalTypes.push(...types);
+			} else if (Is.stringValue(types)) {
+				finalTypes.push(types);
+			}
+
+			const finalContexts = [];
+			if (Is.array(contexts)) {
+				finalContexts.push(...contexts);
+			} else if (Is.stringValue(contexts)) {
+				finalContexts.push(contexts);
+			}
+
 			const unsignedVc = new Credential({
+				context: finalContexts,
 				id: credentialId,
-				type: schemaTypes,
+				type: finalTypes,
 				issuer: issuerDocumentId,
 				credentialSubject: subject as Subject,
-				credentialStatus: {
-					id: `${issuerDocument.id().toString()}#revocation`,
-					type: RevocationBitmap.type(),
-					revocationBitmapIndex: revocationIndex.toString()
-				}
+				credentialStatus: Is.undefined(revocationIndex)
+					? undefined
+					: {
+							id: `${issuerDocument.id().toString()}#revocation`,
+							type: RevocationBitmap.type(),
+							revocationBitmapIndex: revocationIndex.toString()
+						}
 			});
 
 			const verificationMethodKey = await this._vaultConnector.getKey(
@@ -994,8 +1020,9 @@ export class IotaIdentityConnector implements IIdentityConnector {
 	 * Create a verifiable presentation from the supplied verifiable credentials.
 	 * @param requestContext The context for the request.
 	 * @param presentationMethodId The method to associate with the presentation.
-	 * @param schemaTypes The type of the schemas for the data stored in the verifiable credential.
+	 * @param types The types for the data stored in the verifiable credential.
 	 * @param verifiableCredentials The credentials to use for creating the presentation in jwt format.
+	 * @param contexts Additional contexts to include in the presentation.
 	 * @param expiresInMinutes The time in minutes for the presentation to expire.
 	 * @returns The created verifiable presentation and its token.
 	 * @throws NotFoundError if the id can not be resolved.
@@ -1003,8 +1030,9 @@ export class IotaIdentityConnector implements IIdentityConnector {
 	public async createVerifiablePresentation(
 		requestContext: IRequestContext,
 		presentationMethodId: string,
-		schemaTypes: string | string[],
+		types: string | string[] | undefined,
 		verifiableCredentials: string[],
+		contexts: string | string[] | undefined,
 		expiresInMinutes?: number
 	): Promise<{
 		verifiablePresentation: IDidVerifiablePresentation;
@@ -1030,17 +1058,21 @@ export class IotaIdentityConnector implements IIdentityConnector {
 			nameof(presentationMethodId),
 			presentationMethodId
 		);
-		if (Is.array(schemaTypes)) {
-			Guards.arrayValue(IotaIdentityConnector._CLASS_NAME, nameof(schemaTypes), schemaTypes);
-		} else {
-			Guards.stringValue(IotaIdentityConnector._CLASS_NAME, nameof(schemaTypes), schemaTypes);
+		if (Is.array(types)) {
+			Guards.arrayValue(IotaIdentityConnector._CLASS_NAME, nameof(types), types);
+		} else if (Is.string(types)) {
+			Guards.stringValue(IotaIdentityConnector._CLASS_NAME, nameof(types), types);
 		}
 		Guards.arrayValue(
 			IotaIdentityConnector._CLASS_NAME,
 			nameof(verifiableCredentials),
 			verifiableCredentials
 		);
-
+		if (Is.array(contexts)) {
+			Guards.arrayValue(IotaIdentityConnector._CLASS_NAME, nameof(contexts), contexts);
+		} else if (Is.string(contexts)) {
+			Guards.stringValue(IotaIdentityConnector._CLASS_NAME, nameof(contexts), contexts);
+		}
 		if (!Is.undefined(expiresInMinutes)) {
 			Guards.integer(IotaIdentityConnector._CLASS_NAME, nameof(expiresInMinutes), expiresInMinutes);
 		}
@@ -1078,9 +1110,24 @@ export class IotaIdentityConnector implements IIdentityConnector {
 				throw new GeneralError(IotaIdentityConnector._CLASS_NAME, "publicKeyJwkMissing");
 			}
 
+			const finalTypes = [];
+			if (Is.array(types)) {
+				finalTypes.push(...types);
+			} else if (Is.stringValue(types)) {
+				finalTypes.push(types);
+			}
+
+			const finalContexts = [];
+			if (Is.array(contexts)) {
+				finalContexts.push(...contexts);
+			} else if (Is.stringValue(contexts)) {
+				finalContexts.push(contexts);
+			}
+
 			const unsignedVp = new Presentation({
+				context: finalContexts,
 				verifiableCredential: verifiableCredentials.map(j => new Jwt(j)),
-				type: schemaTypes,
+				type: finalTypes,
 				holder: holderDocumentId
 			});
 
@@ -1578,9 +1625,13 @@ export class IotaIdentityConnector implements IIdentityConnector {
 	private extractPayloadError(error: unknown): IError {
 		if (Is.json(error)) {
 			const obj = JSON.parse(error);
+			let message = obj.payload?.error;
+			if (message === "no input with matching ed25519 address provided") {
+				message = "There were insufficient funds to complete the operation";
+			}
 			return {
 				name: "IOTA",
-				message: obj.payload?.error
+				message
 			};
 		}
 

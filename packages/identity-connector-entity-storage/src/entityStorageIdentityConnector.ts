@@ -606,19 +606,21 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 	 * @param requestContext The context for the request.
 	 * @param verificationMethodId The verification method id to use.
 	 * @param credentialId The id of the credential.
-	 * @param schemaTypes The type of the schemas for the data stored in the verifiable credential.
+	 * @param types The type for the data stored in the verifiable credential.
 	 * @param subject The subject data to store for the credential.
-	 * @param revocationIndex The bitmap revocation index of the credential.
+	 * @param contexts Additional contexts to include in the credential.
+	 * @param revocationIndex The bitmap revocation index of the credential, if undefined will not have revocation status.
 	 * @returns The created verifiable credential and its token.
 	 * @throws NotFoundError if the id can not be resolved.
 	 */
 	public async createVerifiableCredential<T>(
 		requestContext: IRequestContext,
 		verificationMethodId: string,
-		credentialId: string,
-		schemaTypes: string | string[],
+		credentialId: string | undefined,
+		types: string | string[] | undefined,
 		subject: T | T[],
-		revocationIndex: number
+		contexts: string | string[] | undefined,
+		revocationIndex: number | undefined
 	): Promise<{
 		verifiableCredential: IDidVerifiableCredential<T>;
 		jwt: string;
@@ -643,34 +645,35 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 			nameof(verificationMethodId),
 			verificationMethodId
 		);
-		Guards.stringValue(
-			EntityStorageIdentityConnector._CLASS_NAME,
-			nameof(credentialId),
-			credentialId
-		);
-		if (Is.array(schemaTypes)) {
-			Guards.arrayValue(
-				EntityStorageIdentityConnector._CLASS_NAME,
-				nameof(schemaTypes),
-				schemaTypes
-			);
-		} else {
+		if (!Is.undefined(credentialId)) {
 			Guards.stringValue(
 				EntityStorageIdentityConnector._CLASS_NAME,
-				nameof(schemaTypes),
-				schemaTypes
+				nameof(credentialId),
+				credentialId
 			);
+		}
+		if (Is.array(types)) {
+			Guards.array(EntityStorageIdentityConnector._CLASS_NAME, nameof(types), types);
+		} else if (!Is.undefined(types)) {
+			Guards.stringValue(EntityStorageIdentityConnector._CLASS_NAME, nameof(types), types);
 		}
 		if (Is.array(subject)) {
 			Guards.arrayValue<T>(EntityStorageIdentityConnector._CLASS_NAME, nameof(subject), subject);
 		} else {
 			Guards.object<T>(EntityStorageIdentityConnector._CLASS_NAME, nameof(subject), subject);
 		}
-		Guards.number(
-			EntityStorageIdentityConnector._CLASS_NAME,
-			nameof(revocationIndex),
-			revocationIndex
-		);
+		if (Is.array(contexts)) {
+			Guards.array(EntityStorageIdentityConnector._CLASS_NAME, nameof(contexts), contexts);
+		} else if (!Is.undefined(contexts)) {
+			Guards.stringValue(EntityStorageIdentityConnector._CLASS_NAME, nameof(contexts), contexts);
+		}
+		if (!Is.undefined(revocationIndex)) {
+			Guards.number(
+				EntityStorageIdentityConnector._CLASS_NAME,
+				nameof(revocationIndex),
+				revocationIndex
+			);
+		}
 
 		try {
 			const hashIndex = verificationMethodId.indexOf("#");
@@ -717,22 +720,37 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 
 			const revocationService = issuerDidDocument.service?.find(s => s.id.endsWith("#revocation"));
 
+			const finalTypes = ["VerifiableCredential"];
+			if (Is.array(types)) {
+				finalTypes.push(...types);
+			} else if (Is.stringValue(types)) {
+				finalTypes.push(types);
+			}
+
+			const finalContexts = ["https://www.w3.org/2018/credentials/v1"];
+			if (Is.array(contexts)) {
+				finalContexts.push(...contexts);
+			} else if (Is.stringValue(contexts)) {
+				finalContexts.push(contexts);
+			}
+
 			const verifiableCredential: IDidVerifiableCredential<T> = {
-				"@context": "https://www.w3.org/2018/credentials/v1",
+				"@context": finalContexts,
 				id: credentialId,
-				type: ["VerifiableCredential", ...(Is.array(schemaTypes) ? schemaTypes : [schemaTypes])],
+				type: finalTypes,
 				credentialSubject: subject,
 				issuer: issuerDidDocument.id,
 				issuanceDate: new Date().toISOString(),
-				credentialStatus: revocationService
-					? {
-							id: revocationService.id,
-							type: Is.array(revocationService.type)
-								? revocationService.type[0]
-								: revocationService.type,
-							revocationBitmapIndex: revocationIndex.toString()
-						}
-					: undefined
+				credentialStatus:
+					revocationService && !Is.undefined(revocationIndex)
+						? {
+								id: revocationService.id,
+								type: Is.array(revocationService.type)
+									? revocationService.type[0]
+									: revocationService.type,
+								revocationBitmapIndex: revocationIndex.toString()
+							}
+						: undefined
 			};
 
 			const jwtHeader: IJwtHeader = {
@@ -1122,8 +1140,9 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 	 * Create a verifiable presentation from the supplied verifiable credentials.
 	 * @param requestContext The context for the request.
 	 * @param presentationMethodId The method to associate with the presentation.
-	 * @param schemaTypes The type of the schemas for the data stored in the verifiable credential.
+	 * @param types The types for the data stored in the verifiable credential.
 	 * @param verifiableCredentials The credentials to use for creating the presentation in jwt format.
+	 * @param contexts Additional contexts to include in the presentation.
 	 * @param expiresInMinutes The time in minutes for the presentation to expire.
 	 * @returns The created verifiable presentation and its token.
 	 * @throws NotFoundError if the id can not be resolved.
@@ -1131,8 +1150,9 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 	public async createVerifiablePresentation(
 		requestContext: IRequestContext,
 		presentationMethodId: string,
-		schemaTypes: string | string[],
+		types: string | string[] | undefined,
 		verifiableCredentials: string[],
+		contexts: string | string[] | undefined,
 		expiresInMinutes?: number
 	): Promise<{
 		verifiablePresentation: IDidVerifiablePresentation;
@@ -1158,25 +1178,21 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 			nameof(presentationMethodId),
 			presentationMethodId
 		);
-		if (Is.array(schemaTypes)) {
-			Guards.arrayValue(
-				EntityStorageIdentityConnector._CLASS_NAME,
-				nameof(schemaTypes),
-				schemaTypes
-			);
-		} else {
-			Guards.stringValue(
-				EntityStorageIdentityConnector._CLASS_NAME,
-				nameof(schemaTypes),
-				schemaTypes
-			);
+		if (Is.array(types)) {
+			Guards.arrayValue(EntityStorageIdentityConnector._CLASS_NAME, nameof(types), types);
+		} else if (Is.string(types)) {
+			Guards.stringValue(EntityStorageIdentityConnector._CLASS_NAME, nameof(types), types);
 		}
 		Guards.arrayValue(
 			EntityStorageIdentityConnector._CLASS_NAME,
 			nameof(verifiableCredentials),
 			verifiableCredentials
 		);
-
+		if (Is.array(contexts)) {
+			Guards.arrayValue(EntityStorageIdentityConnector._CLASS_NAME, nameof(contexts), contexts);
+		} else if (Is.string(contexts)) {
+			Guards.stringValue(EntityStorageIdentityConnector._CLASS_NAME, nameof(contexts), contexts);
+		}
 		if (!Is.undefined(expiresInMinutes)) {
 			Guards.integer(
 				EntityStorageIdentityConnector._CLASS_NAME,
@@ -1227,11 +1243,23 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 				throw new GeneralError(EntityStorageIdentityConnector._CLASS_NAME, "publicKeyJwkMissing");
 			}
 
+			const finalTypes = ["VerifiablePresentation"];
+			if (Is.array(types)) {
+				finalTypes.push(...types);
+			} else if (Is.stringValue(types)) {
+				finalTypes.push(types);
+			}
+
+			const finalContexts = ["https://www.w3.org/2018/credentials/v1"];
+			if (Is.array(contexts)) {
+				finalContexts.push(...contexts);
+			} else if (Is.stringValue(contexts)) {
+				finalContexts.push(contexts);
+			}
+
 			const verifiablePresentation: IDidVerifiablePresentation = {
-				"@context": "https://www.w3.org/2018/credentials/v1",
-				type: ["VerifiablePresentation"].concat(
-					Is.array(schemaTypes) ? schemaTypes : [schemaTypes]
-				),
+				"@context": finalContexts,
+				type: finalTypes,
 				verifiableCredential: verifiableCredentials,
 				holder: holderDocumentId
 			};

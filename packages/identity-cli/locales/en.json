@@ -169,13 +169,17 @@
 					"param": "--credential-id '<'credential-id'>'",
 					"description": "The credential id which uniquely identifies the credential."
 				},
-				"schema-types": {
-					"param": "--schema-types [schema-types...]",
-					"description": "The list of schema-types to include in the verifiable credential."
+				"types": {
+					"param": "--types [types...]",
+					"description": "The list of types to include in the verifiable credential."
 				},
 				"subject-json": {
 					"param": "--subject-json '<'subject-json'>'",
 					"description": "A JSON file to read which includes the data for the verifiable credential."
+				},
+				"contexts": {
+					"param": "--contexts [contexts...]",
+					"description": "The list of contexts to include in the verifiable credential."
 				},
 				"revocation-index": {
 					"param": "--revocation-index '<'revocation-index'>'",
@@ -189,7 +193,8 @@
 			"labels": {
 				"verificationMethodId": "Verification Method Id",
 				"credentialId": "Credential Id",
-				"schemaTypes": "Schema Types",
+				"types": "Types",
+				"contexts": "Contexts",
 				"subjectJson": "Subject JSON",
 				"revocationIndex": "Revocation Index",
 				"verifiableCredential": "Verifiable Credential"

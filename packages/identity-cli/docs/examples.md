@@ -158,7 +158,7 @@ This command will generate a verifiable credential using the specified verificat
 ```
 
 ```shell
-gtsc-identity verifiable-credential-create --load-env config.env verification-method.env --id !DID_VERIFICATION_METHOD_ID --private-key !DID_VERIFICATION_METHOD_PRIVATE_KEY --credential-id https://example.edu/credentials/3732 --schema-types UniversityDegreeCredential --subject-json subject.json --env vc.env --revocation-index 0
+gtsc-identity verifiable-credential-create --load-env config.env verification-method.env --id !DID_VERIFICATION_METHOD_ID --private-key !DID_VERIFICATION_METHOD_PRIVATE_KEY --credential-id https://example.edu/credentials/3732 --types UniversityDegreeCredential --subject-json subject.json --env vc.env --revocation-index 0
 ```
 
 This will output the verifiable credential as a JSON Web Token e.g.
