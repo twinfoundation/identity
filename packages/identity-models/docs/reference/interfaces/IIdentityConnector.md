@@ -414,7 +414,7 @@ Nothing.
 
 ### createVerifiablePresentation()
 
-> **createVerifiablePresentation**(`requestContext`, `presentationMethodId`, `types`, `verifiableCredentials`, `contexts`, `expiresInMinutes`?): `Promise`\<`object`\>
+> **createVerifiablePresentation**(`requestContext`, `presentationMethodId`, `types`, `verifiableCredentials`, `contexts`?, `expiresInMinutes`?): `Promise`\<`object`\>
 
 Create a verifiable presentation from the supplied verifiable credentials.
 
@@ -436,7 +436,7 @@ The types for the data stored in the verifiable credential.
 
 The credentials to use for creating the presentation in jwt format.
 
-• **contexts**: `undefined` \| `string` \| `string`[]
+• **contexts?**: `string` \| `string`[]
 
 Additional contexts to include in the presentation.
 

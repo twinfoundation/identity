@@ -1,6 +1,6 @@
 // Copyright 2024 IOTA Stiftung.
 // SPDX-License-Identifier: Apache-2.0.
-import { CLIDisplay, CLIOptions, CLIParam, CLIUtils } from "@gtsc/cli-core";
+import { CLIDisplay, CLIOptions, CLIParam, CLIUtils, type CliOutputOptions } from "@gtsc/cli-core";
 import { Converter, I18n, Is } from "@gtsc/core";
 import { EntitySchemaHelper } from "@gtsc/entity";
 import { MemoryEntityStorageConnector } from "@gtsc/entity-storage-connector-memory";
@@ -65,25 +65,17 @@ export function buildCommandProofVerify(): Command {
  * @param opts.data The data to verify the proof for.
  * @param opts.type The type of the proof.
  * @param opts.value The proof value.
- * @param opts.console Flag to display on the console.
- * @param opts.json Output the data to a JSON file.
- * @param opts.mergeJson Merge the data to a JSON file.
- * @param opts.env Output the data to an environment file.
- * @param opts.mergeEnv Merge the data to an environment file.
  * @param opts.node The node URL.
  */
-export async function actionCommandProofVerify(opts: {
-	id: string;
-	data: string;
-	type: string;
-	value: string;
-	console: boolean;
-	json?: string;
-	mergeJson: boolean;
-	env?: string;
-	mergeEnv: boolean;
-	node: string;
-}): Promise<void> {
+export async function actionCommandProofVerify(
+	opts: {
+		id: string;
+		data: string;
+		type: string;
+		value: string;
+		node: string;
+	} & CliOutputOptions
+): Promise<void> {
 	const id: string = CLIParam.stringValue("id", opts.id);
 	const data: Uint8Array = CLIParam.hexBase64("data", opts.data);
 	const type: string = CLIParam.stringValue("type", opts.type);

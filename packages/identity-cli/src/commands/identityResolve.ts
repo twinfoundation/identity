@@ -1,6 +1,6 @@
 // Copyright 2024 IOTA Stiftung.
 // SPDX-License-Identifier: Apache-2.0.
-import { CLIDisplay, CLIOptions, CLIParam, CLIUtils } from "@gtsc/cli-core";
+import { CLIDisplay, CLIOptions, CLIParam, CLIUtils, type CliOutputOptions } from "@gtsc/cli-core";
 import { I18n, Is, StringHelper } from "@gtsc/core";
 import { EntitySchemaHelper } from "@gtsc/entity";
 import { MemoryEntityStorageConnector } from "@gtsc/entity-storage-connector-memory";
@@ -55,20 +55,16 @@ export function buildCommandIdentityResolve(): Command {
  * Action the identity resolve command.
  * @param opts The options for the command.
  * @param opts.did The identity to resolve.
- * @param opts.console Flag to display on the console.
- * @param opts.json Output the data to a JSON file.
- * @param opts.mergeJson Merge the data to a JSON file.
  * @param opts.node The node URL.
  * @param opts.explorer The explorer URL.
  */
-export async function actionCommandIdentityResolve(opts: {
-	did: string;
-	console: boolean;
-	json?: string;
-	mergeJson: boolean;
-	node: string;
-	explorer: string;
-}): Promise<void> {
+export async function actionCommandIdentityResolve(
+	opts: {
+		did: string;
+		node: string;
+		explorer: string;
+	} & CliOutputOptions
+): Promise<void> {
 	const did: string = CLIParam.stringValue("did", opts.did);
 	const nodeEndpoint: string = CLIParam.url("node", opts.node);
 	const explorerEndpoint: string = CLIParam.url("explorer", opts.explorer);
@@ -112,8 +108,7 @@ export async function actionCommandIdentityResolve(opts: {
 	if (opts.console) {
 		CLIDisplay.section(I18n.formatMessage("commands.identity-resolve.labels.didDocument"));
 
-		CLIDisplay.write(JSON.stringify(document, undefined, 2));
-		CLIDisplay.break();
+		CLIDisplay.json(document);
 		CLIDisplay.break();
 	}
 

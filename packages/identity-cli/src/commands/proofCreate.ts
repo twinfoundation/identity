@@ -1,6 +1,6 @@
 // Copyright 2024 IOTA Stiftung.
 // SPDX-License-Identifier: Apache-2.0.
-import { CLIDisplay, CLIOptions, CLIParam, CLIUtils } from "@gtsc/cli-core";
+import { CLIDisplay, CLIOptions, CLIParam, CLIUtils, type CliOutputOptions } from "@gtsc/cli-core";
 import { Converter, I18n, Is } from "@gtsc/core";
 import { EntitySchemaHelper } from "@gtsc/entity";
 import { MemoryEntityStorageConnector } from "@gtsc/entity-storage-connector-memory";
@@ -61,24 +61,16 @@ export function buildCommandProofCreate(): Command {
  * @param opts.id The id of the verification method to use for the credential.
  * @param opts.privateKey The private key for the verification method.
  * @param opts.data The data to create the proof for.
- * @param opts.console Flag to display on the console.
- * @param opts.json Output the data to a JSON file.
- * @param opts.mergeJson Merge the data to a JSON file.
- * @param opts.env Output the data to an environment file.
- * @param opts.mergeEnv Merge the data to an environment file.
  * @param opts.node The node URL.
  */
-export async function actionCommandProofCreate(opts: {
-	id: string;
-	privateKey: string;
-	data: string;
-	console: boolean;
-	json?: string;
-	mergeJson: boolean;
-	env?: string;
-	mergeEnv: boolean;
-	node: string;
-}): Promise<void> {
+export async function actionCommandProofCreate(
+	opts: {
+		id: string;
+		privateKey: string;
+		data: string;
+		node: string;
+	} & CliOutputOptions
+): Promise<void> {
 	const id: string = CLIParam.stringValue("id", opts.id);
 	const privateKey: Uint8Array = CLIParam.hexBase64("private-key", opts.privateKey);
 	const data: Uint8Array = CLIParam.hexBase64("data", opts.data);

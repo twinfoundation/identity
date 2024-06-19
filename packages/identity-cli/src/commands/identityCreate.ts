@@ -1,6 +1,6 @@
 // Copyright 2024 IOTA Stiftung.
 // SPDX-License-Identifier: Apache-2.0.
-import { CLIDisplay, CLIOptions, CLIParam, CLIUtils } from "@gtsc/cli-core";
+import { CLIDisplay, CLIOptions, CLIParam, CLIUtils, type CliOutputOptions } from "@gtsc/cli-core";
 import { Converter, I18n, Is, StringHelper } from "@gtsc/core";
 import { EntitySchemaHelper } from "@gtsc/entity";
 import { MemoryEntityStorageConnector } from "@gtsc/entity-storage-connector-memory";
@@ -60,25 +60,17 @@ export function buildCommandIdentityCreate(): Command {
  * @param opts The options for the command.
  * @param opts.controller The address to fill from the faucet.
  * @param opts.seed The private key for the controller.
- * @param opts.console Flag to display on the console.
- * @param opts.json Output the data to a JSON file.
- * @param opts.mergeJson Merge the data to a JSON file.
- * @param opts.env Output the data to an environment file.
- * @param opts.mergeEnv Merge the data to an environment file.
  * @param opts.node The node URL.
  * @param opts.explorer The explorer URL.
  */
-export async function actionCommandIdentityCreate(opts: {
-	controller: string;
-	seed: string;
-	console: boolean;
-	json?: string;
-	mergeJson: boolean;
-	env?: string;
-	mergeEnv: boolean;
-	node: string;
-	explorer: string;
-}): Promise<void> {
+export async function actionCommandIdentityCreate(
+	opts: {
+		controller: string;
+		seed: string;
+		node: string;
+		explorer: string;
+	} & CliOutputOptions
+): Promise<void> {
 	const seed: Uint8Array = CLIParam.hexBase64("seed", opts.seed);
 	const controller: string = CLIParam.bech32("controller", opts.controller);
 	const nodeEndpoint: string = CLIParam.url("node", opts.node);

@@ -659,11 +659,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 			verificationMethodId
 		);
 		if (!Is.undefined(credentialId)) {
-			Guards.stringValue(
-				IotaIdentityConnector._CLASS_NAME,
-				nameof(credentialId),
-				credentialId
-			);
+			Guards.stringValue(IotaIdentityConnector._CLASS_NAME, nameof(credentialId), credentialId);
 		}
 		if (Is.array(types)) {
 			Guards.arrayValue(IotaIdentityConnector._CLASS_NAME, nameof(types), types);

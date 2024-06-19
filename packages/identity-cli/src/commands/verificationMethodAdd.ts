@@ -1,6 +1,6 @@
 // Copyright 2024 IOTA Stiftung.
 // SPDX-License-Identifier: Apache-2.0.
-import { CLIDisplay, CLIOptions, CLIParam, CLIUtils } from "@gtsc/cli-core";
+import { CLIDisplay, CLIOptions, CLIParam, CLIUtils, type CliOutputOptions } from "@gtsc/cli-core";
 import { Converter, I18n, Is, StringHelper } from "@gtsc/core";
 import { EntitySchemaHelper } from "@gtsc/entity";
 import { MemoryEntityStorageConnector } from "@gtsc/entity-storage-connector-memory";
@@ -75,27 +75,19 @@ export function buildCommandVerificationMethodAdd(): Command {
  * @param opts.did The identity of the document to add to.
  * @param opts.type The type of the verification method to add.
  * @param opts.id The id of the verification method to add.
- * @param opts.console Flag to display on the console.
- * @param opts.json Output the data to a JSON file.
- * @param opts.mergeJson Merge the data to a JSON file.
- * @param opts.env Output the data to an environment file.
- * @param opts.mergeEnv Merge the data to an environment file.
  * @param opts.node The node URL.
  * @param opts.explorer The explorer URL.
  */
-export async function actionCommandVerificationMethodAdd(opts: {
-	seed: string;
-	did: string;
-	type: DidVerificationMethodType;
-	id?: string;
-	console: boolean;
-	json?: string;
-	mergeJson: boolean;
-	env?: string;
-	mergeEnv: boolean;
-	node: string;
-	explorer: string;
-}): Promise<void> {
+export async function actionCommandVerificationMethodAdd(
+	opts: {
+		seed: string;
+		did: string;
+		type: DidVerificationMethodType;
+		id?: string;
+		node: string;
+		explorer: string;
+	} & CliOutputOptions
+): Promise<void> {
 	const seed: Uint8Array = CLIParam.hexBase64("seed", opts.seed);
 	const did: string = CLIParam.stringValue("did", opts.did);
 	const type: DidVerificationMethodType = CLIParam.stringValue(
