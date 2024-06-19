@@ -632,8 +632,8 @@ export class IotaIdentityConnector implements IIdentityConnector {
 		credentialId: string | undefined,
 		types: string | string[] | undefined,
 		subject: T | T[],
-		contexts: string | string[] | undefined,
-		revocationIndex: number | undefined
+		contexts?: string | string[],
+		revocationIndex?: number
 	): Promise<{
 		verifiableCredential: IDidVerifiableCredential<T>;
 		jwt: string;
@@ -1032,7 +1032,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 		presentationMethodId: string,
 		types: string | string[] | undefined,
 		verifiableCredentials: string[],
-		contexts: string | string[] | undefined,
+		contexts?: string | string[],
 		expiresInMinutes?: number
 	): Promise<{
 		verifiablePresentation: IDidVerifiablePresentation;
