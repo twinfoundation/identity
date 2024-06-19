@@ -18,19 +18,23 @@ The id of the verification method to use for the credential.
 
 The private key for the verification method.
 
-• **opts.credentialId**: `string`
+• **opts.credentialId?**: `string`
 
 The id of the credential.
 
-• **opts.schemaTypes**: `string`[]
+• **opts.types?**: `string`[]
 
-The schema types for the credential.
+The types for the credential.
 
 • **opts.subjectJson**: `string`
 
 The JSON data for the subject.
 
-• **opts.revocationIndex**: `string`
+• **opts.contexts?**: `string`[]
+
+The contexts for the credential.
+
+• **opts.revocationIndex?**: `string`
 
 The revocation index for the credential.
 

@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0.
 import path from "node:path";
 import { CLIDisplay, CLIOptions, CLIParam, CLIUtils } from "@gtsc/cli-core";
-import { GeneralError, Guards, I18n, Is } from "@gtsc/core";
+import { Coerce, GeneralError, Guards, I18n, Is } from "@gtsc/core";
 import { EntitySchemaHelper } from "@gtsc/entity";
 import { MemoryEntityStorageConnector } from "@gtsc/entity-storage-connector-memory";
 import { IotaIdentityConnector } from "@gtsc/identity-connector-iota";
@@ -32,13 +32,17 @@ export function buildCommandVerifiableCredentialCreate(): Command {
 			I18n.formatMessage("commands.verifiable-credential-create.options.private-key.param"),
 			I18n.formatMessage("commands.verifiable-credential-create.options.private-key.description")
 		)
-		.requiredOption(
+		.option(
 			I18n.formatMessage("commands.verifiable-credential-create.options.credential-id.param"),
 			I18n.formatMessage("commands.verifiable-credential-create.options.credential-id.description")
 		)
-		.requiredOption(
-			I18n.formatMessage("commands.verifiable-credential-create.options.schema-types.param"),
-			I18n.formatMessage("commands.verifiable-credential-create.options.schema-types.description")
+		.option(
+			I18n.formatMessage("commands.verifiable-credential-create.options.types.param"),
+			I18n.formatMessage("commands.verifiable-credential-create.options.types.description")
+		)
+		.option(
+			I18n.formatMessage("commands.verifiable-credential-create.options.contexts.param"),
+			I18n.formatMessage("commands.verifiable-credential-create.options.contexts.description")
 		)
 		.requiredOption(
 			I18n.formatMessage("commands.verifiable-credential-create.options.subject-json.param"),
@@ -48,8 +52,7 @@ export function buildCommandVerifiableCredentialCreate(): Command {
 			I18n.formatMessage("commands.verifiable-credential-create.options.revocation-index.param"),
 			I18n.formatMessage(
 				"commands.verifiable-credential-create.options.revocation-index.description"
-			),
-			"0"
+			)
 		);
 
 	CLIOptions.output(command, {
@@ -77,8 +80,9 @@ export function buildCommandVerifiableCredentialCreate(): Command {
  * @param opts.id The id of the verification method to use for the credential.
  * @param opts.privateKey The private key for the verification method.
  * @param opts.credentialId The id of the credential.
- * @param opts.schemaTypes The schema types for the credential.
+ * @param opts.types The types for the credential.
  * @param opts.subjectJson The JSON data for the subject.
+ * @param opts.contexts The contexts for the credential.
  * @param opts.revocationIndex The revocation index for the credential.
  * @param opts.console Flag to display on the console.
  * @param opts.json Output the data to a JSON file.
@@ -90,10 +94,11 @@ export function buildCommandVerifiableCredentialCreate(): Command {
 export async function actionCommandVerifiableCredentialCreate(opts: {
 	id: string;
 	privateKey: string;
-	credentialId: string;
-	schemaTypes: string[];
+	credentialId?: string;
+	types?: string[];
 	subjectJson: string;
-	revocationIndex: string;
+	contexts?: string[];
+	revocationIndex?: string;
 	console: boolean;
 	json?: string;
 	mergeJson: boolean;
@@ -101,14 +106,20 @@ export async function actionCommandVerifiableCredentialCreate(opts: {
 	mergeEnv: boolean;
 	node: string;
 }): Promise<void> {
-	Guards.arrayValue("commands", "schema-types", opts.schemaTypes);
+	if (!Is.undefined(opts.types)) {
+		Guards.arrayValue("commands", "types", opts.types);
+	}
+	if (!Is.undefined(opts.contexts)) {
+		Guards.arrayValue("commands", "contexts", opts.contexts);
+	}
 
 	const id: string = CLIParam.stringValue("id", opts.id);
 	const privateKey: Uint8Array = CLIParam.hexBase64("private-key", opts.privateKey);
 	const credentialId: string = CLIParam.stringValue("credential-id", opts.credentialId);
-	const schemaTypes: string[] = opts.schemaTypes;
+	const types: string[] | undefined = opts.types;
+	const contexts: string[] | undefined = opts.contexts;
 	const subjectJson: string = path.resolve(CLIParam.stringValue("subject-json", opts.subjectJson));
-	const revocationIndex: number = CLIParam.integer("revocation-index", opts.revocationIndex);
+	const revocationIndex: number | undefined = Coerce.number(opts.revocationIndex);
 	const nodeEndpoint: string = CLIParam.url("node", opts.node);
 
 	CLIDisplay.value(
@@ -119,10 +130,18 @@ export async function actionCommandVerifiableCredentialCreate(opts: {
 		I18n.formatMessage("commands.verifiable-credential-create.labels.credentialId"),
 		credentialId
 	);
-	CLIDisplay.value(
-		I18n.formatMessage("commands.verifiable-credential-create.labels.schemaTypes"),
-		schemaTypes.join(",")
-	);
+	if (Is.arrayValue(types)) {
+		CLIDisplay.value(
+			I18n.formatMessage("commands.verifiable-credential-create.labels.types"),
+			types.join(",")
+		);
+	}
+	if (Is.arrayValue(contexts)) {
+		CLIDisplay.value(
+			I18n.formatMessage("commands.verifiable-credential-create.labels.contexts"),
+			contexts.join(",")
+		);
+	}
 	CLIDisplay.value(
 		I18n.formatMessage("commands.verifiable-credential-create.labels.subjectJson"),
 		subjectJson
@@ -191,8 +210,9 @@ export async function actionCommandVerifiableCredentialCreate(opts: {
 		requestContext,
 		id,
 		credentialId,
-		schemaTypes,
+		types,
 		jsonData,
+		contexts,
 		revocationIndex
 	);
 

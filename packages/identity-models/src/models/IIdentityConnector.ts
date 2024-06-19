@@ -93,19 +93,21 @@ export interface IIdentityConnector extends IService {
 	 * @param requestContext The context for the request.
 	 * @param verificationMethodId The verification method id to use.
 	 * @param credentialId The id of the credential.
-	 * @param schemaTypes The type of the schemas for the data stored in the verifiable credential.
+	 * @param types The type for the data stored in the verifiable credential.
 	 * @param subject The subject data to store for the credential.
-	 * @param revocationIndex The bitmap revocation index of the credential.
+	 * @param contexts Additional contexts to include in the credential.
+	 * @param revocationIndex The bitmap revocation index of the credential, if undefined will not have revocation status.
 	 * @returns The created verifiable credential and its token.
 	 * @throws NotFoundError if the id can not be resolved.
 	 */
 	createVerifiableCredential<T>(
 		requestContext: IRequestContext,
 		verificationMethodId: string,
-		credentialId: string,
-		schemaTypes: string | string[],
+		credentialId: string | undefined,
+		types: string | string[] | undefined,
 		subject: T | T[],
-		revocationIndex: number
+		contexts: string | string[] | undefined,
+		revocationIndex: number | undefined
 	): Promise<{
 		verifiableCredential: IDidVerifiableCredential<T>;
 		jwt: string;
@@ -155,8 +157,9 @@ export interface IIdentityConnector extends IService {
 	 * Create a verifiable presentation from the supplied verifiable credentials.
 	 * @param requestContext The context for the request.
 	 * @param presentationMethodId The method to associate with the presentation.
-	 * @param schemaTypes The type of the schemas for the data stored in the verifiable credential.
+	 * @param types The types for the data stored in the verifiable credential.
 	 * @param verifiableCredentials The credentials to use for creating the presentation in jwt format.
+	 * @param contexts Additional contexts to include in the presentation.
 	 * @param expiresInMinutes The time in minutes for the presentation to expire.
 	 * @returns The created verifiable presentation and its token.
 	 * @throws NotFoundError if the id can not be resolved.
@@ -164,8 +167,9 @@ export interface IIdentityConnector extends IService {
 	createVerifiablePresentation(
 		requestContext: IRequestContext,
 		presentationMethodId: string,
-		schemaTypes: string | string[],
+		types: string | string[] | undefined,
 		verifiableCredentials: string[],
+		contexts: string | string[] | undefined,
 		expiresInMinutes?: number
 	): Promise<{
 		verifiablePresentation: IDidVerifiablePresentation;

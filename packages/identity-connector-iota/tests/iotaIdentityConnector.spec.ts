@@ -518,6 +518,7 @@ describe("IotaIdentityConnector", () => {
 				undefined as unknown as string,
 				undefined as unknown as string,
 				undefined as unknown as IDegree,
+				undefined as unknown as string,
 				undefined as unknown as number
 			)
 		).rejects.toMatchObject({
@@ -525,60 +526,6 @@ describe("IotaIdentityConnector", () => {
 			message: "guard.string",
 			properties: {
 				property: "verificationMethodId",
-				value: "undefined"
-			}
-		});
-	});
-
-	test("can fail to create a verifiable credential with no credential id", async () => {
-		const identityConnector = new IotaIdentityConnector(
-			{ vaultConnector: TEST_VAULT_CONNECTOR },
-			{
-				clientOptions: TEST_CLIENT_OPTIONS,
-				vaultMnemonicId: TEST_MNEMONIC_NAME
-			}
-		);
-		await expect(
-			identityConnector.createVerifiableCredential<IDegree>(
-				TEST_CONTEXT,
-				"foo",
-				undefined as unknown as string,
-				undefined as unknown as string[],
-				undefined as unknown as IDegree,
-				undefined as unknown as number
-			)
-		).rejects.toMatchObject({
-			name: "GuardError",
-			message: "guard.string",
-			properties: {
-				property: "credentialId",
-				value: "undefined"
-			}
-		});
-	});
-
-	test("can fail to create a verifiable credential with no schema types", async () => {
-		const identityConnector = new IotaIdentityConnector(
-			{ vaultConnector: TEST_VAULT_CONNECTOR },
-			{
-				clientOptions: TEST_CLIENT_OPTIONS,
-				vaultMnemonicId: TEST_MNEMONIC_NAME
-			}
-		);
-		await expect(
-			identityConnector.createVerifiableCredential<IDegree>(
-				TEST_CONTEXT,
-				"foo",
-				"foo",
-				undefined as unknown as string,
-				undefined as unknown as IDegree,
-				undefined as unknown as number
-			)
-		).rejects.toMatchObject({
-			name: "GuardError",
-			message: "guard.string",
-			properties: {
-				property: "schemaTypes",
 				value: "undefined"
 			}
 		});
@@ -599,6 +546,7 @@ describe("IotaIdentityConnector", () => {
 				"foo",
 				"UniversityDegreeCredential",
 				undefined as unknown as IDegree,
+				undefined as unknown as string,
 				undefined as unknown as number
 			)
 		).rejects.toMatchObject({
@@ -606,38 +554,6 @@ describe("IotaIdentityConnector", () => {
 			message: "guard.objectUndefined",
 			properties: {
 				property: "subject",
-				value: "undefined"
-			}
-		});
-	});
-
-	test("can fail to create a verifiable credential with no revocation index", async () => {
-		const identityConnector = new IotaIdentityConnector(
-			{ vaultConnector: TEST_VAULT_CONNECTOR },
-			{
-				clientOptions: TEST_CLIENT_OPTIONS,
-				vaultMnemonicId: TEST_MNEMONIC_NAME
-			}
-		);
-
-		await expect(
-			identityConnector.createVerifiableCredential<IDegree>(
-				TEST_CONTEXT,
-				"foo",
-				"foo",
-				"UniversityDegreeCredential",
-				{
-					id: "foo",
-					name: "Alice",
-					degreeName: "Bachelor of Science and Arts"
-				},
-				undefined as unknown as number
-			)
-		).rejects.toMatchObject({
-			name: "GuardError",
-			message: "guard.number",
-			properties: {
-				property: "revocationIndex",
 				value: "undefined"
 			}
 		});
@@ -674,12 +590,14 @@ describe("IotaIdentityConnector", () => {
 				name: "Alice",
 				degreeName: "Bachelor of Science and Arts"
 			},
+			["https://example.com/my-schema"],
 			TEST_REVOCATION_INDEX
 		);
 
-		expect(result.verifiableCredential["@context"]).toEqual(
-			"https://www.w3.org/2018/credentials/v1"
-		);
+		expect(result.verifiableCredential["@context"]).toEqual([
+			"https://www.w3.org/2018/credentials/v1",
+			"https://example.com/my-schema"
+		]);
 		expect(result.verifiableCredential.id).toEqual("https://example.edu/credentials/3732");
 		expect(result.verifiableCredential.type).toContain("VerifiableCredential");
 		expect(result.verifiableCredential.type).toContain("UniversityDegreeCredential");
@@ -691,7 +609,7 @@ describe("IotaIdentityConnector", () => {
 		expect(subject?.id.startsWith("did:iota")).toBeTruthy();
 		expect(subject?.degreeName).toEqual("Bachelor of Science and Arts");
 		expect(subject?.name).toEqual("Alice");
-		expect(result.verifiableCredential.issuer.startsWith("did:iota")).toBeTruthy();
+		expect(result.verifiableCredential.issuer?.startsWith("did:iota")).toBeTruthy();
 		expect(result.verifiableCredential.issuanceDate).toBeDefined();
 		expect(result.verifiableCredential.credentialStatus?.id?.startsWith("did:iota")).toBeTruthy();
 		expect(result.verifiableCredential.credentialStatus?.type).toEqual("RevocationBitmap2022");
@@ -738,9 +656,10 @@ describe("IotaIdentityConnector", () => {
 		);
 
 		expect(result.revoked).toBeFalsy();
-		expect(result.verifiableCredential?.["@context"]).toEqual(
-			"https://www.w3.org/2018/credentials/v1"
-		);
+		expect(result.verifiableCredential?.["@context"]).toEqual([
+			"https://www.w3.org/2018/credentials/v1",
+			"https://example.com/my-schema"
+		]);
 		expect(result.verifiableCredential?.id).toEqual("https://example.edu/credentials/3732");
 		expect(result.verifiableCredential?.type).toContain("VerifiableCredential");
 		expect(result.verifiableCredential?.type).toContain("UniversityDegreeCredential");
@@ -751,7 +670,7 @@ describe("IotaIdentityConnector", () => {
 		expect(subject?.id.startsWith("did:iota")).toBeTruthy();
 		expect(subject?.degreeName).toEqual("Bachelor of Science and Arts");
 		expect(subject?.name).toEqual("Alice");
-		expect(result.verifiableCredential?.issuer.startsWith("did:iota")).toBeTruthy();
+		expect(result.verifiableCredential?.issuer?.startsWith("did:iota")).toBeTruthy();
 		expect(result.verifiableCredential?.issuanceDate).toBeDefined();
 		expect(result.verifiableCredential?.credentialStatus?.id?.startsWith("did:iota")).toBeTruthy();
 		expect(result.verifiableCredential?.credentialStatus?.type).toEqual("RevocationBitmap2022");
@@ -914,30 +833,6 @@ describe("IotaIdentityConnector", () => {
 				TEST_CONTEXT,
 				undefined as unknown as string,
 				undefined as unknown as string[],
-				undefined as unknown as string[]
-			)
-		).rejects.toMatchObject({
-			name: "GuardError",
-			message: "guard.string",
-			properties: {
-				property: "presentationMethodId",
-				value: "undefined"
-			}
-		});
-	});
-
-	test("can fail to create a verifiable presentation with no types", async () => {
-		const identityConnector = new IotaIdentityConnector(
-			{ vaultConnector: TEST_VAULT_CONNECTOR },
-			{
-				clientOptions: TEST_CLIENT_OPTIONS,
-				vaultMnemonicId: TEST_MNEMONIC_NAME
-			}
-		);
-		await expect(
-			identityConnector.createVerifiablePresentation(
-				TEST_CONTEXT,
-				"foo",
 				undefined as unknown as string[],
 				undefined as unknown as string[]
 			)
@@ -945,7 +840,7 @@ describe("IotaIdentityConnector", () => {
 			name: "GuardError",
 			message: "guard.string",
 			properties: {
-				property: "schemaTypes",
+				property: "presentationMethodId",
 				value: "undefined"
 			}
 		});
@@ -964,6 +859,7 @@ describe("IotaIdentityConnector", () => {
 				TEST_CONTEXT,
 				"foo",
 				["vp"],
+				undefined as unknown as string[],
 				undefined as unknown as string[]
 			)
 		).rejects.toMatchObject({
@@ -991,6 +887,7 @@ describe("IotaIdentityConnector", () => {
 				"foo",
 				["vp"],
 				["jwt"],
+				undefined as unknown as string[],
 				"foo" as unknown as number
 			)
 		).rejects.toMatchObject({
@@ -1017,12 +914,14 @@ describe("IotaIdentityConnector", () => {
 			holderDocumentVerificationMethodId,
 			["ExamplePresentation"],
 			[testVcJwt],
+			["https://example.com/my-schema"],
 			14400
 		);
 
-		expect(result.verifiablePresentation["@context"]).toEqual(
-			"https://www.w3.org/2018/credentials/v1"
-		);
+		expect(result.verifiablePresentation["@context"]).toEqual([
+			"https://www.w3.org/2018/credentials/v1",
+			"https://example.com/my-schema"
+		]);
 		expect(result.verifiablePresentation.type).toEqual([
 			"VerifiablePresentation",
 			"ExamplePresentation"
@@ -1067,9 +966,10 @@ describe("IotaIdentityConnector", () => {
 		const result = await identityConnector.checkVerifiablePresentation(TEST_CONTEXT, testVpJwt);
 
 		expect(result.revoked).toBeFalsy();
-		expect(result.verifiablePresentation?.["@context"]).toEqual(
-			"https://www.w3.org/2018/credentials/v1"
-		);
+		expect(result.verifiablePresentation?.["@context"]).toEqual([
+			"https://www.w3.org/2018/credentials/v1",
+			"https://example.com/my-schema"
+		]);
 		expect(result.verifiablePresentation?.type).toEqual([
 			"VerifiablePresentation",
 			"ExamplePresentation"
