@@ -10,25 +10,25 @@ Class for performing identity operations using entity storage.
 
 ### new EntityStorageIdentityConnector()
 
-> **new EntityStorageIdentityConnector**(`dependencies`, `config`?): [`EntityStorageIdentityConnector`](EntityStorageIdentityConnector.md)
+> **new EntityStorageIdentityConnector**(`options`?): [`EntityStorageIdentityConnector`](EntityStorageIdentityConnector.md)
 
 Create a new instance of EntityStorageIdentityConnector.
 
 #### Parameters
 
-• **dependencies**
+• **options?**
 
 The dependencies for the identity connector.
 
-• **dependencies.didDocumentEntityStorage**: `IEntityStorageConnector`\<[`IdentityDocument`](IdentityDocument.md)\>
+• **options.didDocumentEntityStorageType?**: `string`
 
-The entity storage for the did documents.
+The entity storage for the did documents, defaults to "identity-document".
 
-• **dependencies.vaultConnector?**: `IVaultConnector`
+• **options.vaultConnectorType?**: `string`
 
-The vault for the private keys.
+The vault for the private keys, defaults to "vault".
 
-• **config?**: [`IEntityStorageIdentityConnectorConfig`](../interfaces/IEntityStorageIdentityConnectorConfig.md)
+• **options.config?**: [`IEntityStorageIdentityConnectorConfig`](../interfaces/IEntityStorageIdentityConnectorConfig.md)
 
 The configuration for the connector.
 

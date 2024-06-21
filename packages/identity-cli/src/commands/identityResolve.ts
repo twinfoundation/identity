@@ -2,15 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0.
 import { CLIDisplay, CLIOptions, CLIParam, CLIUtils, type CliOutputOptions } from "@gtsc/cli-core";
 import { I18n, Is, StringHelper } from "@gtsc/core";
-import { EntitySchemaHelper } from "@gtsc/entity";
-import { MemoryEntityStorageConnector } from "@gtsc/entity-storage-connector-memory";
 import { IotaIdentityConnector, IotaIdentityUtils } from "@gtsc/identity-connector-iota";
-import {
-	EntityStorageVaultConnector,
-	VaultKey,
-	VaultSecret
-} from "@gtsc/vault-connector-entity-storage";
 import { Command } from "commander";
+import { setupVault } from "./setupCommands";
 
 /**
  * Build the identity resolve command for the CLI.
@@ -74,26 +68,16 @@ export async function actionCommandIdentityResolve(
 	CLIDisplay.value(I18n.formatMessage("commands.common.labels.explorer"), explorerEndpoint);
 	CLIDisplay.break();
 
-	const vaultConnector = new EntityStorageVaultConnector({
-		vaultKeyEntityStorageConnector: new MemoryEntityStorageConnector<VaultKey>(
-			EntitySchemaHelper.getSchema(VaultKey)
-		),
-		vaultSecretEntityStorageConnector: new MemoryEntityStorageConnector<VaultSecret>(
-			EntitySchemaHelper.getSchema(VaultSecret)
-		)
-	});
+	setupVault();
 
-	const iotaIdentityConnector = new IotaIdentityConnector(
-		{
-			vaultConnector
-		},
-		{
+	const iotaIdentityConnector = new IotaIdentityConnector({
+		config: {
 			clientOptions: {
 				nodes: [nodeEndpoint],
 				localPow: true
 			}
 		}
-	);
+	});
 
 	CLIDisplay.task(I18n.formatMessage("commands.identity-resolve.progress.resolvingIdentity"));
 	CLIDisplay.break();

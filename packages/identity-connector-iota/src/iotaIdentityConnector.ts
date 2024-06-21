@@ -22,7 +22,7 @@ import {
 	type IDidVerifiableCredential,
 	type IDidVerifiablePresentation
 } from "@gtsc/standards-w3c-did";
-import { VaultKeyType, type IVaultConnector } from "@gtsc/vault-models";
+import { VaultConnectorFactory, VaultKeyType, type IVaultConnector } from "@gtsc/vault-models";
 import {
 	Credential,
 	Duration,
@@ -119,40 +119,25 @@ export class IotaIdentityConnector implements IIdentityConnector {
 
 	/**
 	 * Create a new instance of IotaIdentityConnector.
-	 * @param dependencies The dependencies for the identity connector.
-	 * @param dependencies.vaultConnector The vault for the private keys.
-	 * @param config The configuration to use.
+	 * @param options The options for the identity connector.
+	 * @param options.vaultConnectorType The vault connector type for the private keys, defaults to "vault".
+	 * @param options.config The configuration to use.
 	 */
-	constructor(
-		dependencies: {
-			vaultConnector: IVaultConnector;
-		},
-		config: IIotaIdentityConnectorConfig
-	) {
-		Guards.object<IotaIdentityConnector>(
-			IotaIdentityConnector._CLASS_NAME,
-			nameof(dependencies),
-			dependencies
-		);
-		Guards.object<IotaIdentityConnector>(
-			IotaIdentityConnector._CLASS_NAME,
-			nameof(dependencies.vaultConnector),
-			dependencies.vaultConnector
-		);
-
+	constructor(options: { vaultConnectorType?: string; config: IIotaIdentityConnectorConfig }) {
+		Guards.object(IotaIdentityConnector._CLASS_NAME, nameof(options), options);
 		Guards.object<IIotaIdentityConnectorConfig>(
 			IotaIdentityConnector._CLASS_NAME,
-			nameof(config),
-			config
+			nameof(options.config),
+			options.config
 		);
-		Guards.object<IIotaIdentityConnectorConfig>(
+		Guards.object<IIotaIdentityConnectorConfig["clientOptions"]>(
 			IotaIdentityConnector._CLASS_NAME,
-			nameof(config.clientOptions),
-			config.clientOptions
+			nameof(options.config.clientOptions),
+			options.config.clientOptions
 		);
 
-		this._vaultConnector = dependencies.vaultConnector;
-		this._config = config;
+		this._vaultConnector = VaultConnectorFactory.get(options.vaultConnectorType ?? "vault");
+		this._config = options.config;
 		this._config.vaultMnemonicId ??= IotaIdentityConnector._DEFAULT_MNEMONIC_SECRET_NAME;
 		this._config.vaultSeedId ??= IotaIdentityConnector._DEFAULT_SEED_SECRET_NAME;
 		this._config.coinType ??= IotaIdentityConnector._DEFAULT_COIN_TYPE;

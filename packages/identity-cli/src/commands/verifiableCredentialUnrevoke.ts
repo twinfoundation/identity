@@ -2,15 +2,11 @@
 // SPDX-License-Identifier: Apache-2.0.
 import { CLIDisplay, CLIParam } from "@gtsc/cli-core";
 import { Converter, I18n } from "@gtsc/core";
-import { EntitySchemaHelper } from "@gtsc/entity";
-import { MemoryEntityStorageConnector } from "@gtsc/entity-storage-connector-memory";
 import { IotaIdentityConnector } from "@gtsc/identity-connector-iota";
-import {
-	EntityStorageVaultConnector,
-	VaultKey,
-	VaultSecret
-} from "@gtsc/vault-connector-entity-storage";
+import { VaultConnectorFactory } from "@gtsc/vault-models";
+
 import { Command } from "commander";
+import { setupVault } from "./setupCommands";
 
 /**
  * Build the verifiable credential unrevoke command for the CLI.
@@ -75,32 +71,23 @@ export async function actionCommandVerifiableCredentialUnrevoke(opts: {
 	CLIDisplay.value(I18n.formatMessage("commands.common.labels.node"), nodeEndpoint);
 	CLIDisplay.break();
 
-	const vaultConnector = new EntityStorageVaultConnector({
-		vaultKeyEntityStorageConnector: new MemoryEntityStorageConnector<VaultKey>(
-			EntitySchemaHelper.getSchema(VaultKey)
-		),
-		vaultSecretEntityStorageConnector: new MemoryEntityStorageConnector<VaultSecret>(
-			EntitySchemaHelper.getSchema(VaultSecret)
-		)
-	});
+	setupVault();
 
 	const requestContext = { identity: "local", tenantId: "local" };
 	const vaultSeedId = "local-seed";
 
-	const iotaIdentityConnector = new IotaIdentityConnector(
-		{
-			vaultConnector
-		},
-		{
+	const vaultConnector = VaultConnectorFactory.get("vault");
+	await vaultConnector.setSecret(requestContext, vaultSeedId, Converter.bytesToBase64(seed));
+
+	const iotaIdentityConnector = new IotaIdentityConnector({
+		config: {
 			clientOptions: {
 				nodes: [nodeEndpoint],
 				localPow: true
 			},
 			vaultSeedId
 		}
-	);
-
-	await vaultConnector.setSecret(requestContext, vaultSeedId, Converter.bytesToBase64(seed));
+	});
 
 	CLIDisplay.task(
 		I18n.formatMessage("commands.verifiable-credential-unrevoke.progress.unrevokingCredential")

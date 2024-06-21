@@ -1,14 +1,15 @@
 // Copyright 2024 IOTA Stiftung.
 // SPDX-License-Identifier: Apache-2.0.
 import { I18n, Is } from "@gtsc/core";
-import { EntitySchemaHelper } from "@gtsc/entity";
+import { EntitySchemaFactory, EntitySchemaHelper } from "@gtsc/entity";
 import { MemoryEntityStorageConnector } from "@gtsc/entity-storage-connector-memory";
-import type { IEntityStorageConnector } from "@gtsc/entity-storage-models";
+import { EntityStorageConnectorFactory } from "@gtsc/entity-storage-models";
 import {
 	EntityStorageIdentityConnector,
 	IdentityDocument
 } from "@gtsc/identity-connector-entity-storage";
-import { IdentityRole, type IIdentityConnector } from "@gtsc/identity-models";
+import { IdentityConnectorFactory, IdentityRole } from "@gtsc/identity-models";
+import { nameof } from "@gtsc/nameof";
 import { PropertyHelper, type IProperty } from "@gtsc/schema";
 import type { IRequestContext } from "@gtsc/services";
 import type { IDidDocument } from "@gtsc/standards-w3c-did";
@@ -17,7 +18,7 @@ import {
 	VaultKey,
 	VaultSecret
 } from "@gtsc/vault-connector-entity-storage";
-import type { IVaultConnector } from "@gtsc/vault-models";
+import { VaultConnectorFactory } from "@gtsc/vault-models";
 import { IdentityProfile } from "../src/entities/identityProfile";
 import { IdentityService } from "../src/identityService";
 
@@ -29,121 +30,69 @@ export const TEST_CONTEXT: IRequestContext = {
 	identity: TEST_IDENTITY_ID
 };
 
-let vaultConnector: IVaultConnector;
 let vaultKeyEntityStorageConnector: MemoryEntityStorageConnector<VaultKey>;
-let didDocumentEntityStorage: MemoryEntityStorageConnector<IdentityDocument>;
-let profileEntityStorage: MemoryEntityStorageConnector<IdentityProfile>;
+let identityDocumentEntityStorage: MemoryEntityStorageConnector<IdentityDocument>;
+let identityProfileEntityStorage: MemoryEntityStorageConnector<IdentityProfile>;
 
 describe("IdentityService", () => {
 	beforeAll(async () => {
 		I18n.addDictionary("en", await import("../locales/en.json"));
+
+		EntitySchemaFactory.register(nameof(VaultKey), () => EntitySchemaHelper.getSchema(VaultKey));
+		EntitySchemaFactory.register(nameof(VaultSecret), () =>
+			EntitySchemaHelper.getSchema(VaultSecret)
+		);
+		EntitySchemaFactory.register(nameof(IdentityDocument), () =>
+			EntitySchemaHelper.getSchema(IdentityDocument)
+		);
+		EntitySchemaFactory.register(nameof(IdentityProfile), () =>
+			EntitySchemaHelper.getSchema(IdentityProfile)
+		);
 	});
 
 	beforeEach(() => {
-		vaultKeyEntityStorageConnector = new MemoryEntityStorageConnector<VaultKey>(
-			EntitySchemaHelper.getSchema(VaultKey)
-		);
-
-		vaultConnector = new EntityStorageVaultConnector({
-			vaultKeyEntityStorageConnector,
-			vaultSecretEntityStorageConnector: new MemoryEntityStorageConnector<VaultSecret>(
-				EntitySchemaHelper.getSchema(VaultSecret)
-			)
+		identityDocumentEntityStorage = new MemoryEntityStorageConnector<IdentityDocument>({
+			entitySchema: nameof(IdentityDocument)
 		});
-		profileEntityStorage = new MemoryEntityStorageConnector<IdentityProfile>(
-			EntitySchemaHelper.getSchema(IdentityProfile)
-		);
-		didDocumentEntityStorage = new MemoryEntityStorageConnector<IdentityDocument>(
-			EntitySchemaHelper.getSchema(IdentityDocument)
-		);
-	});
 
-	test("Can fail to create identity service with no dependencies", () => {
-		expect(
-			() =>
-				new IdentityService(
-					undefined as unknown as {
-						identityConnector: IIdentityConnector;
-						profileEntityStorage: IEntityStorageConnector<IdentityProfile>;
-					}
-				)
-		).toThrow(
-			expect.objectContaining({
-				name: "GuardError",
-				message: "guard.objectUndefined",
-				properties: {
-					property: "dependencies",
-					value: "undefined"
-				}
-			})
-		);
-	});
+		identityProfileEntityStorage = new MemoryEntityStorageConnector<IdentityProfile>({
+			entitySchema: nameof(IdentityProfile)
+		});
 
-	test("Can fail to create identity service with no identity connector", () => {
-		expect(
-			() =>
-				new IdentityService(
-					{} as unknown as {
-						identityConnector: IIdentityConnector;
-						profileEntityStorage: IEntityStorageConnector<IdentityProfile>;
-					}
-				)
-		).toThrow(
-			expect.objectContaining({
-				name: "GuardError",
-				message: "guard.objectUndefined",
-				properties: {
-					property: "dependencies.identityConnector",
-					value: "undefined"
-				}
-			})
-		);
-	});
+		vaultKeyEntityStorageConnector = new MemoryEntityStorageConnector<VaultKey>({
+			entitySchema: nameof(VaultKey)
+		});
 
-	test("Can fail to create identity service with no profile entity storage connector", () => {
-		expect(
-			() =>
-				new IdentityService({ identityConnector: {} } as unknown as {
-					identityConnector: IIdentityConnector;
-					profileEntityStorage: IEntityStorageConnector<IdentityProfile>;
-				})
-		).toThrow(
-			expect.objectContaining({
-				name: "GuardError",
-				message: "guard.objectUndefined",
-				properties: {
-					property: "dependencies.profileEntityStorage",
-					value: "undefined"
-				}
-			})
+		const vaultSecretEntityStorageConnector = new MemoryEntityStorageConnector<VaultSecret>({
+			entitySchema: nameof(VaultSecret)
+		});
+
+		EntityStorageConnectorFactory.register(
+			"identity-document",
+			() => identityDocumentEntityStorage
 		);
+		EntityStorageConnectorFactory.register("identity-profile", () => identityProfileEntityStorage);
+		EntityStorageConnectorFactory.register("vault-key", () => vaultKeyEntityStorageConnector);
+		EntityStorageConnectorFactory.register("vault-secret", () => vaultSecretEntityStorageConnector);
+
+		VaultConnectorFactory.register("vault", () => new EntityStorageVaultConnector());
+
+		IdentityConnectorFactory.register("identity", () => new EntityStorageIdentityConnector());
 	});
 
 	test("Can create identity service", () => {
-		const service = new IdentityService({
-			identityConnector: new EntityStorageIdentityConnector({
-				vaultConnector,
-				didDocumentEntityStorage
-			}),
-			profileEntityStorage
-		});
+		const service = new IdentityService();
 
 		expect(service).toBeDefined();
 	});
 
 	test("Can fail to create identity when storage fails", async () => {
-		profileEntityStorage.set = vi.fn().mockImplementation(() => {
+		identityProfileEntityStorage.set = vi.fn().mockImplementation(() => {
 			// eslint-disable-next-line no-restricted-syntax
 			throw new Error("Test Error");
 		});
 
-		const service = new IdentityService({
-			identityConnector: new EntityStorageIdentityConnector({
-				vaultConnector,
-				didDocumentEntityStorage
-			}),
-			profileEntityStorage
-		});
+		const service = new IdentityService();
 
 		const properties: IProperty[] = [];
 		PropertyHelper.setText(properties, "name", "Test Identity");
@@ -162,13 +111,7 @@ describe("IdentityService", () => {
 	});
 
 	test("Can create identity", async () => {
-		const service = new IdentityService({
-			identityConnector: new EntityStorageIdentityConnector({
-				vaultConnector,
-				didDocumentEntityStorage
-			}),
-			profileEntityStorage
-		});
+		const service = new IdentityService();
 
 		const properties: IProperty[] = [];
 		PropertyHelper.setText(properties, "name", "Test Identity");
@@ -188,14 +131,14 @@ describe("IdentityService", () => {
 		expect(Is.stringBase64(vaultData?.[0].privateKey)).toEqual(true);
 		expect(Is.stringBase64(vaultData?.[0].publicKey)).toEqual(true);
 
-		const documentData = didDocumentEntityStorage.getStore(TEST_TENANT_ID);
+		const documentData = identityDocumentEntityStorage.getStore(TEST_TENANT_ID);
 		expect(documentData?.[0].id).toEqual(identityResult.identity);
 		expect(Is.json(documentData?.[0].document)).toEqual(true);
 
 		const documentJson = JSON.parse(documentData?.[0].document ?? "") as IDidDocument;
 		expect(documentJson.id).toEqual(identityResult.identity);
 
-		const profile = profileEntityStorage.getStore(TEST_TENANT_ID);
+		const profile = identityProfileEntityStorage.getStore(TEST_TENANT_ID);
 		expect(profile?.[0].identity).toEqual(identityResult.identity);
 		expect(profile?.[0].role).toEqual("node");
 		expect(profile?.[0].properties?.length).toEqual(1);
@@ -207,18 +150,12 @@ describe("IdentityService", () => {
 	});
 
 	test("Can fail to get an identity when connector fails", async () => {
-		profileEntityStorage.get = vi.fn().mockImplementation(() => {
+		identityProfileEntityStorage.get = vi.fn().mockImplementation(() => {
 			// eslint-disable-next-line no-restricted-syntax
 			throw new Error("Test Error");
 		});
 
-		const service = new IdentityService({
-			identityConnector: new EntityStorageIdentityConnector({
-				vaultConnector,
-				didDocumentEntityStorage
-			}),
-			profileEntityStorage
-		});
+		const service = new IdentityService();
 
 		await expect(service.identityGet(TEST_CONTEXT, "foo")).rejects.toMatchObject(
 			expect.objectContaining({
@@ -232,13 +169,7 @@ describe("IdentityService", () => {
 	});
 
 	test("Can fail to get an identity when it doesn't exist", async () => {
-		const service = new IdentityService({
-			identityConnector: new EntityStorageIdentityConnector({
-				vaultConnector,
-				didDocumentEntityStorage
-			}),
-			profileEntityStorage
-		});
+		const service = new IdentityService();
 
 		await expect(service.identityGet(TEST_CONTEXT, "foo")).rejects.toMatchObject(
 			expect.objectContaining({
@@ -252,13 +183,7 @@ describe("IdentityService", () => {
 	});
 
 	test("Can get an identity", async () => {
-		const service = new IdentityService({
-			identityConnector: new EntityStorageIdentityConnector({
-				vaultConnector,
-				didDocumentEntityStorage
-			}),
-			profileEntityStorage
-		});
+		const service = new IdentityService();
 
 		const properties: IProperty[] = [];
 		PropertyHelper.setText(properties, "name", "Test Identity");
@@ -280,18 +205,12 @@ describe("IdentityService", () => {
 	});
 
 	test("Can fail to update an identity when connector fails", async () => {
-		profileEntityStorage.get = vi.fn().mockImplementation(() => {
+		identityProfileEntityStorage.get = vi.fn().mockImplementation(() => {
 			// eslint-disable-next-line no-restricted-syntax
 			throw new Error("Test Error");
 		});
 
-		const service = new IdentityService({
-			identityConnector: new EntityStorageIdentityConnector({
-				vaultConnector,
-				didDocumentEntityStorage
-			}),
-			profileEntityStorage
-		});
+		const service = new IdentityService();
 
 		await expect(service.identityUpdate(TEST_CONTEXT, TEST_IDENTITY_ID, [])).rejects.toMatchObject(
 			expect.objectContaining({
@@ -305,13 +224,7 @@ describe("IdentityService", () => {
 	});
 
 	test("Can fail to update an identity when it doesn't exist", async () => {
-		const service = new IdentityService({
-			identityConnector: new EntityStorageIdentityConnector({
-				vaultConnector,
-				didDocumentEntityStorage
-			}),
-			profileEntityStorage
-		});
+		const service = new IdentityService();
 
 		await expect(service.identityUpdate(TEST_CONTEXT, TEST_IDENTITY_ID, [])).rejects.toMatchObject(
 			expect.objectContaining({
@@ -326,13 +239,7 @@ describe("IdentityService", () => {
 	});
 
 	test("Can fail to update an identity when it doesn't match the authenticated user", async () => {
-		const service = new IdentityService({
-			identityConnector: new EntityStorageIdentityConnector({
-				vaultConnector,
-				didDocumentEntityStorage
-			}),
-			profileEntityStorage
-		});
+		const service = new IdentityService();
 
 		await expect(service.identityUpdate(TEST_CONTEXT, "foo", [])).rejects.toMatchObject(
 			expect.objectContaining({
@@ -346,13 +253,7 @@ describe("IdentityService", () => {
 	});
 
 	test("Can update an identity", async () => {
-		const service = new IdentityService({
-			identityConnector: new EntityStorageIdentityConnector({
-				vaultConnector,
-				didDocumentEntityStorage
-			}),
-			profileEntityStorage
-		});
+		const service = new IdentityService();
 
 		const properties: IProperty[] = [];
 		PropertyHelper.setText(properties, "name", "Test Identity");
@@ -371,7 +272,7 @@ describe("IdentityService", () => {
 			properties
 		);
 
-		const profile = profileEntityStorage.getStore(TEST_TENANT_ID);
+		const profile = identityProfileEntityStorage.getStore(TEST_TENANT_ID);
 		expect(profile?.[0].identity).toEqual(identityResult.identity);
 		expect(profile?.[0].role).toEqual("node");
 		expect(profile?.[0].properties?.length).toEqual(1);
@@ -381,18 +282,12 @@ describe("IdentityService", () => {
 	});
 
 	test("Can fail get a list of identities when connector fails", async () => {
-		profileEntityStorage.query = vi.fn().mockImplementation(() => {
+		identityProfileEntityStorage.query = vi.fn().mockImplementation(() => {
 			// eslint-disable-next-line no-restricted-syntax
 			throw new Error("Test Error");
 		});
 
-		const service = new IdentityService({
-			identityConnector: new EntityStorageIdentityConnector({
-				vaultConnector,
-				didDocumentEntityStorage
-			}),
-			profileEntityStorage
-		});
+		const service = new IdentityService();
 
 		await expect(service.identityList(TEST_CONTEXT, IdentityRole.Node)).rejects.toMatchObject(
 			expect.objectContaining({
@@ -406,13 +301,7 @@ describe("IdentityService", () => {
 	});
 
 	test("Can get a list of identities", async () => {
-		const service = new IdentityService({
-			identityConnector: new EntityStorageIdentityConnector({
-				vaultConnector,
-				didDocumentEntityStorage
-			}),
-			profileEntityStorage
-		});
+		const service = new IdentityService();
 
 		for (let i = 0; i < 3; i++) {
 			const properties: IProperty[] = [];

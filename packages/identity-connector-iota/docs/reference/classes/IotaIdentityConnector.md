@@ -10,21 +10,21 @@ Class for performing identity operations on IOTA.
 
 ### new IotaIdentityConnector()
 
-> **new IotaIdentityConnector**(`dependencies`, `config`): [`IotaIdentityConnector`](IotaIdentityConnector.md)
+> **new IotaIdentityConnector**(`options`): [`IotaIdentityConnector`](IotaIdentityConnector.md)
 
 Create a new instance of IotaIdentityConnector.
 
 #### Parameters
 
-• **dependencies**
+• **options**
 
-The dependencies for the identity connector.
+The options for the identity connector.
 
-• **dependencies.vaultConnector**: `IVaultConnector`
+• **options.vaultConnectorType?**: `string`
 
-The vault for the private keys.
+The vault connector type for the private keys, defaults to "vault".
 
-• **config**: [`IIotaIdentityConnectorConfig`](../interfaces/IIotaIdentityConnectorConfig.md)
+• **options.config**: [`IIotaIdentityConnectorConfig`](../interfaces/IIotaIdentityConnectorConfig.md)
 
 The configuration to use.
 

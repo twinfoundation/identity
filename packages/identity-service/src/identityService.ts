@@ -2,8 +2,16 @@
 // SPDX-License-Identifier: Apache-2.0.
 import { BaseError, GeneralError, Guards, NotFoundError, UnauthorizedError } from "@gtsc/core";
 import { ComparisonOperator } from "@gtsc/entity";
-import type { IEntityStorageConnector } from "@gtsc/entity-storage-models";
-import { IdentityRole, type IIdentity, type IIdentityConnector } from "@gtsc/identity-models";
+import {
+	EntityStorageConnectorFactory,
+	type IEntityStorageConnector
+} from "@gtsc/entity-storage-models";
+import {
+	IdentityConnectorFactory,
+	IdentityRole,
+	type IIdentity,
+	type IIdentityConnector
+} from "@gtsc/identity-models";
 import { nameof } from "@gtsc/nameof";
 import { PropertyHelper, type IProperty } from "@gtsc/schema";
 import type { IRequestContext } from "@gtsc/services";
@@ -33,27 +41,17 @@ export class IdentityService implements IIdentity {
 
 	/**
 	 * Create a new instance of Identity.
-	 * @param dependencies The dependencies for the identity service.
-	 * @param dependencies.identityConnector The identity connector.
-	 * @param dependencies.profileEntityStorage The storage connector for the profiles.
+	 * @param options The dependencies for the identity service.
+	 * @param options.identityConnectorType The identity connector type, defaults to "identity".
+	 * @param options.profileEntityStorageType The storage connector for the profiles, default to "identity-profile".
 	 */
-	constructor(dependencies: {
-		identityConnector: IIdentityConnector;
-		profileEntityStorage: IEntityStorageConnector<IdentityProfile>;
-	}) {
-		Guards.object(IdentityService._CLASS_NAME, nameof(dependencies), dependencies);
-		Guards.object<IIdentityConnector>(
-			IdentityService._CLASS_NAME,
-			nameof(dependencies.identityConnector),
-			dependencies.identityConnector
+	constructor(options?: { identityConnectorType?: string; profileEntityStorageType?: string }) {
+		this._identityConnector = IdentityConnectorFactory.get(
+			options?.identityConnectorType ?? "identity"
 		);
-		Guards.object<IEntityStorageConnector<IdentityProfile>>(
-			IdentityService._CLASS_NAME,
-			nameof(dependencies.profileEntityStorage),
-			dependencies.profileEntityStorage
+		this._profileEntityStorage = EntityStorageConnectorFactory.get(
+			options?.profileEntityStorageType ?? "identity-profile"
 		);
-		this._identityConnector = dependencies.identityConnector;
-		this._profileEntityStorage = dependencies.profileEntityStorage;
 	}
 
 	/**

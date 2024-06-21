@@ -7,4 +7,5 @@ import type { IIdentityConnector } from "../models/IIdentityConnector";
  * Factory for creating identity connectors.
  */
 // eslint-disable-next-line @typescript-eslint/naming-convention
-export const IdentityConnectorFactory = new Factory<IIdentityConnector>("identityConnector");
+export const IdentityConnectorFactory =
+	Factory.createFactory<IIdentityConnector>("identityConnector");

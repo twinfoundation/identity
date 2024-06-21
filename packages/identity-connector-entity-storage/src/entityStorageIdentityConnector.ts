@@ -14,7 +14,10 @@ import {
 	RandomHelper
 } from "@gtsc/core";
 import { Sha256 } from "@gtsc/crypto";
-import type { IEntityStorageConnector } from "@gtsc/entity-storage-models";
+import {
+	EntityStorageConnectorFactory,
+	type IEntityStorageConnector
+} from "@gtsc/entity-storage-models";
 import type { IIdentityConnector } from "@gtsc/identity-models";
 import { nameof } from "@gtsc/nameof";
 import type { IRequestContext } from "@gtsc/services";
@@ -26,7 +29,7 @@ import {
 	type IDidVerifiableCredential,
 	type IDidVerifiablePresentation
 } from "@gtsc/standards-w3c-did";
-import { VaultKeyType, type IVaultConnector } from "@gtsc/vault-models";
+import { VaultConnectorFactory, VaultKeyType, type IVaultConnector } from "@gtsc/vault-models";
 import { Jwt, type IJwk, type IJwtHeader, type IJwtPayload } from "@gtsc/web";
 import type { IdentityDocument } from "./entities/identityDocument";
 import type { IEntityStorageIdentityConnectorConfig } from "./models/IEntityStorageIdentityConnectorConfig";
@@ -71,39 +74,23 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 
 	/**
 	 * Create a new instance of EntityStorageIdentityConnector.
-	 * @param dependencies The dependencies for the identity connector.
-	 * @param dependencies.didDocumentEntityStorage The entity storage for the did documents.
-	 * @param dependencies.vaultConnector The vault for the private keys.
-	 * @param config The configuration for the connector.
+	 * @param options The dependencies for the identity connector.
+	 * @param options.didDocumentEntityStorageType The entity storage for the did documents, defaults to "identity-document".
+	 * @param options.vaultConnectorType The vault for the private keys, defaults to "vault".
+	 * @param options.config The configuration for the connector.
 	 */
-	constructor(
-		dependencies: {
-			didDocumentEntityStorage: IEntityStorageConnector<IdentityDocument>;
-			vaultConnector: IVaultConnector;
-		},
-		config?: IEntityStorageIdentityConnectorConfig
-	) {
-		Guards.object<EntityStorageIdentityConnector>(
-			EntityStorageIdentityConnector._CLASS_NAME,
-			nameof(dependencies),
-			dependencies
+	constructor(options?: {
+		didDocumentEntityStorageType?: string;
+		vaultConnectorType?: string;
+		config?: IEntityStorageIdentityConnectorConfig;
+	}) {
+		this._didDocumentEntityStorage = EntityStorageConnectorFactory.get(
+			options?.didDocumentEntityStorageType ?? "identity-document"
 		);
-		Guards.object<EntityStorageIdentityConnector>(
-			EntityStorageIdentityConnector._CLASS_NAME,
-			nameof(dependencies.didDocumentEntityStorage),
-			dependencies.didDocumentEntityStorage
-		);
-		Guards.object<EntityStorageIdentityConnector>(
-			EntityStorageIdentityConnector._CLASS_NAME,
-			nameof(dependencies.vaultConnector),
-			dependencies.vaultConnector
-		);
-		this._didDocumentEntityStorage = dependencies.didDocumentEntityStorage;
-		this._vaultConnector = dependencies.vaultConnector;
+		this._vaultConnector = VaultConnectorFactory.get(options?.vaultConnectorType ?? "vault");
 
-		config ??= {};
-		config.didMethod ??= "gtsc";
-		this._config = config;
+		this._config = options?.config ?? {};
+		this._config.didMethod ??= "gtsc";
 	}
 
 	/**

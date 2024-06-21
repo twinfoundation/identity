@@ -2,15 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0.
 import { CLIDisplay, CLIOptions, CLIParam, CLIUtils, type CliOutputOptions } from "@gtsc/cli-core";
 import { Converter, I18n, Is } from "@gtsc/core";
-import { EntitySchemaHelper } from "@gtsc/entity";
-import { MemoryEntityStorageConnector } from "@gtsc/entity-storage-connector-memory";
 import { IotaIdentityConnector } from "@gtsc/identity-connector-iota";
-import {
-	EntityStorageVaultConnector,
-	VaultKey,
-	VaultSecret
-} from "@gtsc/vault-connector-entity-storage";
 import { Command } from "commander";
+import { setupVault } from "./setupCommands";
 
 /**
  * Build the proof verify command for the CLI.
@@ -92,28 +86,18 @@ export async function actionCommandProofVerify(
 	CLIDisplay.value(I18n.formatMessage("commands.common.labels.node"), nodeEndpoint);
 	CLIDisplay.break();
 
-	const vaultConnector = new EntityStorageVaultConnector({
-		vaultKeyEntityStorageConnector: new MemoryEntityStorageConnector<VaultKey>(
-			EntitySchemaHelper.getSchema(VaultKey)
-		),
-		vaultSecretEntityStorageConnector: new MemoryEntityStorageConnector<VaultSecret>(
-			EntitySchemaHelper.getSchema(VaultSecret)
-		)
-	});
+	setupVault();
 
 	const requestContext = { identity: "local", tenantId: "local" };
 
-	const iotaIdentityConnector = new IotaIdentityConnector(
-		{
-			vaultConnector
-		},
-		{
+	const iotaIdentityConnector = new IotaIdentityConnector({
+		config: {
 			clientOptions: {
 				nodes: [nodeEndpoint],
 				localPow: true
 			}
 		}
-	);
+	});
 
 	CLIDisplay.task(I18n.formatMessage("commands.proof-verify.progress.verifyingProof"));
 	CLIDisplay.break();
