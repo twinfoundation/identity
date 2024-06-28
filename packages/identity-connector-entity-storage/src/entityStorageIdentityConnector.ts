@@ -1,5 +1,6 @@
 // Copyright 2024 IOTA Stiftung.
 // SPDX-License-Identifier: Apache-2.0.
+/* eslint-disable no-console */
 import {
 	BitString,
 	Coerce,
@@ -835,12 +836,14 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 		);
 
 		try {
+			console.log("Header decode", credentialJwt);
 			const jwtDecoded = await Jwt.decode(credentialJwt);
 
 			const jwtHeader = jwtDecoded.header;
 			const jwtPayload = jwtDecoded.payload;
 			const jwtSignature = jwtDecoded.signature;
 
+			console.log("Decoded", jwtDecoded);
 			if (
 				Is.undefined(jwtHeader) ||
 				Is.undefined(jwtPayload) ||
@@ -850,6 +853,7 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 				throw new NotFoundError(EntityStorageIdentityConnector._CLASS_NAME, "jwkSignatureFailed");
 			}
 
+			console.log("Get Document");
 			const issuerDocumentId = jwtPayload.iss;
 			const issuerIdentityDocument = await this._didDocumentEntityStorage.get(
 				requestContext,
@@ -862,9 +866,11 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 					issuerDocumentId
 				);
 			}
+			console.log("Verify Document");
 			await this.verifyDocument(requestContext, issuerIdentityDocument);
 			const issuerDidDocument = JSON.parse(issuerIdentityDocument.document) as IDidDocument;
 
+			console.log("Get All Methods");
 			const methods = this.getAllMethods(issuerDidDocument);
 			const methodAndArray = methods.find(m => {
 				if (Is.string(m.method)) {
@@ -882,6 +888,7 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 				throw new GeneralError(EntityStorageIdentityConnector._CLASS_NAME, "publicKeyJwkMissing");
 			}
 
+			console.log("Verify Signature");
 			const verified = Jwt.verifySignature(
 				jwtHeader,
 				jwtPayload,
@@ -912,6 +919,7 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 				}
 			}
 
+			console.log("Check revocation");
 			const revoked = await this.checkRevocation(
 				issuerDidDocument,
 				verifiableCredential.credentialStatus?.revocationBitmapIndex
