@@ -126,7 +126,9 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 			await this._vaultConnector.createKey(requestContext, did, VaultKeyType.Ed25519);
 
 			const bitString = new BitString(EntityStorageIdentityConnector._REVOCATION_BITS_SIZE);
+			console.log("BitString", bitString.getBits());
 			const compressed = await Compression.compress(bitString.getBits(), CompressionType.Gzip);
+			console.log("compressed", compressed);
 
 			const didDocument: IDidDocument = {
 				id: did,
