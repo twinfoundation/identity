@@ -483,15 +483,20 @@ describe("EntityStorageIdentityConnector", () => {
 	});
 
 	test("can validate a verifiable credential", async () => {
+		console.log("Adding Test Document");
 		await didDocumentEntityStorage.set(TEST_CONTEXT, testIdentityDocument);
+		console.log("Adding Test Document Key");
 		await vaultKeyEntityStorageConnector.set(TEST_CONTEXT, testDocumentKey);
+		console.log("Creating Identity Connector");
 		const identityConnector = new EntityStorageIdentityConnector();
 
+		console.log("Checking Verifiable Credential");
 		const result = await identityConnector.checkVerifiableCredential<IDegree>(
 			TEST_CONTEXT,
 			testVcJwt
 		);
 
+		console.log("Result");
 		expect(result.revoked).toBeFalsy();
 		expect(result.verifiableCredential?.["@context"]).toEqual([
 			"https://www.w3.org/2018/credentials/v1",
