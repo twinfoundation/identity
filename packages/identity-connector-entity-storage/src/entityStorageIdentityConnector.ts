@@ -924,6 +924,7 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 				issuerDidDocument,
 				verifiableCredential.credentialStatus?.revocationBitmapIndex
 			);
+			console.log("Finish check revocation");
 
 			return {
 				revoked,
@@ -1684,10 +1685,13 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 		document: IDidDocument,
 		revocationBitmapIndex?: unknown
 	): Promise<boolean> {
+		console.log("Check revocation bitmap index");
 		if (Is.stringValue(revocationBitmapIndex)) {
 			const revocationIndex = Coerce.number(revocationBitmapIndex);
+			console.log("revocation index", revocationIndex);
 			if (Is.number(revocationIndex)) {
 				const revocationService = document.service?.find(s => s.id.endsWith("#revocation"));
+				console.log("found service", revocationService);
 				if (
 					revocationService &&
 					Is.string(revocationService.serviceEndpoint) &&
@@ -1695,16 +1699,20 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 				) {
 					const revocationParts = revocationService.serviceEndpoint.split(",");
 					if (revocationParts.length === 2) {
+						console.log("revocationParts", revocationParts);
 						const compressedRevocationBytes = Converter.base64UrlToBytes(revocationParts[1]);
+						console.log("compressedRevocationBytes", compressedRevocationBytes);
 						const decompressed = await Compression.decompress(
 							compressedRevocationBytes,
 							CompressionType.Gzip
 						);
+						console.log("decompressed", decompressed);
 
 						const bitString = BitString.fromBits(
 							decompressed,
 							EntityStorageIdentityConnector._REVOCATION_BITS_SIZE
 						);
+						console.log("bitString", bitString);
 
 						return bitString.getBit(revocationIndex);
 					}
