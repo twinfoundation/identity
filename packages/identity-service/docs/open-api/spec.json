@@ -14,7 +14,12 @@
             "url": "https://localhost"
         }
     ],
-    "tags": [],
+    "tags": [
+        {
+            "name": "Identity",
+            "description": "Service to provide all features related to digital identity."
+        }
+    ],
     "paths": {
         "/identity": {
             "post": {

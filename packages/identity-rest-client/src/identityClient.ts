@@ -1,20 +1,17 @@
 // Copyright 2024 IOTA Stiftung.
 // SPDX-License-Identifier: Apache-2.0.
-import {
-	BaseRestClient,
-	type IBaseRestClientConfig,
-	type ICreatedResponse
-} from "@gtsc/api-models";
+import { BaseRestClient } from "@gtsc/api-core";
+import type { IBaseRestClientConfig, ICreatedResponse } from "@gtsc/api-models";
 import { Guards, StringHelper } from "@gtsc/core";
 import {
+	IdentityRole,
 	type IIdentity,
 	type IIdentityCreateRequest,
 	type IIdentityGetRequest,
 	type IIdentityGetResponse,
 	type IIdentityListRequest,
 	type IIdentityListResponse,
-	type IIdentityUpdateRequest,
-	IdentityRole
+	type IIdentityUpdateRequest
 } from "@gtsc/identity-models";
 import { nameof } from "@gtsc/nameof";
 import type { IProperty } from "@gtsc/schema";
@@ -100,7 +97,7 @@ export class IdentityClient extends BaseRestClient implements IIdentity {
 			"/:identity",
 			"GET",
 			{
-				path: {
+				pathParams: {
 					identity
 				},
 				query: {
@@ -127,7 +124,7 @@ export class IdentityClient extends BaseRestClient implements IIdentity {
 		Guards.stringValue(IdentityClient._CLASS_NAME, nameof(identity), identity);
 
 		await this.fetch<IIdentityUpdateRequest, never>(requestContext, "/:identity", "PUT", {
-			path: {
+			pathParams: {
 				identity
 			},
 			body: {

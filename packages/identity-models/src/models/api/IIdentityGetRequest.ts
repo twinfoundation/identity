@@ -8,7 +8,7 @@ export interface IIdentityGetRequest {
 	/**
 	 * The path parameters.
 	 */
-	path: {
+	pathParams: {
 		/**
 		 * The identity to get the profile for.
 		 */

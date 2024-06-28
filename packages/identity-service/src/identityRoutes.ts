@@ -51,8 +51,8 @@ export function generateRestRoutes(routeName: string, serviceName: string): IRes
 		tag: tags[0].name,
 		method: "POST",
 		path: `${routeName}/`,
-		handler: async (requestContext, request, body) =>
-			identityCreate(requestContext, serviceName, request, body),
+		handler: async (requestContext, request) =>
+			identityCreate(requestContext, serviceName, request),
 		requestType: {
 			type: nameof<IIdentityCreateRequest>(),
 			examples: [
@@ -104,15 +104,15 @@ export function generateRestRoutes(routeName: string, serviceName: string): IRes
 		tag: tags[0].name,
 		method: "PUT",
 		path: `${routeName}/:identity`,
-		handler: async (requestContext, request, body) =>
-			identityUpdate(requestContext, serviceName, request, body),
+		handler: async (requestContext, request) =>
+			identityUpdate(requestContext, serviceName, request),
 		requestType: {
 			type: nameof<IIdentityUpdateRequest>(),
 			examples: [
 				{
 					id: "identityUpdateRequestExample",
 					request: {
-						path: {
+						pathParams: {
 							identity:
 								"did:gtsc:0xc57d94b088f4c6d2cb32ded014813d0c786aa00134c8ee22f84b1e2545602a70"
 						},
@@ -150,15 +150,14 @@ export function generateRestRoutes(routeName: string, serviceName: string): IRes
 		tag: tags[0].name,
 		method: "GET",
 		path: `${routeName}/:identity`,
-		handler: async (requestContext, request, body) =>
-			identityGet(requestContext, serviceName, request, body),
+		handler: async (requestContext, request) => identityGet(requestContext, serviceName, request),
 		requestType: {
 			type: nameof<IIdentityGetRequest>(),
 			examples: [
 				{
 					id: "identityGetRequestExample",
 					request: {
-						path: {
+						pathParams: {
 							identity:
 								"did:gtsc:0xc57d94b088f4c6d2cb32ded014813d0c786aa00134c8ee22f84b1e2545602a70"
 						},
@@ -207,8 +206,8 @@ export function generateRestRoutes(routeName: string, serviceName: string): IRes
 		tag: tags[0].name,
 		method: "GET",
 		path: `${routeName}/`,
-		handler: async (requestContext, request, body) =>
-			identitiesList(requestContext, serviceName, request, body),
+		handler: async (requestContext, request) =>
+			identitiesList(requestContext, serviceName, request),
 		requestType: {
 			type: nameof<IIdentityListRequest>(),
 			examples: [
@@ -306,11 +305,19 @@ export async function identityUpdate(
 	body?: unknown
 ): Promise<void> {
 	Guards.object<IIdentityUpdateRequest>(ROUTES_SOURCE, nameof(request), request);
-	Guards.object<IIdentityUpdateRequest["path"]>(ROUTES_SOURCE, nameof(request.path), request.path);
+	Guards.object<IIdentityUpdateRequest["pathParams"]>(
+		ROUTES_SOURCE,
+		nameof(request.pathParams),
+		request.pathParams
+	);
 	Guards.object<IIdentityUpdateRequest["body"]>(ROUTES_SOURCE, nameof(request.body), request.body);
 	const service = ServiceFactory.get<IIdentity>(serviceName);
 
-	await service.identityUpdate(requestContext, request.path.identity, request.body.properties);
+	await service.identityUpdate(
+		requestContext,
+		request.pathParams.identity,
+		request.body.properties
+	);
 }
 
 /**
@@ -328,14 +335,22 @@ export async function identityGet(
 	body?: unknown
 ): Promise<IIdentityGetResponse> {
 	Guards.object<IIdentityGetRequest>(ROUTES_SOURCE, nameof(request), request);
-	Guards.object<IIdentityGetRequest["path"]>(ROUTES_SOURCE, nameof(request.path), request.path);
-	Guards.stringValue(ROUTES_SOURCE, nameof(request.path.identity), request.path.identity);
+	Guards.object<IIdentityGetRequest["pathParams"]>(
+		ROUTES_SOURCE,
+		nameof(request.pathParams),
+		request.pathParams
+	);
+	Guards.stringValue(
+		ROUTES_SOURCE,
+		nameof(request.pathParams.identity),
+		request.pathParams.identity
+	);
 
 	const service = ServiceFactory.get<IIdentity>(serviceName);
 
 	const result = await service.identityGet(
 		requestContext,
-		request.path.identity,
+		request.pathParams.identity,
 		request?.query?.propertyNames?.split(",")
 	);
 

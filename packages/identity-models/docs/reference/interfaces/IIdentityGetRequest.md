@@ -4,9 +4,9 @@ Get the profile for an identity.
 
 ## Properties
 
-### path
+### pathParams
 
-> **path**: `object`
+> **pathParams**: `object`
 
 The path parameters.
 
