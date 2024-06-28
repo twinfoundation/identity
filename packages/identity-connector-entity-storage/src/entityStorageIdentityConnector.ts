@@ -1704,19 +1704,23 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 						console.log("revocationParts", revocationParts);
 						const compressedRevocationBytes = Converter.base64UrlToBytes(revocationParts[1]);
 						console.log("compressedRevocationBytes", compressedRevocationBytes);
-						const decompressed = await Compression.decompress(
-							compressedRevocationBytes,
-							CompressionType.Gzip
-						);
-						console.log("decompressed", decompressed);
+						try {
+							const decompressed = await Compression.decompress(
+								compressedRevocationBytes,
+								CompressionType.Gzip
+							);
+							console.log("decompressed", decompressed);
 
-						const bitString = BitString.fromBits(
-							decompressed,
-							EntityStorageIdentityConnector._REVOCATION_BITS_SIZE
-						);
-						console.log("bitString", bitString);
+							const bitString = BitString.fromBits(
+								decompressed,
+								EntityStorageIdentityConnector._REVOCATION_BITS_SIZE
+							);
+							console.log("bitString", bitString);
 
-						return bitString.getBit(revocationIndex);
+							return bitString.getBit(revocationIndex);
+						} catch (err) {
+							console.error(err);
+						}
 					}
 				}
 			}
