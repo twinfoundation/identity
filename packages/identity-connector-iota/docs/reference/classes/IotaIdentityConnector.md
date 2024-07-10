@@ -48,6 +48,18 @@ The namespace supported by the identity connector.
 
 Default name for the seed secret.
 
+***
+
+### CLASS\_NAME
+
+> `readonly` **CLASS\_NAME**: `string`
+
+Runtime name for the class.
+
+#### Implementation of
+
+`IIdentityConnector.CLASS_NAME`
+
 ## Methods
 
 ### createDocument()

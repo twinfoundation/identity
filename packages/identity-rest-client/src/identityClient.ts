@@ -28,6 +28,11 @@ export class IdentityClient extends BaseRestClient implements IIdentity {
 	private static readonly _CLASS_NAME: string = nameof<IdentityClient>();
 
 	/**
+	 * Runtime name for the class.
+	 */
+	public readonly CLASS_NAME: string = IdentityClient._CLASS_NAME;
+
+	/**
 	 * Create a new instance of IdentityClient.
 	 * @param config The configuration for the client.
 	 */
@@ -54,8 +59,8 @@ export class IdentityClient extends BaseRestClient implements IIdentity {
 		 */
 		identity: string;
 	}> {
-		Guards.stringValue(IdentityClient._CLASS_NAME, nameof(controller), controller);
-		Guards.arrayOneOf(IdentityClient._CLASS_NAME, nameof(role), role, Object.values(IdentityRole));
+		Guards.stringValue(this.CLASS_NAME, nameof(controller), controller);
+		Guards.arrayOneOf(this.CLASS_NAME, nameof(role), role, Object.values(IdentityRole));
 
 		const response = await this.fetch<IIdentityCreateRequest, ICreatedResponse>(
 			requestContext,
@@ -90,7 +95,7 @@ export class IdentityClient extends BaseRestClient implements IIdentity {
 		role: IdentityRole;
 		properties?: IProperty[];
 	}> {
-		Guards.stringValue(IdentityClient._CLASS_NAME, nameof(identity), identity);
+		Guards.stringValue(this.CLASS_NAME, nameof(identity), identity);
 
 		const response = await this.fetch<IIdentityGetRequest, IIdentityGetResponse>(
 			requestContext,
@@ -121,7 +126,7 @@ export class IdentityClient extends BaseRestClient implements IIdentity {
 		identity: string,
 		properties: IProperty[]
 	): Promise<void> {
-		Guards.stringValue(IdentityClient._CLASS_NAME, nameof(identity), identity);
+		Guards.stringValue(this.CLASS_NAME, nameof(identity), identity);
 
 		await this.fetch<IIdentityUpdateRequest, never>(requestContext, "/:identity", "PUT", {
 			pathParams: {
@@ -169,7 +174,7 @@ export class IdentityClient extends BaseRestClient implements IIdentity {
 		 */
 		totalEntities: number;
 	}> {
-		Guards.arrayOneOf(IdentityClient._CLASS_NAME, nameof(role), role, Object.values(IdentityRole));
+		Guards.arrayOneOf(this.CLASS_NAME, nameof(role), role, Object.values(IdentityRole));
 
 		const response = await this.fetch<IIdentityListRequest, IIdentityListResponse>(
 			requestContext,

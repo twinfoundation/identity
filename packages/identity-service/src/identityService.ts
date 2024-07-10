@@ -23,9 +23,8 @@ import type { IdentityProfile } from "./entities/identityProfile";
 export class IdentityService implements IIdentity {
 	/**
 	 * Runtime name for the class.
-	 * @internal
 	 */
-	private static readonly _CLASS_NAME: string = nameof<IdentityService>();
+	public readonly CLASS_NAME: string = nameof<IdentityService>();
 
 	/**
 	 * The identity connector.
@@ -73,23 +72,11 @@ export class IdentityService implements IIdentity {
 		 */
 		identity: string;
 	}> {
-		Guards.object<IRequestContext>(
-			IdentityService._CLASS_NAME,
-			nameof(requestContext),
-			requestContext
-		);
-		Guards.stringValue(
-			IdentityService._CLASS_NAME,
-			nameof(requestContext.tenantId),
-			requestContext.tenantId
-		);
-		Guards.stringValue(
-			IdentityService._CLASS_NAME,
-			nameof(requestContext.identity),
-			requestContext.identity
-		);
-		Guards.stringValue(IdentityService._CLASS_NAME, nameof(controller), controller);
-		Guards.arrayOneOf(IdentityService._CLASS_NAME, nameof(role), role, Object.values(IdentityRole));
+		Guards.object<IRequestContext>(this.CLASS_NAME, nameof(requestContext), requestContext);
+		Guards.stringValue(this.CLASS_NAME, nameof(requestContext.tenantId), requestContext.tenantId);
+		Guards.stringValue(this.CLASS_NAME, nameof(requestContext.identity), requestContext.identity);
+		Guards.stringValue(this.CLASS_NAME, nameof(controller), controller);
+		Guards.arrayOneOf(this.CLASS_NAME, nameof(role), role, Object.values(IdentityRole));
 
 		try {
 			const document = await this._identityConnector.createDocument(requestContext, controller);
@@ -104,7 +91,7 @@ export class IdentityService implements IIdentity {
 				identity: document.id
 			};
 		} catch (error) {
-			throw new GeneralError(IdentityService._CLASS_NAME, "identityCreateFailed", undefined, error);
+			throw new GeneralError(this.CLASS_NAME, "identityCreateFailed", undefined, error);
 		}
 	}
 
@@ -123,22 +110,14 @@ export class IdentityService implements IIdentity {
 		role: IdentityRole;
 		properties?: IProperty[];
 	}> {
-		Guards.object<IRequestContext>(
-			IdentityService._CLASS_NAME,
-			nameof(requestContext),
-			requestContext
-		);
-		Guards.stringValue(
-			IdentityService._CLASS_NAME,
-			nameof(requestContext.tenantId),
-			requestContext.tenantId
-		);
-		Guards.stringValue(IdentityService._CLASS_NAME, nameof(identity), identity);
+		Guards.object<IRequestContext>(this.CLASS_NAME, nameof(requestContext), requestContext);
+		Guards.stringValue(this.CLASS_NAME, nameof(requestContext.tenantId), requestContext.tenantId);
+		Guards.stringValue(this.CLASS_NAME, nameof(identity), identity);
 
 		try {
 			const profile = await this._profileEntityStorage.get(requestContext, identity);
 			if (!profile) {
-				throw new NotFoundError(IdentityService._CLASS_NAME, "identityGetFailed", identity);
+				throw new NotFoundError(this.CLASS_NAME, "identityGetFailed", identity);
 			}
 
 			return {
@@ -146,10 +125,10 @@ export class IdentityService implements IIdentity {
 				properties: PropertyHelper.filterInclude(profile.properties, propertyNames)
 			};
 		} catch (error) {
-			if (BaseError.someErrorClass(error, IdentityService._CLASS_NAME)) {
+			if (BaseError.someErrorClass(error, this.CLASS_NAME)) {
 				throw error;
 			}
-			throw new GeneralError(IdentityService._CLASS_NAME, "identityGetFailed", undefined, error);
+			throw new GeneralError(this.CLASS_NAME, "identityGetFailed", undefined, error);
 		}
 	}
 
@@ -165,46 +144,29 @@ export class IdentityService implements IIdentity {
 		identity: string,
 		properties: IProperty[]
 	): Promise<void> {
-		Guards.object<IRequestContext>(
-			IdentityService._CLASS_NAME,
-			nameof(requestContext),
-			requestContext
-		);
-		Guards.stringValue(
-			IdentityService._CLASS_NAME,
-			nameof(requestContext.tenantId),
-			requestContext.tenantId
-		);
-		Guards.stringValue(
-			IdentityService._CLASS_NAME,
-			nameof(requestContext.identity),
-			requestContext.identity
-		);
-		Guards.stringValue(IdentityService._CLASS_NAME, nameof(identity), identity);
+		Guards.object<IRequestContext>(this.CLASS_NAME, nameof(requestContext), requestContext);
+		Guards.stringValue(this.CLASS_NAME, nameof(requestContext.tenantId), requestContext.tenantId);
+		Guards.stringValue(this.CLASS_NAME, nameof(requestContext.identity), requestContext.identity);
+		Guards.stringValue(this.CLASS_NAME, nameof(identity), identity);
 
 		try {
 			if (requestContext.identity !== identity) {
-				throw new UnauthorizedError(IdentityService._CLASS_NAME, "identityMismatch");
+				throw new UnauthorizedError(this.CLASS_NAME, "identityMismatch");
 			}
 
 			const profile = await this._profileEntityStorage.get(requestContext, identity);
 			if (!profile) {
-				throw new NotFoundError(IdentityService._CLASS_NAME, "identityUpdateFailed", identity);
+				throw new NotFoundError(this.CLASS_NAME, "identityUpdateFailed", identity);
 			}
 
 			PropertyHelper.merge(profile.properties, properties);
 
 			await this._profileEntityStorage.set(requestContext, profile);
 		} catch (error) {
-			if (BaseError.someErrorClass(error, IdentityService._CLASS_NAME)) {
+			if (BaseError.someErrorClass(error, this.CLASS_NAME)) {
 				throw error;
 			}
-			throw new GeneralError(
-				IdentityService._CLASS_NAME,
-				"identityUpdateFailed",
-				{ identity },
-				error
-			);
+			throw new GeneralError(this.CLASS_NAME, "identityUpdateFailed", { identity }, error);
 		}
 	}
 
@@ -241,17 +203,9 @@ export class IdentityService implements IIdentity {
 		 */
 		totalEntities: number;
 	}> {
-		Guards.object<IRequestContext>(
-			IdentityService._CLASS_NAME,
-			nameof(requestContext),
-			requestContext
-		);
-		Guards.stringValue(
-			IdentityService._CLASS_NAME,
-			nameof(requestContext.tenantId),
-			requestContext.tenantId
-		);
-		Guards.arrayOneOf(IdentityService._CLASS_NAME, nameof(role), role, Object.values(IdentityRole));
+		Guards.object<IRequestContext>(this.CLASS_NAME, nameof(requestContext), requestContext);
+		Guards.stringValue(this.CLASS_NAME, nameof(requestContext.tenantId), requestContext.tenantId);
+		Guards.arrayOneOf(this.CLASS_NAME, nameof(role), role, Object.values(IdentityRole));
 
 		try {
 			const result = await this._profileEntityStorage.query(
@@ -277,7 +231,7 @@ export class IdentityService implements IIdentity {
 				totalEntities: result.totalEntities
 			};
 		} catch (error) {
-			throw new GeneralError(IdentityService._CLASS_NAME, "identityListFailed", undefined, error);
+			throw new GeneralError(this.CLASS_NAME, "identityListFailed", undefined, error);
 		}
 	}
 }

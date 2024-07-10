@@ -32,6 +32,18 @@ The storage connector for the profiles, default to "identity-profile".
 
 [`IdentityService`](IdentityService.md)
 
+## Properties
+
+### CLASS\_NAME
+
+> `readonly` **CLASS\_NAME**: `string`
+
+Runtime name for the class.
+
+#### Implementation of
+
+`IIdentity.CLASS_NAME`
+
 ## Methods
 
 ### identityCreate()

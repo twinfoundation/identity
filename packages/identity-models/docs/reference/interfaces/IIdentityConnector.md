@@ -6,6 +6,18 @@ Interface describing an identity connector.
 
 - `IService`
 
+## Properties
+
+### CLASS\_NAME
+
+> `readonly` **CLASS\_NAME**: `string`
+
+The name of the service.
+
+#### Inherited from
+
+`IService.CLASS_NAME`
+
 ## Methods
 
 ### bootstrap()?
