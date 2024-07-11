@@ -261,14 +261,12 @@ export function generateRestRoutes(routeName: string, serviceName: string): IRes
  * @param requestContext The request context for the API.
  * @param serviceName The name of the service to use in the routes.
  * @param request The request.
- * @param body The body if required for pure content.
  * @returns The response object with additional http response properties.
  */
 export async function identityCreate(
 	requestContext: IRequestContext,
 	serviceName: string,
-	request: IIdentityCreateRequest,
-	body?: unknown
+	request: IIdentityCreateRequest
 ): Promise<ICreatedResponse> {
 	Guards.object<IIdentityCreateRequest>(ROUTES_SOURCE, nameof(request), request);
 	Guards.object<IIdentityCreateRequest["body"]>(ROUTES_SOURCE, nameof(request.body), request.body);
@@ -295,14 +293,12 @@ export async function identityCreate(
  * @param requestContext The request context for the API.
  * @param serviceName The name of the service to use in the routes.
  * @param request The request.
- * @param body The body if required for pure content.
  * @returns The response object with additional http response properties.
  */
 export async function identityUpdate(
 	requestContext: IRequestContext,
 	serviceName: string,
-	request: IIdentityUpdateRequest,
-	body?: unknown
+	request: IIdentityUpdateRequest
 ): Promise<void> {
 	Guards.object<IIdentityUpdateRequest>(ROUTES_SOURCE, nameof(request), request);
 	Guards.object<IIdentityUpdateRequest["pathParams"]>(
@@ -325,14 +321,12 @@ export async function identityUpdate(
  * @param requestContext The request context for the API.
  * @param serviceName The name of the service to use in the routes.
  * @param request The request.
- * @param body The body if required for pure content.
  * @returns The response object with additional http response properties.
  */
 export async function identityGet(
 	requestContext: IRequestContext,
 	serviceName: string,
-	request: IIdentityGetRequest,
-	body?: unknown
+	request: IIdentityGetRequest
 ): Promise<IIdentityGetResponse> {
 	Guards.object<IIdentityGetRequest>(ROUTES_SOURCE, nameof(request), request);
 	Guards.object<IIdentityGetRequest["pathParams"]>(
@@ -367,14 +361,12 @@ export async function identityGet(
  * @param requestContext The request context for the API.
  * @param serviceName The name of the service to use in the routes.
  * @param request The request.
- * @param body The body if required for pure content.
  * @returns The response object with additional http response properties.
  */
 export async function identitiesList(
 	requestContext: IRequestContext,
 	serviceName: string,
-	request: IIdentityListRequest,
-	body?: unknown
+	request: IIdentityListRequest
 ): Promise<IIdentityListResponse> {
 	const service = ServiceFactory.get<IIdentity>(serviceName);
 
