@@ -1335,9 +1335,9 @@ export class IotaIdentityConnector implements IIdentityConnector {
 	private extractPayloadError(error: unknown): IError {
 		if (Is.json(error)) {
 			const obj = JSON.parse(error);
-			let message = obj.payload?.error;
+			const message = obj.payload?.error;
 			if (message === "no input with matching ed25519 address provided") {
-				message = "There were insufficient funds to complete the operation";
+				return new GeneralError(this.CLASS_NAME, "insufficientFunds");
 			}
 			return {
 				name: "IOTA",
