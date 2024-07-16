@@ -3,3 +3,4 @@
 export * from "./entities/identityDocument";
 export * from "./entityStorageIdentityConnector";
 export * from "./models/IEntityStorageIdentityConnectorConfig";
+export * from "./schema";

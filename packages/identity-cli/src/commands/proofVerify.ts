@@ -88,7 +88,7 @@ export async function actionCommandProofVerify(
 
 	setupVault();
 
-	const requestContext = { identity: "local", tenantId: "local" };
+	const requestContext = { identity: "local", partitionId: "local" };
 
 	const iotaIdentityConnector = new IotaIdentityConnector({
 		config: {
@@ -104,7 +104,7 @@ export async function actionCommandProofVerify(
 
 	CLIDisplay.spinnerStart();
 
-	const isVerified = await iotaIdentityConnector.verifyProof(requestContext, id, data, type, value);
+	const isVerified = await iotaIdentityConnector.verifyProof(id, data, type, value, requestContext);
 
 	CLIDisplay.spinnerStop();
 

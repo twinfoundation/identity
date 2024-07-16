@@ -84,8 +84,8 @@ export async function actionCommandIdentityResolve(
 
 	CLIDisplay.spinnerStart();
 
-	const requestContext = { identity: "local", tenantId: "local" };
-	const document = await iotaIdentityConnector.resolveDocument(requestContext, did);
+	const requestContext = { identity: "local", partitionId: "local" };
+	const document = await iotaIdentityConnector.resolveDocument(did, requestContext);
 
 	CLIDisplay.spinnerStop();
 

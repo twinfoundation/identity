@@ -1,6 +1,6 @@
 {
 	"name": "@gtsc/identity-connector-iota",
-	"version": "0.0.3-next.23",
+	"version": "0.0.3-next.24",
 	"description": "Identity connector implementation using IOTA",
 	"repository": {
 		"type": "git",
@@ -31,8 +31,8 @@
 		"@gtsc/core": "next",
 		"@gtsc/crypto": "next",
 		"@gtsc/entity": "next",
-		"@gtsc/identity-models": "0.0.3-next.23",
-		"@gtsc/nameof": "0.0.4",
+		"@gtsc/identity-models": "0.0.3-next.24",
+		"@gtsc/nameof": "next",
 		"@gtsc/standards-w3c-did": "next",
 		"@gtsc/vault-models": "next",
 		"@gtsc/wallet-models": "next",
@@ -41,7 +41,7 @@
 	},
 	"devDependencies": {
 		"@gtsc/entity-storage-connector-memory": "next",
-		"@gtsc/nameof-transformer": "0.0.4",
+		"@gtsc/nameof-transformer": "next",
 		"@gtsc/vault-connector-entity-storage": "next",
 		"@gtsc/wallet-connector-iota": "next",
 		"@vitest/coverage-v8": "1.6.0",

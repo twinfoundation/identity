@@ -77,15 +77,15 @@ export async function actionCommandProofCreate(
 
 	setupVault();
 
-	const requestContext = { identity: "local", tenantId: "local" };
+	const requestContext = { identity: "local", partitionId: "local" };
 
 	const vaultConnector = VaultConnectorFactory.get("vault");
 	await vaultConnector.addKey(
-		requestContext,
 		id,
 		VaultKeyType.Ed25519,
 		privateKey,
-		new Uint8Array()
+		new Uint8Array(),
+		requestContext
 	);
 
 	const iotaIdentityConnector = new IotaIdentityConnector({
@@ -102,7 +102,7 @@ export async function actionCommandProofCreate(
 
 	CLIDisplay.spinnerStart();
 
-	const proof = await iotaIdentityConnector.createProof(requestContext, id, data);
+	const proof = await iotaIdentityConnector.createProof(id, data, requestContext);
 
 	const proofValue = Converter.bytesToBase64(proof.value);
 

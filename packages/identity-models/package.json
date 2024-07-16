@@ -1,6 +1,6 @@
 {
 	"name": "@gtsc/identity-models",
-	"version": "0.0.3-next.23",
+	"version": "0.0.3-next.24",
 	"description": "Models which define the structure of the contracts and connectors",
 	"repository": {
 		"type": "git",
@@ -34,7 +34,7 @@
 		"@gtsc/standards-w3c-did": "next"
 	},
 	"devDependencies": {
-		"@gtsc/nameof-transformer": "0.0.4",
+		"@gtsc/nameof-transformer": "next",
 		"@vitest/coverage-v8": "1.6.0",
 		"copyfiles": "2.4.1",
 		"replace-in-files-cli": "2.2.0",

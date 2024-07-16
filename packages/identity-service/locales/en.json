@@ -1,11 +1,17 @@
 {
 	"error": {
 		"identityService": {
-			"identityCreateFailed": "Creating the identity failed",
-			"identityGetFailed": "Getting the identity failed \"{notFoundId}\"",
-			"identityUpdateFailed": "Updating the identity failed \"{identity}\"",
-			"identityMismatch": "The authenticated user does not match",
-			"identityListFailed": "Failed listing identities"
+			"createFailed": "Creating the identity failed"
+		},
+		"identityProfileService": {
+			"alreadyExists": "The identity profile already exists for the identity \"{existingId}\"",
+			"createFailed": "Creating the identity profile failed \"{identity}\"",
+			"getFailed": "Getting the identity profile failed \"{notFoundId}\"",
+			"updateFailed": "Updating the identity profile failed \"{identity}\"",
+			"notFound": "The identity profile failed \"{notFoundId}\"",
+			"removeFailed": "Removing the identity profile failed \"{identity}\"",
+			"mismatch": "The authenticated user does not match",
+			"listFailed": "Failed listing identities"
 		}
 	}
 }

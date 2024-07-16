@@ -1,12 +1,12 @@
-# Interface: IIdentityGetRequest
+# Interface: IIdentityProfileGetRequest
 
 Get the profile for an identity.
 
 ## Properties
 
-### pathParams
+### pathParams?
 
-> **pathParams**: `object`
+> `optional` **pathParams**: `object`
 
 The path parameters.
 
@@ -18,9 +18,9 @@ The identity to get the profile for.
 
 ***
 
-### query
+### query?
 
-> **query**: `object`
+> `optional` **query**: `object`
 
 The query parameters.
 

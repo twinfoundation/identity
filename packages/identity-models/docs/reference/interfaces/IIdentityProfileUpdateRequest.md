@@ -1,12 +1,12 @@
-# Interface: IIdentityUpdateRequest
+# Interface: IIdentityProfileUpdateRequest
 
-Request to update an identity.
+Request to update an identity profile.
 
 ## Properties
 
-### pathParams
+### pathParams?
 
-> **pathParams**: `object`
+> `optional` **pathParams**: `object`
 
 The path parameters.
 
@@ -26,6 +26,6 @@ The data for the request.
 
 #### properties
 
-> **properties**: `IProperty`[]
+> **properties**: [`IIdentityProfileProperty`](IIdentityProfileProperty.md)[]
 
 Properties for the identity.

@@ -1,6 +1,6 @@
-# Function: generateRestRoutes()
+# Function: generateRestRoutesIdentity()
 
-> **generateRestRoutes**(`routeName`, `serviceName`): `IRestRoute`[]
+> **generateRestRoutesIdentity**(`routeName`, `serviceName`): `IRestRoute`[]
 
 The REST routes for identity.
 

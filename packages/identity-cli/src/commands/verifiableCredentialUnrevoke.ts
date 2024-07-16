@@ -73,11 +73,11 @@ export async function actionCommandVerifiableCredentialUnrevoke(opts: {
 
 	setupVault();
 
-	const requestContext = { identity: "local", tenantId: "local" };
+	const requestContext = { identity: "local", partitionId: "local" };
 	const vaultSeedId = "local-seed";
 
 	const vaultConnector = VaultConnectorFactory.get("vault");
-	await vaultConnector.setSecret(requestContext, vaultSeedId, Converter.bytesToBase64(seed));
+	await vaultConnector.setSecret(vaultSeedId, Converter.bytesToBase64(seed), requestContext);
 
 	const iotaIdentityConnector = new IotaIdentityConnector({
 		config: {
@@ -96,7 +96,7 @@ export async function actionCommandVerifiableCredentialUnrevoke(opts: {
 
 	CLIDisplay.spinnerStart();
 
-	await iotaIdentityConnector.unrevokeVerifiableCredentials(requestContext, did, [revocationIndex]);
+	await iotaIdentityConnector.unrevokeVerifiableCredentials(did, [revocationIndex], requestContext);
 
 	CLIDisplay.spinnerStop();
 

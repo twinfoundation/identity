@@ -1,4 +1,4 @@
-# Interface: IIdentityListResponse
+# Interface: IIdentityProfileListResponse
 
 Response to get a list of identities.
 

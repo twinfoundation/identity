@@ -1,6 +1,6 @@
-# Interface: IIdentityListRequest
+# Interface: IIdentityProfileListRequest
 
-Request to get a list of identities by role.
+Request to get a list of identities.
 
 ## Properties
 
@@ -10,11 +10,11 @@ Request to get a list of identities by role.
 
 The query parameters.
 
-#### role
+#### filters?
 
-> **role**: [`IdentityRole`](../type-aliases/IdentityRole.md)
+> `optional` **filters**: `string`
 
-The property name to use for lookup.
+The filters to apply to the list, comma separated list with color between key and value for each pair e.g. prop1:value1,prop2:value2.
 
 #### propertyNames?
 

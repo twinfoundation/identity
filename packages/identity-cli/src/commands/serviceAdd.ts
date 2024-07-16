@@ -102,11 +102,11 @@ export async function actionCommandServiceAdd(
 
 	setupVault();
 
-	const requestContext = { identity: "local", tenantId: "local" };
+	const requestContext = { identity: "local", partitionId: "local" };
 	const vaultSeedId = "local-seed";
 
 	const vaultConnector = VaultConnectorFactory.get("vault");
-	await vaultConnector.setSecret(requestContext, vaultSeedId, Converter.bytesToBase64(seed));
+	await vaultConnector.setSecret(vaultSeedId, Converter.bytesToBase64(seed), requestContext);
 
 	const iotaIdentityConnector = new IotaIdentityConnector({
 		config: {
@@ -123,7 +123,7 @@ export async function actionCommandServiceAdd(
 
 	CLIDisplay.spinnerStart();
 
-	const service = await iotaIdentityConnector.addService(requestContext, did, id, type, endpoint);
+	const service = await iotaIdentityConnector.addService(did, id, type, endpoint, requestContext);
 
 	CLIDisplay.spinnerStop();
 

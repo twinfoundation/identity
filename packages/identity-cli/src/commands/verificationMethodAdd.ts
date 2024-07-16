@@ -110,11 +110,11 @@ export async function actionCommandVerificationMethodAdd(
 
 	setupVault();
 
-	const requestContext = { identity: "local", tenantId: "local" };
+	const requestContext = { identity: "local", partitionId: "local" };
 	const vaultSeedId = "local-seed";
 
 	const vaultConnector = VaultConnectorFactory.get("vault");
-	await vaultConnector.setSecret(requestContext, vaultSeedId, Converter.bytesToBase64(seed));
+	await vaultConnector.setSecret(vaultSeedId, Converter.bytesToBase64(seed), requestContext);
 
 	const iotaIdentityConnector = new IotaIdentityConnector({
 		config: {
@@ -134,15 +134,15 @@ export async function actionCommandVerificationMethodAdd(
 	CLIDisplay.spinnerStart();
 
 	const verificationMethod = await iotaIdentityConnector.addVerificationMethod(
-		requestContext,
 		did,
 		type,
-		opts?.id
+		opts?.id,
+		requestContext
 	);
 
 	CLIDisplay.spinnerStop();
 
-	const keyPair = await vaultConnector.getKey(requestContext, verificationMethod.id);
+	const keyPair = await vaultConnector.getKey(verificationMethod.id, requestContext);
 	const privateKey = Converter.bytesToBase64(keyPair.privateKey);
 	const publicKey = Converter.bytesToBase64(keyPair.publicKey);
 

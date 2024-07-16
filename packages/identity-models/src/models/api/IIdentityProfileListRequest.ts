@@ -1,19 +1,18 @@
 // Copyright 2024 IOTA Stiftung.
 // SPDX-License-Identifier: Apache-2.0.
-import type { IdentityRole } from "../identityRole";
 
 /**
- * Request to get a list of identities by role.
+ * Request to get a list of identities.
  */
-export interface IIdentityListRequest {
+export interface IIdentityProfileListRequest {
 	/**
 	 * The query parameters.
 	 */
 	query: {
 		/**
-		 * The property name to use for lookup.
+		 * The filters to apply to the list, comma separated list with color between key and value for each pair e.g. prop1:value1,prop2:value2.
 		 */
-		role: IdentityRole;
+		filters?: string;
 
 		/**
 		 * The properties to get for the profile, defaults to all, should be a comma separated list.

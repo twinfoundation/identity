@@ -142,15 +142,15 @@ export async function actionCommandVerifiableCredentialCreate(
 
 	setupVault();
 
-	const requestContext = { identity: "local", tenantId: "local" };
+	const requestContext = { identity: "local", partitionId: "local" };
 
 	const vaultConnector = VaultConnectorFactory.get("vault");
 	await vaultConnector.addKey(
-		requestContext,
 		id,
 		VaultKeyType.Ed25519,
 		privateKey,
-		new Uint8Array()
+		new Uint8Array(),
+		requestContext
 	);
 
 	const iotaIdentityConnector = new IotaIdentityConnector({
@@ -185,13 +185,13 @@ export async function actionCommandVerifiableCredentialCreate(
 	CLIDisplay.spinnerStart();
 
 	const verifiableCredential = await iotaIdentityConnector.createVerifiableCredential(
-		requestContext,
 		id,
 		credentialId,
 		types,
 		jsonData,
 		contexts,
-		revocationIndex
+		revocationIndex,
+		requestContext
 	);
 
 	CLIDisplay.spinnerStop();

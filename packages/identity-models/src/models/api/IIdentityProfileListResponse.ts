@@ -1,11 +1,11 @@
 // Copyright 2024 IOTA Stiftung.
 // SPDX-License-Identifier: Apache-2.0.
-import type { IProperty } from "@gtsc/schema";
+import type { IIdentityProfileProperty } from "../IIdentityProfileProperty";
 
 /**
  * Response to get a list of identities.
  */
-export interface IIdentityListResponse {
+export interface IIdentityProfileListResponse {
 	/**
 	 * The response payload.
 	 */
@@ -14,8 +14,15 @@ export interface IIdentityListResponse {
 		 * The identities.
 		 */
 		identities: {
+			/**
+			 * The identity.
+			 */
 			identity: string;
-			properties?: IProperty[];
+
+			/**
+			 * The properties for the identity.
+			 */
+			properties?: IIdentityProfileProperty[];
 		}[];
 
 		/**

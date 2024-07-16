@@ -76,11 +76,11 @@ export async function actionCommandServiceRemove(opts: {
 
 	setupVault();
 
-	const requestContext = { identity: "local", tenantId: "local" };
+	const requestContext = { identity: "local", partitionId: "local" };
 	const vaultSeedId = "local-seed";
 
 	const vaultConnector = VaultConnectorFactory.get("vault");
-	await vaultConnector.setSecret(requestContext, vaultSeedId, Converter.bytesToBase64(seed));
+	await vaultConnector.setSecret(vaultSeedId, Converter.bytesToBase64(seed), requestContext);
 
 	const iotaIdentityConnector = new IotaIdentityConnector({
 		config: {
@@ -97,7 +97,7 @@ export async function actionCommandServiceRemove(opts: {
 
 	CLIDisplay.spinnerStart();
 
-	await iotaIdentityConnector.removeService(requestContext, id);
+	await iotaIdentityConnector.removeService(id, requestContext);
 
 	CLIDisplay.spinnerStop();
 
