@@ -54,7 +54,7 @@ export function generateRestRoutesIdentityProfile(
 			summary: "Create an identity profile",
 			tag: tagsIdentityProfile[0].name,
 			method: "POST",
-			path: `${baseRouteName}`,
+			path: `${baseRouteName}/`,
 			handler: async (requestContext, request) =>
 				identityProfileCreate(requestContext, serviceName, request),
 			requestType: {

@@ -24,17 +24,20 @@ export const tagsIdentity: ITag[] = [
 
 /**
  * The REST routes for identity.
- * @param routeName Prefix to prepend to the paths.
+ * @param baseRouteName Prefix to prepend to the paths.
  * @param serviceName The name of the service to use in the routes.
  * @returns The generated routes.
  */
-export function generateRestRoutesIdentity(routeName: string, serviceName: string): IRestRoute[] {
+export function generateRestRoutesIdentity(
+	baseRouteName: string,
+	serviceName: string
+): IRestRoute[] {
 	const identityCreateRoute: IRestRoute<IIdentityCreateRequest, ICreatedResponse> = {
 		operationId: "identityCreate",
 		summary: "Create a new identity",
 		tag: tagsIdentity[0].name,
 		method: "POST",
-		path: `${routeName}/`,
+		path: `${baseRouteName}/`,
 		handler: async (requestContext, request) =>
 			identityCreate(requestContext, serviceName, request),
 		requestType: {

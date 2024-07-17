@@ -1,12 +1,12 @@
 # Function: generateRestRoutesIdentity()
 
-> **generateRestRoutesIdentity**(`routeName`, `serviceName`): `IRestRoute`[]
+> **generateRestRoutesIdentity**(`baseRouteName`, `serviceName`): `IRestRoute`[]
 
 The REST routes for identity.
 
 ## Parameters
 
-• **routeName**: `string`
+• **baseRouteName**: `string`
 
 Prefix to prepend to the paths.
 

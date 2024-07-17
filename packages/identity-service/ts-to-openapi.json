@@ -8,8 +8,7 @@
 	"authMethods": ["jwtBearer"],
 	"restRoutes": [
 		{
-			"packageRoot": "./",
-			"pathRoot": "/identity"
+			"packageRoot": "./"
 		}
 	]
 }

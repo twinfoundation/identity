@@ -7,11 +7,13 @@ import { generateRestRoutesIdentity, tagsIdentity } from "./identityRoutes";
 export const restEntryPoints: IRestRouteEntryPoint[] = [
 	{
 		name: "identity",
+		defaultBaseRoute: "identity",
 		tags: tagsIdentity,
 		generateRoutes: generateRestRoutesIdentity
 	},
 	{
 		name: "identityProfile",
+		defaultBaseRoute: "identity/profile",
 		tags: tagsIdentityProfile,
 		generateRoutes: generateRestRoutesIdentityProfile
 	}
