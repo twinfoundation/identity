@@ -9,7 +9,7 @@ export interface IIdentityProfileUpdateRequest {
 	/**
 	 * The path parameters.
 	 */
-	pathParams?: {
+	pathParams: {
 		/**
 		 * The identity to update the profile for.
 		 */

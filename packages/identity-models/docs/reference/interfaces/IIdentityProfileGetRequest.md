@@ -4,9 +4,9 @@ Get the profile for an identity.
 
 ## Properties
 
-### pathParams?
+### pathParams
 
-> `optional` **pathParams**: `object`
+> **pathParams**: `object`
 
 The path parameters.
 
@@ -18,9 +18,9 @@ The identity to get the profile for.
 
 ***
 
-### query?
+### query
 
-> `optional` **query**: `object`
+> **query**: `object`
 
 The query parameters.
 

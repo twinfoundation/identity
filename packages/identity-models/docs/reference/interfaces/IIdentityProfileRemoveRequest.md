@@ -4,9 +4,9 @@ Remove the profile for an identity.
 
 ## Properties
 
-### pathParams?
+### pathParams
 
-> `optional` **pathParams**: `object`
+> **pathParams**: `object`
 
 The path parameters.
 

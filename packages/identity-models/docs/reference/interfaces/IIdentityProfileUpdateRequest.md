@@ -4,9 +4,9 @@ Request to update an identity profile.
 
 ## Properties
 
-### pathParams?
+### pathParams
 
-> `optional` **pathParams**: `object`
+> **pathParams**: `object`
 
 The path parameters.
 

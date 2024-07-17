@@ -8,7 +8,7 @@ import { IdentityProfile } from "./entities/identityProfile";
  * Initialize the schema for the identity service.
  */
 export function initSchema(): void {
-	EntitySchemaFactory.register(nameof(IdentityProfile), () =>
+	EntitySchemaFactory.register(nameof<IdentityProfile>(), () =>
 		EntitySchemaHelper.getSchema(IdentityProfile)
 	);
 }

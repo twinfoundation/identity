@@ -8,7 +8,7 @@ export interface IIdentityProfileGetRequest {
 	/**
 	 * The path parameters.
 	 */
-	pathParams?: {
+	pathParams: {
 		/**
 		 * The identity to get the profile for.
 		 */
@@ -18,7 +18,7 @@ export interface IIdentityProfileGetRequest {
 	/**
 	 * The query parameters.
 	 */
-	query?: {
+	query: {
 		/**
 		 * The properties to get for the profile, defaults to all, should be a comma separated list.
 		 */

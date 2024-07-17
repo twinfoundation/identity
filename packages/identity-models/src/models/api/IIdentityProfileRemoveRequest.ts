@@ -8,7 +8,7 @@ export interface IIdentityProfileRemoveRequest {
 	/**
 	 * The path parameters.
 	 */
-	pathParams?: {
+	pathParams: {
 		/**
 		 * The identity to remove the profile for.
 		 */

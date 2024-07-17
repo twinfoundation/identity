@@ -740,58 +740,38 @@
             "IdentityCreateRequest": {
                 "type": "object",
                 "properties": {
-                    "body": {
-                        "type": "object",
-                        "properties": {
-                            "controller": {
-                                "type": "string",
-                                "description": "The controller for the identity."
-                            }
-                        },
-                        "required": [
-                            "controller"
-                        ],
-                        "additionalProperties": false,
-                        "description": "The data for the request."
+                    "controller": {
+                        "type": "string",
+                        "description": "The controller for the identity."
                     }
                 },
                 "required": [
-                    "body"
+                    "controller"
                 ],
                 "additionalProperties": false,
-                "description": "Create a new identity."
+                "description": "The data for the request."
             },
             "IdentityProfileCreateRequest": {
                 "type": "object",
                 "properties": {
-                    "body": {
-                        "type": "object",
-                        "properties": {
-                            "identity": {
-                                "type": "string",
-                                "description": "The identity to create the profile for."
-                            },
-                            "properties": {
-                                "type": "array",
-                                "items": {
-                                    "$ref": "#/components/schemas/IdentityProfileProperty"
-                                },
-                                "description": "Properties for the identity."
-                            }
+                    "identity": {
+                        "type": "string",
+                        "description": "The identity to create the profile for."
+                    },
+                    "properties": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/IdentityProfileProperty"
                         },
-                        "required": [
-                            "identity",
-                            "properties"
-                        ],
-                        "additionalProperties": false,
-                        "description": "The data for the request."
+                        "description": "Properties for the identity."
                     }
                 },
                 "required": [
-                    "body"
+                    "identity",
+                    "properties"
                 ],
                 "additionalProperties": false,
-                "description": "Request to create an identity profile."
+                "description": "The data for the request."
             },
             "IdentityProfileProperty": {
                 "type": "object",
@@ -838,29 +818,19 @@
             "IdentityProfileUpdateRequest": {
                 "type": "object",
                 "properties": {
-                    "body": {
-                        "type": "object",
-                        "properties": {
-                            "properties": {
-                                "type": "array",
-                                "items": {
-                                    "$ref": "#/components/schemas/IdentityProfileProperty"
-                                },
-                                "description": "Properties for the identity."
-                            }
+                    "properties": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/IdentityProfileProperty"
                         },
-                        "required": [
-                            "properties"
-                        ],
-                        "additionalProperties": false,
-                        "description": "The data for the request."
+                        "description": "Properties for the identity."
                     }
                 },
                 "required": [
-                    "body"
+                    "properties"
                 ],
                 "additionalProperties": false,
-                "description": "Request to update an identity profile."
+                "description": "The data for the request."
             },
             "IdentityProfileListResponse": {
                 "type": "object",

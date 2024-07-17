@@ -5,7 +5,7 @@ import { MemoryEntityStorageConnector } from "@gtsc/entity-storage-connector-mem
 import { EntityStorageConnectorFactory } from "@gtsc/entity-storage-models";
 import {
 	EntityStorageIdentityConnector,
-	IdentityDocument,
+	type IdentityDocument,
 	initSchema as initSchemaIdentity
 } from "@gtsc/identity-connector-entity-storage";
 import { IdentityConnectorFactory } from "@gtsc/identity-models";
@@ -15,8 +15,8 @@ import type { IServiceRequestContext } from "@gtsc/services";
 import type { IDidDocument } from "@gtsc/standards-w3c-did";
 import {
 	EntityStorageVaultConnector,
-	VaultKey,
-	VaultSecret,
+	type VaultKey,
+	type VaultSecret,
 	initSchema as initSchemaVault
 } from "@gtsc/vault-connector-entity-storage";
 import { VaultConnectorFactory } from "@gtsc/vault-models";
@@ -45,15 +45,15 @@ describe("IdentityService", () => {
 
 	beforeEach(() => {
 		identityDocumentEntityStorage = new MemoryEntityStorageConnector<IdentityDocument>({
-			entitySchema: nameof(IdentityDocument)
+			entitySchema: nameof<IdentityDocument>()
 		});
 
 		vaultKeyEntityStorageConnector = new MemoryEntityStorageConnector<VaultKey>({
-			entitySchema: nameof(VaultKey)
+			entitySchema: nameof<VaultKey>()
 		});
 
 		const vaultSecretEntityStorageConnector = new MemoryEntityStorageConnector<VaultSecret>({
-			entitySchema: nameof(VaultSecret)
+			entitySchema: nameof<VaultSecret>()
 		});
 
 		EntityStorageConnectorFactory.register(
