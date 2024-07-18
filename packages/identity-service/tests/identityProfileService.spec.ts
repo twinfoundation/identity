@@ -87,13 +87,11 @@ describe("IdentityProfileService", () => {
 
 		const service = new IdentityProfileService();
 
-		await expect(service.get("foo", undefined, TEST_CONTEXT)).rejects.toMatchObject(
-			expect.objectContaining({
-				name: "GeneralError",
-				message: "identityProfileService.getFailed",
-				inner: { name: "Error", message: "Test Error" }
-			})
-		);
+		await expect(service.get("foo", undefined, TEST_CONTEXT)).rejects.toMatchObject({
+			name: "GeneralError",
+			message: "identityProfileService.getFailed",
+			inner: { name: "Error", message: "Test Error" }
+		});
 
 		expect(I18n.hasMessage("error.identityProfileService.getFailed")).toEqual(true);
 	});
@@ -101,13 +99,11 @@ describe("IdentityProfileService", () => {
 	test("Can fail to get an identity when it doesn't exist", async () => {
 		const service = new IdentityProfileService();
 
-		await expect(service.get("foo", undefined, TEST_CONTEXT)).rejects.toMatchObject(
-			expect.objectContaining({
-				name: "NotFoundError",
-				message: "identityProfileService.getFailed",
-				properties: { notFoundId: "foo" }
-			})
-		);
+		await expect(service.get("foo", undefined, TEST_CONTEXT)).rejects.toMatchObject({
+			name: "NotFoundError",
+			message: "identityProfileService.getFailed",
+			properties: { notFoundId: "foo" }
+		});
 
 		expect(I18n.hasMessage("error.identityProfileService.getFailed")).toEqual(true);
 	});
@@ -143,13 +139,11 @@ describe("IdentityProfileService", () => {
 
 		const service = new IdentityProfileService();
 
-		await expect(service.update(TEST_IDENTITY_ID, [], TEST_CONTEXT)).rejects.toMatchObject(
-			expect.objectContaining({
-				name: "GeneralError",
-				message: "identityProfileService.updateFailed",
-				inner: { name: "Error", message: "Test Error" }
-			})
-		);
+		await expect(service.update(TEST_IDENTITY_ID, [], TEST_CONTEXT)).rejects.toMatchObject({
+			name: "GeneralError",
+			message: "identityProfileService.updateFailed",
+			inner: { name: "Error", message: "Test Error" }
+		});
 
 		expect(I18n.hasMessage("error.identityProfileService.updateFailed")).toEqual(true);
 	});
@@ -157,14 +151,12 @@ describe("IdentityProfileService", () => {
 	test("Can fail to update an identity when it doesn't exist", async () => {
 		const service = new IdentityProfileService();
 
-		await expect(service.update(TEST_IDENTITY_ID, [], TEST_CONTEXT)).rejects.toMatchObject(
-			expect.objectContaining({
-				name: "NotFoundError",
-				source: "IdentityProfileService",
-				message: "identityProfileService.notFound",
-				properties: { notFoundId: TEST_IDENTITY_ID }
-			})
-		);
+		await expect(service.update(TEST_IDENTITY_ID, [], TEST_CONTEXT)).rejects.toMatchObject({
+			name: "NotFoundError",
+			source: "IdentityProfileService",
+			message: "identityProfileService.notFound",
+			properties: { notFoundId: TEST_IDENTITY_ID }
+		});
 
 		expect(I18n.hasMessage("error.identityProfileService.updateFailed")).toEqual(true);
 	});
@@ -172,13 +164,11 @@ describe("IdentityProfileService", () => {
 	test("Can fail to update an identity when it doesn't match the authenticated user", async () => {
 		const service = new IdentityProfileService();
 
-		await expect(service.update("foo", [], TEST_CONTEXT)).rejects.toMatchObject(
-			expect.objectContaining({
-				name: "UnauthorizedError",
-				source: "IdentityProfileService",
-				message: "identityProfileService.mismatch"
-			})
-		);
+		await expect(service.update("foo", [], TEST_CONTEXT)).rejects.toMatchObject({
+			name: "UnauthorizedError",
+			source: "IdentityProfileService",
+			message: "identityProfileService.mismatch"
+		});
 
 		expect(I18n.hasMessage("error.identityProfileService.mismatch")).toEqual(true);
 	});
@@ -232,13 +222,11 @@ describe("IdentityProfileService", () => {
 
 		await expect(
 			service.list(undefined, undefined, undefined, undefined, TEST_CONTEXT)
-		).rejects.toMatchObject(
-			expect.objectContaining({
-				name: "GeneralError",
-				message: "identityProfileService.listFailed",
-				inner: { name: "Error", message: "Test Error" }
-			})
-		);
+		).rejects.toMatchObject({
+			name: "GeneralError",
+			message: "identityProfileService.listFailed",
+			inner: { name: "Error", message: "Test Error" }
+		});
 
 		expect(I18n.hasMessage("error.identityProfileService.listFailed")).toEqual(true);
 	});
