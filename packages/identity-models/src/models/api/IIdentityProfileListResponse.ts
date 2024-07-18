@@ -13,7 +13,7 @@ export interface IIdentityProfileListResponse {
 		/**
 		 * The identities.
 		 */
-		identities: {
+		items: {
 			/**
 			 * The identity.
 			 */

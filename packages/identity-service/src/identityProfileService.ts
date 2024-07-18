@@ -222,7 +222,7 @@ export class IdentityProfileService implements IIdentityProfile {
 		/**
 		 * The identities.
 		 */
-		identities: { identity: string; properties?: IIdentityProfileProperty[] }[];
+		items: { identity: string; properties?: IIdentityProfileProperty[] }[];
 		/**
 		 * An optional cursor, when defined can be used to call find to get more entities.
 		 */
@@ -266,7 +266,7 @@ export class IdentityProfileService implements IIdentityProfile {
 			);
 
 			return {
-				identities: result.entities.map(entity => ({
+				items: result.entities.map(entity => ({
 					identity: entity.identity ?? "",
 					properties: PropertyHelper.filterInclude<IIdentityProfileProperty>(
 						entity.properties,

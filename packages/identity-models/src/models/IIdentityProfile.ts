@@ -79,7 +79,7 @@ export interface IIdentityProfile extends IService {
 		/**
 		 * The identities.
 		 */
-		identities: { identity: string; properties?: IIdentityProfileProperty[] }[];
+		items: { identity: string; properties?: IIdentityProfileProperty[] }[];
 		/**
 		 * An optional cursor, when defined can be used to call find to get more entities.
 		 */

@@ -293,7 +293,7 @@ export function generateRestRoutesIdentityProfile(
 						id: "identitiesProfileListResponseExample",
 						response: {
 							body: {
-								identities: [
+								items: [
 									{
 										identity:
 											"did:gtsc:0xc57d94b088f4c6d2cb32ded014813d0c786aa00134c8ee22f84b1e2545602a70",

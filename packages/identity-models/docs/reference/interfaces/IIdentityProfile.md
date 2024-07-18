@@ -227,9 +227,9 @@ The context for the request.
 
 The list of items and cursor for paging.
 
-##### identities
+##### items
 
-> **identities**: `object`[]
+> **items**: `object`[]
 
 The identities.
 

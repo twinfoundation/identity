@@ -134,9 +134,9 @@ export class IdentityProfileClient extends BaseRestClient implements IIdentityPr
 		pageSize?: number
 	): Promise<{
 		/**
-		 * The identities.
+		 * The items.
 		 */
-		identities: {
+		items: {
 			identity: string;
 			properties?: IIdentityProfileProperty[];
 		}[];
