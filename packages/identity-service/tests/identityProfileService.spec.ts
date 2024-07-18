@@ -281,7 +281,7 @@ describe("IdentityProfileService", () => {
 			undefined,
 			TEST_CONTEXT
 		);
-		expect(identitiesNode.identities.length).toEqual(3);
+		expect(identitiesNode.items.length).toEqual(3);
 
 		const identitiesUsers = await service.list(
 			[
@@ -295,6 +295,6 @@ describe("IdentityProfileService", () => {
 			undefined,
 			TEST_CONTEXT
 		);
-		expect(identitiesUsers.identities.length).toEqual(7);
+		expect(identitiesUsers.items.length).toEqual(7);
 	});
 });
