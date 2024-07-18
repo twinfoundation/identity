@@ -85,7 +85,7 @@ describe("IdentityService", () => {
 		expect(identityResult.identity).toBeDefined();
 
 		const vaultData = vaultKeyEntityStorageConnector.getStore(TEST_PARTITION_ID);
-		expect(vaultData?.[0].id).toEqual(`${TEST_IDENTITY_ID}/${identityResult.identity}`);
+		expect(vaultData?.[0].id).toEqual(`${identityResult.identity}/${identityResult.identity}`);
 		expect(vaultData?.[0].type).toEqual(0);
 		expect(Is.stringBase64(vaultData?.[0].privateKey)).toEqual(true);
 		expect(Is.stringBase64(vaultData?.[0].publicKey)).toEqual(true);
