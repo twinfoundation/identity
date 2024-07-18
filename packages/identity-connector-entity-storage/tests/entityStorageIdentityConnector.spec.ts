@@ -105,6 +105,8 @@ describe("EntityStorageIdentityConnector", () => {
 		testIdentityDocument = didDocumentEntityStorage.getStore(
 			TEST_PARTITION_ID
 		)?.[0] as IdentityDocument;
+
+		TEST_CONTEXT.identity = testIdentityDocument.id;
 	});
 
 	test("can fail to resolve a document with no id", async () => {

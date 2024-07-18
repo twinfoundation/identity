@@ -107,7 +107,14 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 		try {
 			const did = `did:${this._config.didMethod}:${Converter.bytesToHex(RandomHelper.generate(32), true)}`;
 
-			await this._vaultConnector.createKey(did, VaultKeyType.Ed25519, requestContext);
+			// We use a new request context with the identity set to the did so that
+			// the vault connector can associate the new keys with the created identity.
+			const identityContext: IServiceRequestContext = {
+				partitionId: requestContext?.partitionId,
+				identity: did
+			};
+
+			await this._vaultConnector.createKey(did, VaultKeyType.Ed25519, identityContext);
 
 			const bitString = new BitString(EntityStorageIdentityConnector._REVOCATION_BITS_SIZE);
 			const compressed = await Compression.compress(bitString.getBits(), CompressionType.Gzip);
@@ -123,7 +130,7 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 				]
 			};
 
-			await this.updateDocument(didDocument, controller, requestContext);
+			await this.updateDocument(didDocument, controller, identityContext);
 
 			return didDocument;
 		} catch (error) {
