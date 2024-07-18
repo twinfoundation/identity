@@ -76,7 +76,7 @@ export function generateRestRoutesIdentityProfile(
 									{
 										key: "email",
 										type: "https://schema.org/Text",
-										value: undefined,
+										value: "john@example.com",
 										isPublic: false
 									},
 									{
