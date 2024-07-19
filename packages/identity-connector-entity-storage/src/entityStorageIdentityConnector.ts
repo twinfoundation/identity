@@ -589,10 +589,9 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 				vc: jwtVc
 			};
 
-			const signature = await Jwt.encode(
+			const signature = await Jwt.encodeWithSigner(
 				jwtHeader,
 				jwtPayload,
-				undefined,
 				async (alg, key, payload) => {
 					const sig = await this._vaultConnector.sign(
 						verificationMethodId,
@@ -978,10 +977,9 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 				jwtPayload.exp = Math.floor(Date.now() / 1000) + expiresInSeconds;
 			}
 
-			const signature = await Jwt.encode(
+			const signature = await Jwt.encodeWithSigner(
 				jwtHeader,
 				jwtPayload,
-				undefined,
 				async (alg, key, payload) => {
 					const sig = await this._vaultConnector.sign(
 						presentationMethodId,

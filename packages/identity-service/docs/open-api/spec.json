@@ -210,6 +210,7 @@
                                             {
                                                 "key": "email",
                                                 "type": "https://schema.org/Text",
+                                                "value": "john@example.com",
                                                 "isPublic": false
                                             },
                                             {
