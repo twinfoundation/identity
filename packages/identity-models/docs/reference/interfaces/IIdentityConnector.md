@@ -22,15 +22,19 @@ The name of the service.
 
 ### bootstrap()?
 
-> `optional` **bootstrap**(`requestContext`?): `Promise`\<`void`\>
+> `optional` **bootstrap**(`systemRequestContext`, `systemLoggingConnectorType`?): `Promise`\<`void`\>
 
 Bootstrap the service by creating and initializing any resources it needs.
 
 #### Parameters
 
-• **requestContext?**: `IServiceRequestContext`
+• **systemRequestContext**: `IServiceRequestContext`
 
-The request context for bootstrapping.
+The system request context.
+
+• **systemLoggingConnectorType?**: `string`
+
+The system logging connector type, defaults to "system-logging".
 
 #### Returns
 
@@ -46,9 +50,19 @@ Nothing.
 
 ### start()?
 
-> `optional` **start**(): `Promise`\<`void`\>
+> `optional` **start**(`systemRequestContext`, `systemLoggingConnectorType`?): `Promise`\<`void`\>
 
 The service needs to be started when the application is initialized.
+
+#### Parameters
+
+• **systemRequestContext**: `IServiceRequestContext`
+
+The system request context.
+
+• **systemLoggingConnectorType?**: `string`
+
+The system logging connector type, defaults to "system-logging".
 
 #### Returns
 
@@ -64,9 +78,19 @@ Nothing.
 
 ### stop()?
 
-> `optional` **stop**(): `Promise`\<`void`\>
+> `optional` **stop**(`systemRequestContext`, `systemLoggingConnectorType`?): `Promise`\<`void`\>
 
 The service needs to be stopped when the application is closed.
+
+#### Parameters
+
+• **systemRequestContext**: `IServiceRequestContext`
+
+The system request context.
+
+• **systemLoggingConnectorType?**: `string`
+
+The system logging connector type, defaults to "system-logging".
 
 #### Returns
 

@@ -41,10 +41,11 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 	/**
 	 * The namespace supported by the identity connector.
 	 */
-	public static NAMESPACE: string = "entity-storage";
+	public static readonly NAMESPACE: string = "entity-storage";
 
 	/**
 	 * The size of the revocation bitmap in bits (16Kb).
+	 * @internal
 	 */
 	private static readonly _REVOCATION_BITS_SIZE: number = 131072;
 

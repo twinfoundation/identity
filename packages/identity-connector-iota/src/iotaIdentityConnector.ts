@@ -74,7 +74,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 	/**
 	 * The namespace supported by the identity connector.
 	 */
-	public static NAMESPACE: string = "iota";
+	public static readonly NAMESPACE: string = "iota";
 
 	/**
 	 * Default name for the seed secret.

@@ -40,7 +40,7 @@ The configuration for the connector.
 
 ### NAMESPACE
 
-> `static` **NAMESPACE**: `string` = `"entity-storage"`
+> `static` `readonly` **NAMESPACE**: `string` = `"entity-storage"`
 
 The namespace supported by the identity connector.
 

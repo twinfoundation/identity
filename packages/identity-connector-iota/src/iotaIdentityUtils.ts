@@ -15,7 +15,7 @@ export class IotaIdentityUtils {
 	public static didToAddress(did: string): string {
 		// The did is made up from scheme:method:hrp:aliasId
 		const didUrn = Urn.fromValidString(did);
-		const didParts = didUrn.parts(true);
+		const didParts = didUrn.parts();
 		return Utils.aliasIdToBech32(didParts[3], didParts[2]);
 	}
 }
