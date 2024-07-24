@@ -13,5 +13,10 @@ export interface IIdentityCreateRequest {
 		 * The controller for the identity.
 		 */
 		controller: string;
+
+		/**
+		 * The namespace of the connector to use for the identity, defaults to service configured namespace.
+		 */
+		namespace?: string;
 	};
 }

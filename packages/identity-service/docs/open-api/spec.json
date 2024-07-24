@@ -828,6 +828,10 @@
                     "controller": {
                         "type": "string",
                         "description": "The controller for the identity."
+                    },
+                    "namespace": {
+                        "type": "string",
+                        "description": "The namespace of the connector to use for the identity, defaults to service configured namespace."
                     }
                 },
                 "required": [

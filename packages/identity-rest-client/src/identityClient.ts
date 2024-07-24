@@ -26,9 +26,16 @@ export class IdentityClient extends BaseRestClient implements IIdentity {
 	/**
 	 * Create a new identity.
 	 * @param controller The controller for the identity.
+	 * @param options Additional options for the identity service.
+	 * @param options.namespace The namespace of the connector to use for the identity, defaults to service configured namespace.
 	 * @returns The created identity details.
 	 */
-	public async create(controller: string): Promise<{
+	public async create(
+		controller: string,
+		options?: {
+			namespace?: string;
+		}
+	): Promise<{
 		/**
 		 * The identity created.
 		 */
@@ -38,7 +45,8 @@ export class IdentityClient extends BaseRestClient implements IIdentity {
 
 		const response = await this.fetch<IIdentityCreateRequest, ICreatedResponse>("/", "POST", {
 			body: {
-				controller
+				controller,
+				namespace: options?.namespace
 			}
 		});
 

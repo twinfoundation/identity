@@ -80,7 +80,7 @@ describe("IdentityService", () => {
 		const properties: IProperty[] = [];
 		PropertyHelper.setText(properties, "name", "Test Identity");
 
-		const identityResult = await service.create(TEST_CONTROLLER, TEST_CONTEXT);
+		const identityResult = await service.create(TEST_CONTROLLER, undefined, TEST_CONTEXT);
 
 		expect(identityResult.identity).toBeDefined();
 

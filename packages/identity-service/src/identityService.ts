@@ -8,6 +8,7 @@ import {
 } from "@gtsc/identity-models";
 import { nameof } from "@gtsc/nameof";
 import type { IServiceRequestContext } from "@gtsc/services";
+import type { IIdentityServiceConfig } from "./models/IIdentityServiceConfig";
 
 /**
  * Class which implements the identity contract.
@@ -19,30 +20,37 @@ export class IdentityService implements IIdentity {
 	public readonly CLASS_NAME: string = nameof<IdentityService>();
 
 	/**
-	 * The identity connector.
+	 * The default namespace for the connector to use.
 	 * @internal
 	 */
-	private readonly _identityConnector: IIdentityConnector;
+	private readonly _defaultNamespace: string;
 
 	/**
-	 * Create a new instance of Identity.
-	 * @param options The dependencies for the identity service.
-	 * @param options.identityConnectorType The identity connector type, defaults to "identity".
+	 * Create a new instance of IdentityService.
+	 * @param config The configuration for the service.
 	 */
-	constructor(options?: { identityConnectorType?: string }) {
-		this._identityConnector = IdentityConnectorFactory.get(
-			options?.identityConnectorType ?? "identity"
-		);
+	constructor(config?: IIdentityServiceConfig) {
+		const names = IdentityConnectorFactory.names();
+		if (names.length === 0) {
+			throw new GeneralError(this.CLASS_NAME, "noConnectors");
+		}
+
+		this._defaultNamespace = config?.defaultNamespace ?? names[0];
 	}
 
 	/**
 	 * Create a new identity.
 	 * @param controller The controller for the identity.
+	 * @param options Additional options for the identity service.
+	 * @param options.namespace The namespace of the connector to use for the identity, defaults to service configured namespace.
 	 * @param requestContext The context for the request.
 	 * @returns The created identity details.
 	 */
 	public async create(
 		controller: string,
+		options?: {
+			namespace?: string;
+		},
 		requestContext?: IServiceRequestContext
 	): Promise<{
 		/**
@@ -53,7 +61,12 @@ export class IdentityService implements IIdentity {
 		Guards.stringValue(this.CLASS_NAME, nameof(controller), controller);
 
 		try {
-			const document = await this._identityConnector.createDocument(controller, requestContext);
+			const connectorNamespace = options?.namespace ?? this._defaultNamespace;
+
+			const identityConnector =
+				IdentityConnectorFactory.get<IIdentityConnector>(connectorNamespace);
+
+			const document = await identityConnector.createDocument(controller, requestContext);
 
 			return {
 				identity: document.id

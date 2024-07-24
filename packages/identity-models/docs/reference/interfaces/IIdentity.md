@@ -82,7 +82,7 @@ Nothing.
 
 ### create()
 
-> **create**(`controller`, `requestContext`?): `Promise`\<`object`\>
+> **create**(`controller`, `options`?, `requestContext`?): `Promise`\<`object`\>
 
 Create a new identity.
 
@@ -91,6 +91,14 @@ Create a new identity.
 • **controller**: `string`
 
 The controller for the identity.
+
+• **options?**
+
+Additional options for the identity service.
+
+• **options.namespace?**: `string`
+
+The namespace of the connector to use for the identity, defaults to service configured namespace.
 
 • **requestContext?**: `IServiceRequestContext`
 

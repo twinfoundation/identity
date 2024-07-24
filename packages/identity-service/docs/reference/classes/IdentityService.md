@@ -10,19 +10,15 @@ Class which implements the identity contract.
 
 ### new IdentityService()
 
-> **new IdentityService**(`options`?): [`IdentityService`](IdentityService.md)
+> **new IdentityService**(`config`?): [`IdentityService`](IdentityService.md)
 
-Create a new instance of Identity.
+Create a new instance of IdentityService.
 
 #### Parameters
 
-• **options?**
+• **config?**: [`IIdentityServiceConfig`](../interfaces/IIdentityServiceConfig.md)
 
-The dependencies for the identity service.
-
-• **options.identityConnectorType?**: `string`
-
-The identity connector type, defaults to "identity".
+The configuration for the service.
 
 #### Returns
 
@@ -44,7 +40,7 @@ Runtime name for the class.
 
 ### create()
 
-> **create**(`controller`, `requestContext`?): `Promise`\<`object`\>
+> **create**(`controller`, `options`?, `requestContext`?): `Promise`\<`object`\>
 
 Create a new identity.
 
@@ -53,6 +49,14 @@ Create a new identity.
 • **controller**: `string`
 
 The controller for the identity.
+
+• **options?**
+
+Additional options for the identity service.
+
+• **options.namespace?**: `string`
+
+The namespace of the connector to use for the identity, defaults to service configured namespace.
 
 • **requestContext?**: `IServiceRequestContext`
 

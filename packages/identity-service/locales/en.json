@@ -1,6 +1,7 @@
 {
 	"error": {
 		"identityService": {
+			"noConnectors": "There are no connectors registered with the identity factory",
 			"createFailed": "Creating the identity failed"
 		},
 		"identityProfileService": {

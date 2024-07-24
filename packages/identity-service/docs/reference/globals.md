@@ -6,6 +6,10 @@
 - [IdentityProfileService](classes/IdentityProfileService.md)
 - [IdentityService](classes/IdentityService.md)
 
+## Interfaces
+
+- [IIdentityServiceConfig](interfaces/IIdentityServiceConfig.md)
+
 ## Variables
 
 - [tagsIdentityProfile](variables/tagsIdentityProfile.md)

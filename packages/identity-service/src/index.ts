@@ -5,5 +5,6 @@ export * from "./identityProfileRoutes";
 export * from "./identityProfileService";
 export * from "./identityRoutes";
 export * from "./identityService";
+export * from "./models/IIdentityServiceConfig";
 export * from "./restEntryPoints";
 export * from "./schema";

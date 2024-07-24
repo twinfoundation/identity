@@ -110,7 +110,7 @@ describe("IdentityProfileService", () => {
 
 	test("Can get an identity", async () => {
 		const identityService = new IdentityService();
-		const identityResult = await identityService.create(TEST_CONTROLLER, TEST_CONTEXT);
+		const identityResult = await identityService.create(TEST_CONTROLLER, undefined, TEST_CONTEXT);
 
 		const service = new IdentityProfileService();
 
@@ -177,7 +177,7 @@ describe("IdentityProfileService", () => {
 		const service = new IdentityProfileService();
 
 		const identityService = new IdentityService();
-		const identityResult = await identityService.create(TEST_CONTROLLER, TEST_CONTEXT);
+		const identityResult = await identityService.create(TEST_CONTROLLER, undefined, TEST_CONTEXT);
 
 		const properties1: IIdentityProfileProperty[] = [];
 		PropertyHelper.setText(properties1, "name", "Test Identity 1", { isPublic: true });
@@ -239,7 +239,7 @@ describe("IdentityProfileService", () => {
 			const properties: IIdentityProfileProperty[] = [];
 			PropertyHelper.setText(properties, "name", `Test Node Identity ${i}`);
 			PropertyHelper.setText(properties, "role", IdentityRole.Node);
-			const identity = await identityService.create(TEST_CONTROLLER, TEST_CONTEXT);
+			const identity = await identityService.create(TEST_CONTROLLER, undefined, TEST_CONTEXT);
 			await service.create(identity.identity, properties, {
 				partitionId: TEST_PARTITION_ID,
 				identity: identity.identity
@@ -250,7 +250,7 @@ describe("IdentityProfileService", () => {
 			const properties: IIdentityProfileProperty[] = [];
 			PropertyHelper.setText(properties, "name", `Test User Identity ${i}`);
 			PropertyHelper.setText(properties, "role", IdentityRole.User);
-			const identity = await identityService.create(TEST_CONTROLLER, TEST_CONTEXT);
+			const identity = await identityService.create(TEST_CONTROLLER, undefined, TEST_CONTEXT);
 			await service.create(identity.identity, properties, {
 				partitionId: TEST_PARTITION_ID,
 				identity: identity.identity

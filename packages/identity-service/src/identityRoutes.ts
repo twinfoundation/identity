@@ -92,7 +92,13 @@ export async function identityCreate(
 
 	const service = ServiceFactory.get<IIdentity>(serviceName);
 
-	const result = await service.create(request.body.controller, requestContext);
+	const result = await service.create(
+		request.body.controller,
+		{
+			namespace: request.body.namespace
+		},
+		requestContext
+	);
 
 	return {
 		statusCode: HttpStatusCode.created,
