@@ -45,7 +45,7 @@
                                 "schema": {
                                     "type": "string"
                                 },
-                                "description": "e.g. did:gtsc:0xc57d94b088f4c6d2cb32ded014813d0c786aa00134c8ee22f84b1e2545602a70"
+                                "description": "e.g. did:iota:tst:0xc57d94b088f4c6d2cb32ded014813d0c786aa00134c8ee22f84b1e2545602a70"
                             }
                         }
                     },
@@ -345,7 +345,7 @@
                             "examples": {
                                 "identityProfileCreateRequestExample": {
                                     "value": {
-                                        "identity": "did:gtsc:0xc57d94b088f4c6d2cb32ded014813d0c786aa00134c8ee22f84b1e2545602a70",
+                                        "identity": "did:iota:tst:0xc57d94b088f4c6d2cb32ded014813d0c786aa00134c8ee22f84b1e2545602a70",
                                         "properties": [
                                             {
                                                 "key": "role",
@@ -435,7 +435,7 @@
                                         "value": {
                                             "items": [
                                                 {
-                                                    "identity": "did:gtsc:0xc57d94b088f4c6d2cb32ded014813d0c786aa00134c8ee22f84b1e2545602a70",
+                                                    "identity": "did:iota:tst:0xc57d94b088f4c6d2cb32ded014813d0c786aa00134c8ee22f84b1e2545602a70",
                                                     "properties": [
                                                         {
                                                             "key": "email",
@@ -532,7 +532,7 @@
                             "type": "string"
                         },
                         "style": "simple",
-                        "example": "did:gtsc:0xc57d94b088f4c6d2cb32ded014813d0c786aa00134c8ee22f84b1e2545602a70"
+                        "example": "did:iota:tst:0xc57d94b088f4c6d2cb32ded014813d0c786aa00134c8ee22f84b1e2545602a70"
                     },
                     {
                         "name": "propertyNames",
@@ -683,7 +683,7 @@
                             "type": "string"
                         },
                         "style": "simple",
-                        "example": "did:gtsc:0xc57d94b088f4c6d2cb32ded014813d0c786aa00134c8ee22f84b1e2545602a70"
+                        "example": "did:iota:tst:0xc57d94b088f4c6d2cb32ded014813d0c786aa00134c8ee22f84b1e2545602a70"
                     }
                 ],
                 "security": [
@@ -827,7 +827,7 @@
                             "type": "string"
                         },
                         "style": "simple",
-                        "example": "did:gtsc:0xc57d94b088f4c6d2cb32ded014813d0c786aa00134c8ee22f84b1e2545602a70"
+                        "example": "did:iota:tst:0xc57d94b088f4c6d2cb32ded014813d0c786aa00134c8ee22f84b1e2545602a70"
                     }
                 ],
                 "security": [
