@@ -68,7 +68,7 @@ export function generateRestRoutesIdentity(
 							statusCode: HttpStatusCode.created,
 							headers: {
 								location:
-									"did:gtsc:0xc57d94b088f4c6d2cb32ded014813d0c786aa00134c8ee22f84b1e2545602a70"
+									"did:iota:tst:0xc57d94b088f4c6d2cb32ded014813d0c786aa00134c8ee22f84b1e2545602a70"
 							}
 						}
 					}

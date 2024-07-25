@@ -65,7 +65,7 @@ export function generateRestRoutesIdentityProfile(
 						request: {
 							body: {
 								identity:
-									"did:gtsc:0xc57d94b088f4c6d2cb32ded014813d0c786aa00134c8ee22f84b1e2545602a70",
+									"did:iota:tst:0xc57d94b088f4c6d2cb32ded014813d0c786aa00134c8ee22f84b1e2545602a70",
 								properties: [
 									{
 										key: "role",
@@ -119,7 +119,7 @@ export function generateRestRoutesIdentityProfile(
 					request: {
 						pathParams: {
 							identity:
-								"did:gtsc:0xc57d94b088f4c6d2cb32ded014813d0c786aa00134c8ee22f84b1e2545602a70"
+								"did:iota:tst:0xc57d94b088f4c6d2cb32ded014813d0c786aa00134c8ee22f84b1e2545602a70"
 						},
 						query: {
 							propertyNames: "role,email,name"
@@ -184,7 +184,7 @@ export function generateRestRoutesIdentityProfile(
 						request: {
 							pathParams: {
 								identity:
-									"did:gtsc:0xc57d94b088f4c6d2cb32ded014813d0c786aa00134c8ee22f84b1e2545602a70"
+									"did:iota:tst:0xc57d94b088f4c6d2cb32ded014813d0c786aa00134c8ee22f84b1e2545602a70"
 							},
 							body: {
 								properties: [
@@ -239,7 +239,7 @@ export function generateRestRoutesIdentityProfile(
 						request: {
 							pathParams: {
 								identity:
-									"did:gtsc:0xc57d94b088f4c6d2cb32ded014813d0c786aa00134c8ee22f84b1e2545602a70"
+									"did:iota:tst:0xc57d94b088f4c6d2cb32ded014813d0c786aa00134c8ee22f84b1e2545602a70"
 							}
 						}
 					}
@@ -296,7 +296,7 @@ export function generateRestRoutesIdentityProfile(
 								items: [
 									{
 										identity:
-											"did:gtsc:0xc57d94b088f4c6d2cb32ded014813d0c786aa00134c8ee22f84b1e2545602a70",
+											"did:iota:tst:0xc57d94b088f4c6d2cb32ded014813d0c786aa00134c8ee22f84b1e2545602a70",
 										properties: [
 											{
 												key: "email",
