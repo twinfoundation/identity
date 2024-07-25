@@ -32,7 +32,6 @@ import {
 import { VaultConnectorFactory, VaultKeyType, type IVaultConnector } from "@gtsc/vault-models";
 import { Jwt, type IJwk, type IJwtHeader, type IJwtPayload } from "@gtsc/web";
 import type { IdentityDocument } from "./entities/identityDocument";
-import type { IEntityStorageIdentityConnectorConfig } from "./models/IEntityStorageIdentityConnectorConfig";
 
 /**
  * Class for performing identity operations using entity storage.
@@ -67,30 +66,16 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 	private readonly _vaultConnector: IVaultConnector;
 
 	/**
-	 * The configuration for the connector.
-	 * @internal
-	 */
-	private readonly _config: IEntityStorageIdentityConnectorConfig;
-
-	/**
 	 * Create a new instance of EntityStorageIdentityConnector.
 	 * @param options The dependencies for the identity connector.
 	 * @param options.didDocumentEntityStorageType The entity storage for the did documents, defaults to "identity-document".
 	 * @param options.vaultConnectorType The vault for the private keys, defaults to "vault".
-	 * @param options.config The configuration for the connector.
 	 */
-	constructor(options?: {
-		didDocumentEntityStorageType?: string;
-		vaultConnectorType?: string;
-		config?: IEntityStorageIdentityConnectorConfig;
-	}) {
+	constructor(options?: { didDocumentEntityStorageType?: string; vaultConnectorType?: string }) {
 		this._didDocumentEntityStorage = EntityStorageConnectorFactory.get(
 			options?.didDocumentEntityStorageType ?? "identity-document"
 		);
 		this._vaultConnector = VaultConnectorFactory.get(options?.vaultConnectorType ?? "vault");
-
-		this._config = options?.config ?? {};
-		this._config.didMethod ??= "gtsc";
 	}
 
 	/**
@@ -106,7 +91,7 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 		Guards.stringValue(this.CLASS_NAME, nameof(controller), controller);
 
 		try {
-			const did = `did:${this._config.didMethod}:${Converter.bytesToHex(RandomHelper.generate(32), true)}`;
+			const did = `did:${EntityStorageIdentityConnector.NAMESPACE}:${Converter.bytesToHex(RandomHelper.generate(32), true)}`;
 
 			// We use a new request context with the identity set to the did so that
 			// the vault connector can associate the new keys with the created identity.

@@ -90,7 +90,7 @@ describe("EntityStorageIdentityConnector", () => {
 		const keyStore = vaultKeyEntityStorageConnector.getStore(TEST_PARTITION_ID);
 		testDocumentKey = keyStore?.[0] ?? ({} as VaultKey);
 
-		expect(testDocument.id.slice(0, 11)).toEqual("did:gtsc:0x");
+		expect(testDocument.id.slice(0, 21)).toEqual("did:entity-storage:0x");
 		expect(testDocument.service).toBeDefined();
 		expect((testDocument.service?.[0] as IDidService)?.id).toEqual(`${testDocument.id}#revocation`);
 
@@ -129,7 +129,7 @@ describe("EntityStorageIdentityConnector", () => {
 		const identityConnector = new EntityStorageIdentityConnector();
 
 		const doc = await identityConnector.resolveDocument(testIdentityDocument.id, TEST_CONTEXT);
-		expect(doc.id.slice(0, 11)).toEqual("did:gtsc:0x");
+		expect(doc.id.slice(0, 21)).toEqual("did:entity-storage:0x");
 		expect(doc.service).toBeDefined();
 		expect((doc.service?.[0] as IDidService)?.id).toEqual(`${doc.id}#revocation`);
 	});
@@ -437,12 +437,14 @@ describe("EntityStorageIdentityConnector", () => {
 		const subject = Is.array(result.verifiableCredential.credentialSubject)
 			? result.verifiableCredential.credentialSubject[0]
 			: result.verifiableCredential.credentialSubject;
-		expect(subject.id.startsWith("did:gtsc")).toBeTruthy();
+		expect(subject.id.startsWith("did:entity-storage")).toBeTruthy();
 		expect(subject.degreeName).toEqual("Bachelor of Science and Arts");
 		expect(subject.name).toEqual("Alice");
-		expect(result.verifiableCredential.issuer?.startsWith("did:gtsc")).toBeTruthy();
+		expect(result.verifiableCredential.issuer?.startsWith("did:entity-storage")).toBeTruthy();
 		expect(result.verifiableCredential.issuanceDate).toBeDefined();
-		expect(result.verifiableCredential.credentialStatus?.id?.startsWith("did:gtsc")).toBeTruthy();
+		expect(
+			result.verifiableCredential.credentialStatus?.id?.startsWith("did:entity-storage")
+		).toBeTruthy();
 		expect(result.verifiableCredential.credentialStatus?.type).toEqual("BitstringStatusList");
 		expect(result.verifiableCredential.credentialStatus?.revocationBitmapIndex).toEqual("5");
 		expect(result.jwt.split(".").length).toEqual(3);
@@ -484,12 +486,14 @@ describe("EntityStorageIdentityConnector", () => {
 		const subject = Is.array(result.verifiableCredential?.credentialSubject)
 			? result.verifiableCredential?.credentialSubject[0]
 			: result.verifiableCredential?.credentialSubject;
-		expect(subject?.id.startsWith("did:gtsc")).toBeTruthy();
+		expect(subject?.id.startsWith("did:entity-storage")).toBeTruthy();
 		expect(subject?.degreeName).toEqual("Bachelor of Science and Arts");
 		expect(subject?.name).toEqual("Alice");
-		expect(result.verifiableCredential?.issuer?.startsWith("did:gtsc")).toBeTruthy();
+		expect(result.verifiableCredential?.issuer?.startsWith("did:entity-storage")).toBeTruthy();
 		expect(result.verifiableCredential?.issuanceDate).toBeDefined();
-		expect(result.verifiableCredential?.credentialStatus?.id?.startsWith("did:gtsc")).toBeTruthy();
+		expect(
+			result.verifiableCredential?.credentialStatus?.id?.startsWith("did:entity-storage")
+		).toBeTruthy();
 		expect(result.verifiableCredential?.credentialStatus?.type).toEqual("BitstringStatusList");
 		expect(result.verifiableCredential?.credentialStatus?.revocationBitmapIndex).toEqual("5");
 	});
@@ -720,7 +724,7 @@ describe("EntityStorageIdentityConnector", () => {
 		]);
 		expect(result.verifiablePresentation.verifiableCredential).toBeDefined();
 		expect(result.verifiablePresentation.verifiableCredential[0]).toEqual(testVcJwt);
-		expect(result.verifiablePresentation.holder?.startsWith("did:gtsc")).toBeTruthy();
+		expect(result.verifiablePresentation.holder?.startsWith("did:entity-storage")).toBeTruthy();
 		expect(result.jwt.split(".").length).toEqual(3);
 		testVpJwt = result.jwt;
 	});
@@ -757,7 +761,7 @@ describe("EntityStorageIdentityConnector", () => {
 			"ExamplePresentation"
 		]);
 		expect(result.verifiablePresentation?.verifiableCredential).toBeDefined();
-		expect(result.verifiablePresentation?.holder?.startsWith("did:gtsc")).toBeTruthy();
+		expect(result.verifiablePresentation?.holder?.startsWith("did:entity-storage")).toBeTruthy();
 		expect(result.issuers).toBeDefined();
 		expect(result.issuers?.length).toEqual(1);
 		expect(result.issuers?.[0].id).toEqual(testIdentityDocument.id);
@@ -935,5 +939,33 @@ describe("EntityStorageIdentityConnector", () => {
 			TEST_CONTEXT
 		);
 		expect(verified).toBeTruthy();
+	});
+
+	test("can create a full document with keys and verification methods", async () => {
+		const identityConnector = new EntityStorageIdentityConnector();
+
+		const requestContext: IServiceRequestContext = {
+			partitionId: "test"
+		};
+
+		const doc = await identityConnector.createDocument(
+			"tst1pqvhcdyt3lmz752u495977jt2eaqwwswd3yjceqlm5pfmyy3ymdfx6c48gj",
+			requestContext
+		);
+
+		requestContext.identity = doc.id;
+		await identityConnector.addVerificationMethod(
+			doc.id,
+			"assertionMethod",
+			"attestation",
+			requestContext
+		);
+
+		const keyStore = vaultKeyEntityStorageConnector.getStore("test");
+		console.log("key", JSON.stringify(keyStore?.[0], undefined, "\t"));
+
+		const docStore = didDocumentEntityStorage.getStore("test");
+		expect(docStore?.[0].id).toEqual(doc.id);
+		console.log("doc", JSON.stringify(docStore?.[0], undefined, "\t"));
 	});
 });

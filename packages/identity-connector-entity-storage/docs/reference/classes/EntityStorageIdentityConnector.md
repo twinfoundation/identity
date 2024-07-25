@@ -28,10 +28,6 @@ The entity storage for the did documents, defaults to "identity-document".
 
 The vault for the private keys, defaults to "vault".
 
-• **options.config?**: [`IEntityStorageIdentityConnectorConfig`](../interfaces/IEntityStorageIdentityConnectorConfig.md)
-
-The configuration for the connector.
-
 #### Returns
 
 [`EntityStorageIdentityConnector`](EntityStorageIdentityConnector.md)
