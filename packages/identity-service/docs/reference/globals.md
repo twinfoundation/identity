@@ -26,4 +26,5 @@
 - [identitiesList](functions/identitiesList.md)
 - [generateRestRoutesIdentity](functions/generateRestRoutesIdentity.md)
 - [identityCreate](functions/identityCreate.md)
+- [identityResolve](functions/identityResolve.md)
 - [initSchema](functions/initSchema.md)

@@ -137,3 +137,27 @@ The identity created.
 #### Implementation of
 
 `IIdentity.create`
+
+***
+
+### resolve()
+
+> **resolve**(`documentId`): `Promise`\<`IDidDocument`\>
+
+Resolve an identity.
+
+#### Parameters
+
+• **documentId**: `string`
+
+The id of the document to resolve.
+
+#### Returns
+
+`Promise`\<`IDidDocument`\>
+
+The resolved document.
+
+#### Implementation of
+
+`IIdentity.resolve`

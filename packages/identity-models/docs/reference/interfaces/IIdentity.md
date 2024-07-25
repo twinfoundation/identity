@@ -139,3 +139,27 @@ The created identity details.
 > **identity**: `string`
 
 The identity created.
+
+***
+
+### resolve()
+
+> **resolve**(`documentId`, `requestContext`?): `Promise`\<`IDidDocument`\>
+
+Resolve an identity.
+
+#### Parameters
+
+• **documentId**: `string`
+
+The id of the document to resolve.
+
+• **requestContext?**: `IServiceRequestContext`
+
+The context for the request.
+
+#### Returns
+
+`Promise`\<`IDidDocument`\>
+
+The resolved document.

@@ -46,14 +46,6 @@ The namespace supported by the identity connector.
 
 ***
 
-### \_REVOCATION\_BITS\_SIZE
-
-> `static` `private` `readonly` **\_REVOCATION\_BITS\_SIZE**: `number` = `131072`
-
-The size of the revocation bitmap in bits (16Kb).
-
-***
-
 ### CLASS\_NAME
 
 > `readonly` **CLASS\_NAME**: `string`

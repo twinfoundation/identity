@@ -9,6 +9,8 @@ export * from "./models/api/IIdentityProfileListRequest";
 export * from "./models/api/IIdentityProfileListResponse";
 export * from "./models/api/IIdentityProfileRemoveRequest";
 export * from "./models/api/IIdentityProfileUpdateRequest";
+export * from "./models/api/IIdentityResolveRequest";
+export * from "./models/api/IIdentityResolveResponse";
 export * from "./models/identityRole";
 export * from "./models/IIdentity";
 export * from "./models/IIdentityConnector";

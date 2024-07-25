@@ -1,6 +1,7 @@
 // Copyright 2024 IOTA Stiftung.
 // SPDX-License-Identifier: Apache-2.0.
 import type { IService, IServiceRequestContext } from "@gtsc/services";
+import type { IDidDocument } from "@gtsc/standards-w3c-did";
 
 /**
  * Interface describing a contract which provides identity operations.
@@ -26,4 +27,12 @@ export interface IIdentity extends IService {
 		 */
 		identity: string;
 	}>;
+
+	/**
+	 * Resolve an identity.
+	 * @param documentId The id of the document to resolve.
+	 * @param requestContext The context for the request.
+	 * @returns The resolved document.
+	 */
+	resolve(documentId: string, requestContext?: IServiceRequestContext): Promise<IDidDocument>;
 }

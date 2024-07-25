@@ -26,6 +26,14 @@ The configuration for the service.
 
 ## Properties
 
+### NAMESPACE
+
+> `static` `readonly` **NAMESPACE**: `string` = `"did"`
+
+The namespace supported by the identity service.
+
+***
+
 ### CLASS\_NAME
 
 > `readonly` **CLASS\_NAME**: `string`
@@ -77,3 +85,31 @@ The identity created.
 #### Implementation of
 
 `IIdentity.create`
+
+***
+
+### resolve()
+
+> **resolve**(`documentId`, `requestContext`?): `Promise`\<`IDidDocument`\>
+
+Resolve an identity.
+
+#### Parameters
+
+• **documentId**: `string`
+
+The id of the document to resolve.
+
+• **requestContext?**: `IServiceRequestContext`
+
+The context for the request.
+
+#### Returns
+
+`Promise`\<`IDidDocument`\>
+
+The resolved document.
+
+#### Implementation of
+
+`IIdentity.resolve`
