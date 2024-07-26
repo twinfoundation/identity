@@ -28,7 +28,7 @@ export const TEST_IDENTITY_ID = "test-identity";
 export const TEST_CONTROLLER = "test-controller";
 export const TEST_CONTEXT: IServiceRequestContext = {
 	partitionId: TEST_PARTITION_ID,
-	identity: TEST_IDENTITY_ID
+	userIdentity: TEST_IDENTITY_ID
 };
 
 let vaultKeyEntityStorageConnector: MemoryEntityStorageConnector<VaultKey>;

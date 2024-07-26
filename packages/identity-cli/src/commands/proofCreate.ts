@@ -77,7 +77,7 @@ export async function actionCommandProofCreate(
 
 	setupVault();
 
-	const requestContext = { identity: "local", partitionId: "local" };
+	const requestContext = { userIdentity: "local", partitionId: "local" };
 
 	const vaultConnector = VaultConnectorFactory.get("vault");
 	await vaultConnector.addKey(

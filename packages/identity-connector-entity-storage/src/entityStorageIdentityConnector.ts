@@ -97,7 +97,7 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 			// the vault connector can associate the new keys with the created identity.
 			const identityContext: IServiceRequestContext = {
 				partitionId: requestContext?.partitionId,
-				identity: did
+				userIdentity: did
 			};
 
 			await this._vaultConnector.createKey(did, VaultKeyType.Ed25519, identityContext);

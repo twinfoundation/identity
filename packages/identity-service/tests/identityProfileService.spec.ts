@@ -33,7 +33,7 @@ export const TEST_IDENTITY_ID = "test-identity";
 export const TEST_CONTROLLER = "test-controller";
 export const TEST_CONTEXT: IServiceRequestContext = {
 	partitionId: TEST_PARTITION_ID,
-	identity: TEST_IDENTITY_ID
+	userIdentity: TEST_IDENTITY_ID
 };
 
 let vaultKeyEntityStorageConnector: MemoryEntityStorageConnector<VaultKey>;
@@ -118,7 +118,7 @@ describe("IdentityProfileService", () => {
 		PropertyHelper.setText(properties, "name", "Test Identity", { isPublic: true });
 		await service.create(identityResult.identity, properties, {
 			partitionId: TEST_PARTITION_ID,
-			identity: identityResult.identity
+			userIdentity: identityResult.identity
 		});
 
 		const identity = await service.get(identityResult.identity, undefined, TEST_CONTEXT);
@@ -184,7 +184,7 @@ describe("IdentityProfileService", () => {
 
 		await service.create(identityResult.identity, properties1, {
 			partitionId: TEST_PARTITION_ID,
-			identity: identityResult.identity
+			userIdentity: identityResult.identity
 		});
 
 		const profile = identityProfileEntityStorage.getStore(TEST_PARTITION_ID);
@@ -200,7 +200,7 @@ describe("IdentityProfileService", () => {
 
 		await service.update(identityResult.identity, properties2, {
 			partitionId: TEST_PARTITION_ID,
-			identity: identityResult.identity
+			userIdentity: identityResult.identity
 		});
 
 		const profile2 = identityProfileEntityStorage.getStore(TEST_PARTITION_ID);
@@ -242,7 +242,7 @@ describe("IdentityProfileService", () => {
 			const identity = await identityService.create(TEST_CONTROLLER, undefined, TEST_CONTEXT);
 			await service.create(identity.identity, properties, {
 				partitionId: TEST_PARTITION_ID,
-				identity: identity.identity
+				userIdentity: identity.identity
 			});
 		}
 
@@ -253,7 +253,7 @@ describe("IdentityProfileService", () => {
 			const identity = await identityService.create(TEST_CONTROLLER, undefined, TEST_CONTEXT);
 			await service.create(identity.identity, properties, {
 				partitionId: TEST_PARTITION_ID,
-				identity: identity.identity
+				userIdentity: identity.identity
 			});
 		}
 

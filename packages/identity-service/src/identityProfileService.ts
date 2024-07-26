@@ -62,7 +62,7 @@ export class IdentityProfileService implements IIdentityProfile {
 
 		try {
 			// To create a profile the identity must match the authenticated user.
-			if (requestContext?.identity !== identity) {
+			if (requestContext?.userIdentity !== identity) {
 				throw new UnauthorizedError(this.CLASS_NAME, "mismatch");
 			}
 
@@ -109,7 +109,7 @@ export class IdentityProfileService implements IIdentityProfile {
 			}
 
 			// If the identity matches the authenticated user, include private properties
-			const includePrivate = requestContext?.identity === identity;
+			const includePrivate = requestContext?.userIdentity === identity;
 			const props = (profile.properties ?? []).filter(p => includePrivate || p.isPublic);
 
 			return {
@@ -139,7 +139,7 @@ export class IdentityProfileService implements IIdentityProfile {
 
 		try {
 			// To update a profile the identity must match the authenticated user.
-			if (requestContext?.identity !== identity) {
+			if (requestContext?.userIdentity !== identity) {
 				throw new UnauthorizedError(this.CLASS_NAME, "mismatch");
 			}
 
@@ -182,7 +182,7 @@ export class IdentityProfileService implements IIdentityProfile {
 
 		try {
 			// To remove a profile the identity must match the authenticated user.
-			if (requestContext?.identity !== identity) {
+			if (requestContext?.userIdentity !== identity) {
 				throw new UnauthorizedError(this.CLASS_NAME, "mismatch");
 			}
 

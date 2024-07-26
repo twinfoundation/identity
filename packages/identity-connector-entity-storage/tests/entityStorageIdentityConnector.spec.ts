@@ -55,7 +55,7 @@ export const TEST_CONTROLLER = "test-controller";
 
 export const TEST_CONTEXT: IServiceRequestContext = {
 	partitionId: TEST_PARTITION_ID,
-	identity: TEST_IDENTITY_ID
+	userIdentity: TEST_IDENTITY_ID
 };
 
 describe("EntityStorageIdentityConnector", () => {
@@ -106,7 +106,7 @@ describe("EntityStorageIdentityConnector", () => {
 			TEST_PARTITION_ID
 		)?.[0] as IdentityDocument;
 
-		TEST_CONTEXT.identity = testIdentityDocument.id;
+		TEST_CONTEXT.userIdentity = testIdentityDocument.id;
 	});
 
 	test("can fail to resolve a document with no id", async () => {
@@ -953,7 +953,7 @@ describe("EntityStorageIdentityConnector", () => {
 			requestContext
 		);
 
-		requestContext.identity = doc.id;
+		requestContext.userIdentity = doc.id;
 		await identityConnector.addVerificationMethod(
 			doc.id,
 			"assertionMethod",

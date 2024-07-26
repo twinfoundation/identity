@@ -75,7 +75,7 @@ export const TEST_WALLET_CONNECTOR = new IotaWalletConnector({
 
 export const TEST_CONTEXT: IServiceRequestContext = {
 	partitionId: TEST_PARTITION_ID,
-	identity: TEST_IDENTITY_ID
+	userIdentity: TEST_IDENTITY_ID
 };
 
 await secretEntityStorage.set(

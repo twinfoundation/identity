@@ -88,7 +88,7 @@ export async function actionCommandProofVerify(
 
 	setupVault();
 
-	const requestContext = { identity: "local", partitionId: "local" };
+	const requestContext = { userIdentity: "local", partitionId: "local" };
 
 	const iotaIdentityConnector = new IotaIdentityConnector({
 		config: {

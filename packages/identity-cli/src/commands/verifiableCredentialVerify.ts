@@ -62,7 +62,7 @@ export async function actionCommandVerifiableCredentialVerify(
 
 	setupVault();
 
-	const requestContext = { identity: "local", partitionId: "local" };
+	const requestContext = { userIdentity: "local", partitionId: "local" };
 
 	const iotaIdentityConnector = new IotaIdentityConnector({
 		config: {
