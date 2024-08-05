@@ -55,8 +55,8 @@ export function generateRestRoutesIdentityProfile(
 			tag: tagsIdentityProfile[0].name,
 			method: "POST",
 			path: `${baseRouteName}/`,
-			handler: async (requestContext, request) =>
-				identityProfileCreate(requestContext, serviceName, request),
+			handler: async (httpRequestContext, request) =>
+				identityProfileCreate(httpRequestContext, serviceName, request),
 			requestType: {
 				type: nameof<IIdentityProfileCreateRequest>(),
 				examples: [
@@ -108,7 +108,8 @@ export function generateRestRoutesIdentityProfile(
 		tag: tagsIdentityProfile[0].name,
 		method: "GET",
 		path: `${baseRouteName}/`,
-		handler: async (requestContext, request) => identityGet(requestContext, serviceName, request),
+		handler: async (httpRequestContext, request) =>
+			identityGet(httpRequestContext, serviceName, request),
 		requestType: {
 			type: nameof<IIdentityProfileGetRequest>(),
 			examples: [
@@ -168,8 +169,8 @@ export function generateRestRoutesIdentityProfile(
 			tag: tagsIdentityProfile[0].name,
 			method: "PUT",
 			path: `${baseRouteName}/`,
-			handler: async (requestContext, request) =>
-				identityProfileUpdate(requestContext, serviceName, request),
+			handler: async (httpRequestContext, request) =>
+				identityProfileUpdate(httpRequestContext, serviceName, request),
 			requestType: {
 				type: nameof<IIdentityProfileUpdateRequest>(),
 				examples: [
@@ -218,8 +219,8 @@ export function generateRestRoutesIdentityProfile(
 		tag: tagsIdentityProfile[0].name,
 		method: "DELETE",
 		path: `${baseRouteName}/`,
-		handler: async (requestContext, request) =>
-			identityProfileRemove(requestContext, serviceName, request),
+		handler: async (httpRequestContext, request) =>
+			identityProfileRemove(httpRequestContext, serviceName, request),
 		responseType: [
 			{
 				type: nameof<INoContentResponse>()
@@ -239,8 +240,8 @@ export function generateRestRoutesIdentityProfile(
 		tag: tagsIdentityProfile[0].name,
 		method: "GET",
 		path: `${baseRouteName}/query/`,
-		handler: async (requestContext, request) =>
-			identitiesList(requestContext, serviceName, request),
+		handler: async (httpRequestContext, request) =>
+			identitiesList(httpRequestContext, serviceName, request),
 		requestType: {
 			type: nameof<IIdentityProfileListRequest>(),
 			examples: [
@@ -304,13 +305,13 @@ export function generateRestRoutesIdentityProfile(
 
 /**
  * Create an identity profile.
- * @param requestContext The request context for the API.
+ * @param httpRequestContext The request context for the API.
  * @param serviceName The name of the service to use in the routes.
  * @param request The request.
  * @returns The response object with additional http response properties.
  */
 export async function identityProfileCreate(
-	requestContext: IHttpRequestContext,
+	httpRequestContext: IHttpRequestContext,
 	serviceName: string,
 	request: IIdentityProfileCreateRequest
 ): Promise<INoContentResponse> {
@@ -323,7 +324,7 @@ export async function identityProfileCreate(
 
 	const service = ServiceFactory.get<IIdentityProfile>(serviceName);
 
-	await service.create(request.body.properties, requestContext);
+	await service.create(request.body.properties, httpRequestContext.userIdentity);
 
 	return {
 		statusCode: HttpStatusCode.noContent
@@ -332,13 +333,13 @@ export async function identityProfileCreate(
 
 /**
  * Get the identity profile.
- * @param requestContext The request context for the API.
+ * @param httpRequestContext The request context for the API.
  * @param serviceName The name of the service to use in the routes.
  * @param request The request.
  * @returns The response object with additional http response properties.
  */
 export async function identityGet(
-	requestContext: IHttpRequestContext,
+	httpRequestContext: IHttpRequestContext,
 	serviceName: string,
 	request: IIdentityProfileGetRequest
 ): Promise<IIdentityProfileGetResponse> {
@@ -346,7 +347,10 @@ export async function identityGet(
 
 	const service = ServiceFactory.get<IIdentityProfile>(serviceName);
 
-	const result = await service.get(request?.query?.propertyNames?.split(","), requestContext);
+	const result = await service.get(
+		request?.query?.propertyNames?.split(","),
+		httpRequestContext.userIdentity
+	);
 
 	return {
 		body: {
@@ -357,13 +361,13 @@ export async function identityGet(
 
 /**
  * Update an identity profile.
- * @param requestContext The request context for the API.
+ * @param httpRequestContext The request context for the API.
  * @param serviceName The name of the service to use in the routes.
  * @param request The request.
  * @returns The response object with additional http response properties.
  */
 export async function identityProfileUpdate(
-	requestContext: IHttpRequestContext,
+	httpRequestContext: IHttpRequestContext,
 	serviceName: string,
 	request: IIdentityProfileUpdateRequest
 ): Promise<INoContentResponse> {
@@ -376,7 +380,7 @@ export async function identityProfileUpdate(
 	);
 	const service = ServiceFactory.get<IIdentityProfile>(serviceName);
 
-	await service.update(request.body.properties, requestContext);
+	await service.update(request.body.properties, httpRequestContext.userIdentity);
 
 	return {
 		statusCode: HttpStatusCode.noContent
@@ -385,19 +389,19 @@ export async function identityProfileUpdate(
 
 /**
  * Remove an identity profile.
- * @param requestContext The request context for the API.
+ * @param httpRequestContext The request context for the API.
  * @param serviceName The name of the service to use in the routes.
  * @param request The request.
  * @returns The response object with additional http response properties.
  */
 export async function identityProfileRemove(
-	requestContext: IHttpRequestContext,
+	httpRequestContext: IHttpRequestContext,
 	serviceName: string,
 	request: INoContentRequest
 ): Promise<INoContentResponse> {
 	const service = ServiceFactory.get<IIdentityProfile>(serviceName);
 
-	await service.remove(requestContext);
+	await service.remove(httpRequestContext.userIdentity);
 
 	return {
 		statusCode: HttpStatusCode.noContent
@@ -406,13 +410,13 @@ export async function identityProfileRemove(
 
 /**
  * Get the list of organizations.
- * @param requestContext The request context for the API.
+ * @param httpRequestContext The request context for the API.
  * @param serviceName The name of the service to use in the routes.
  * @param request The request.
  * @returns The response object with additional http response properties.
  */
 export async function identitiesList(
-	requestContext: IHttpRequestContext,
+	httpRequestContext: IHttpRequestContext,
 	serviceName: string,
 	request: IIdentityProfileListRequest
 ): Promise<IIdentityProfileListResponse> {
@@ -432,8 +436,7 @@ export async function identitiesList(
 			filters,
 			request?.query?.propertyNames?.split(","),
 			request?.query?.cursor,
-			Coerce.number(request.query?.pageSize),
-			requestContext
+			Coerce.number(request.query?.pageSize)
 		)
 	};
 }

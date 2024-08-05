@@ -41,8 +41,8 @@ export function generateRestRoutesIdentity(
 		tag: tagsIdentity[0].name,
 		method: "GET",
 		path: `${baseRouteName}/:id`,
-		handler: async (requestContext, request) =>
-			identityResolve(requestContext, serviceName, request),
+		handler: async (httpRequestContext, request) =>
+			identityResolve(httpRequestContext, serviceName, request),
 		requestType: {
 			type: nameof<IIdentityResolveRequest>(),
 			examples: [

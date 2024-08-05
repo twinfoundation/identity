@@ -8,7 +8,6 @@ import {
 	type IIdentityProfileProperty
 } from "@gtsc/identity-models";
 import { nameof } from "@gtsc/nameof";
-import type { IServiceRequestContext } from "@gtsc/services";
 
 /**
  * Class which implements the identity profile contract.
@@ -39,56 +38,38 @@ export class IdentityProfileService implements IIdentityProfile {
 	/**
 	 * Create the profile properties for an identity.
 	 * @param properties The properties to create the profile with.
-	 * @param requestContext The context for the request.
+	 * @param identity The identity to perform the profile operation on.
 	 * @returns Nothing.
 	 */
-	public async create(
-		properties: IIdentityProfileProperty[],
-		requestContext?: IServiceRequestContext
-	): Promise<void> {
-		Guards.object<IServiceRequestContext>(this.CLASS_NAME, nameof(requestContext), requestContext);
-		Guards.stringValue(
-			this.CLASS_NAME,
-			nameof(requestContext.userIdentity),
-			requestContext.userIdentity
-		);
+	public async create(properties: IIdentityProfileProperty[], identity?: string): Promise<void> {
+		Guards.stringValue(this.CLASS_NAME, nameof(identity), identity);
 
 		try {
-			await this._identityProfileConnector.create(requestContext.userIdentity, properties);
+			await this._identityProfileConnector.create(identity, properties);
 		} catch (error) {
 			if (BaseError.someErrorClass(error, this.CLASS_NAME)) {
 				throw error;
 			}
-			throw new GeneralError(
-				this.CLASS_NAME,
-				"createFailed",
-				{ identity: requestContext.userIdentity },
-				error
-			);
+			throw new GeneralError(this.CLASS_NAME, "createFailed", { identity }, error);
 		}
 	}
 
 	/**
 	 * Get the profile properties for an identity.
 	 * @param propertyNames The properties to get for the item, defaults to all.
-	 * @param requestContext The context for the request.
+	 * @param identity The identity to perform the profile operation on.
 	 * @returns The items properties.
 	 */
 	public async get(
 		propertyNames?: string[],
-		requestContext?: IServiceRequestContext
+		identity?: string
 	): Promise<{
 		properties?: IIdentityProfileProperty[];
 	}> {
-		Guards.object<IServiceRequestContext>(this.CLASS_NAME, nameof(requestContext), requestContext);
-		Guards.stringValue(
-			this.CLASS_NAME,
-			nameof(requestContext.userIdentity),
-			requestContext.userIdentity
-		);
+		Guards.stringValue(this.CLASS_NAME, nameof(identity), identity);
 
 		try {
-			return this._identityProfileConnector.get(requestContext.userIdentity, true, propertyNames);
+			return this._identityProfileConnector.get(identity, true, propertyNames);
 		} catch (error) {
 			if (BaseError.someErrorClass(error, this.CLASS_NAME)) {
 				throw error;
@@ -100,60 +81,37 @@ export class IdentityProfileService implements IIdentityProfile {
 	/**
 	 * Update the profile properties of an identity.
 	 * @param properties Properties for the profile, set a properties value to undefined to remove it.
-	 * @param requestContext The context for the request.
+	 * @param identity The identity to perform the profile operation on.
 	 * @returns Nothing.
 	 */
-	public async update(
-		properties: IIdentityProfileProperty[],
-		requestContext?: IServiceRequestContext
-	): Promise<void> {
-		Guards.object<IServiceRequestContext>(this.CLASS_NAME, nameof(requestContext), requestContext);
-		Guards.stringValue(
-			this.CLASS_NAME,
-			nameof(requestContext.userIdentity),
-			requestContext.userIdentity
-		);
+	public async update(properties: IIdentityProfileProperty[], identity?: string): Promise<void> {
+		Guards.stringValue(this.CLASS_NAME, nameof(identity), identity);
 
 		try {
-			await this._identityProfileConnector.update(requestContext.userIdentity, properties);
+			await this._identityProfileConnector.update(identity, properties);
 		} catch (error) {
 			if (BaseError.someErrorClass(error, this.CLASS_NAME)) {
 				throw error;
 			}
-			throw new GeneralError(
-				this.CLASS_NAME,
-				"updateFailed",
-				{ identity: requestContext.userIdentity },
-				error
-			);
+			throw new GeneralError(this.CLASS_NAME, "updateFailed", { identity }, error);
 		}
 	}
 
 	/**
 	 * Delete the profile for an identity.
-	 * @param requestContext The context for the request.
+	 * @param identity The identity to perform the profile operation on.
 	 * @returns Nothing.
 	 */
-	public async remove(requestContext?: IServiceRequestContext): Promise<void> {
-		Guards.object<IServiceRequestContext>(this.CLASS_NAME, nameof(requestContext), requestContext);
-		Guards.stringValue(
-			this.CLASS_NAME,
-			nameof(requestContext.userIdentity),
-			requestContext.userIdentity
-		);
+	public async remove(identity?: string): Promise<void> {
+		Guards.stringValue(this.CLASS_NAME, nameof(identity), identity);
 
 		try {
-			await this._identityProfileConnector.remove(requestContext.userIdentity);
+			await this._identityProfileConnector.remove(identity);
 		} catch (error) {
 			if (BaseError.someErrorClass(error, this.CLASS_NAME)) {
 				throw error;
 			}
-			throw new GeneralError(
-				this.CLASS_NAME,
-				"removeFailed",
-				{ identity: requestContext.userIdentity },
-				error
-			);
+			throw new GeneralError(this.CLASS_NAME, "removeFailed", { identity }, error);
 		}
 	}
 
@@ -163,7 +121,6 @@ export class IdentityProfileService implements IIdentityProfile {
 	 * @param propertyNames The properties to get for the identities, default to all if undefined.
 	 * @param cursor The cursor for paged requests.
 	 * @param pageSize The maximum number of items in a page.
-	 * @param requestContext The context for the request.
 	 * @returns The list of items and cursor for paging.
 	 */
 	public async list(
@@ -173,8 +130,7 @@ export class IdentityProfileService implements IIdentityProfile {
 		}[],
 		propertyNames?: string[],
 		cursor?: string,
-		pageSize?: number,
-		requestContext?: IServiceRequestContext
+		pageSize?: number
 	): Promise<{
 		/**
 		 * The identities.

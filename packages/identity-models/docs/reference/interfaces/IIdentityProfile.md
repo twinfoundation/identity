@@ -102,7 +102,7 @@ Nothing.
 
 ### create()
 
-> **create**(`properties`, `requestContext`?): `Promise`\<`void`\>
+> **create**(`properties`, `identity`?): `Promise`\<`void`\>
 
 Create the profile properties for an identity.
 
@@ -112,9 +112,9 @@ Create the profile properties for an identity.
 
 The properties to create the profile with.
 
-• **requestContext?**: `IServiceRequestContext`
+• **identity?**: `string`
 
-The context for the request.
+The identity to perform the profile operation on.
 
 #### Returns
 
@@ -126,7 +126,7 @@ Nothing.
 
 ### get()
 
-> **get**(`propertyNames`?, `requestContext`?): `Promise`\<`object`\>
+> **get**(`propertyNames`?, `identity`?): `Promise`\<`object`\>
 
 Get the profile properties for an identity.
 
@@ -136,9 +136,9 @@ Get the profile properties for an identity.
 
 The properties to get for the item, defaults to all.
 
-• **requestContext?**: `IServiceRequestContext`
+• **identity?**: `string`
 
-The context for the request.
+The identity to perform the profile operation on.
 
 #### Returns
 
@@ -154,7 +154,7 @@ The items properties.
 
 ### update()
 
-> **update**(`properties`, `requestContext`?): `Promise`\<`void`\>
+> **update**(`properties`, `identity`?): `Promise`\<`void`\>
 
 Update the profile properties of an identity.
 
@@ -164,9 +164,9 @@ Update the profile properties of an identity.
 
 Properties for the profile, set a properties value to undefined to remove it.
 
-• **requestContext?**: `IServiceRequestContext`
+• **identity?**: `string`
 
-The context for the request.
+The identity to perform the profile operation on.
 
 #### Returns
 
@@ -178,15 +178,15 @@ Nothing.
 
 ### remove()
 
-> **remove**(`requestContext`?): `Promise`\<`void`\>
+> **remove**(`identity`?): `Promise`\<`void`\>
 
 Delete the profile for an identity.
 
 #### Parameters
 
-• **requestContext?**: `IServiceRequestContext`
+• **identity?**: `string`
 
-The context for the request.
+The identity to perform the profile operation on.
 
 #### Returns
 
@@ -198,7 +198,7 @@ Nothing.
 
 ### list()
 
-> **list**(`filters`?, `propertyNames`?, `cursor`?, `pageSize`?, `requestContext`?): `Promise`\<`object`\>
+> **list**(`filters`?, `propertyNames`?, `cursor`?, `pageSize`?): `Promise`\<`object`\>
 
 Get a list of the requested identities.
 
@@ -219,10 +219,6 @@ The cursor for paged requests.
 • **pageSize?**: `number`
 
 The maximum number of items in a page.
-
-• **requestContext?**: `IServiceRequestContext`
-
-The context for the request.
 
 #### Returns
 

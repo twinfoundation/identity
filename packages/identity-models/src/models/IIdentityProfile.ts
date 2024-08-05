@@ -1,6 +1,6 @@
 // Copyright 2024 IOTA Stiftung.
 // SPDX-License-Identifier: Apache-2.0.
-import type { IService, IServiceRequestContext } from "@gtsc/services";
+import type { IService } from "@gtsc/services";
 import type { IIdentityProfileProperty } from "./IIdentityProfileProperty";
 
 /**
@@ -10,23 +10,20 @@ export interface IIdentityProfile extends IService {
 	/**
 	 * Create the profile properties for an identity.
 	 * @param properties The properties to create the profile with.
-	 * @param requestContext The context for the request.
+	 * @param identity The identity to perform the profile operation on.
 	 * @returns Nothing.
 	 */
-	create(
-		properties: IIdentityProfileProperty[],
-		requestContext?: IServiceRequestContext
-	): Promise<void>;
+	create(properties: IIdentityProfileProperty[], identity?: string): Promise<void>;
 
 	/**
 	 * Get the profile properties for an identity.
 	 * @param propertyNames The properties to get for the item, defaults to all.
-	 * @param requestContext The context for the request.
+	 * @param identity The identity to perform the profile operation on.
 	 * @returns The items properties.
 	 */
 	get(
 		propertyNames?: string[],
-		requestContext?: IServiceRequestContext
+		identity?: string
 	): Promise<{
 		properties?: IIdentityProfileProperty[];
 	}>;
@@ -34,20 +31,17 @@ export interface IIdentityProfile extends IService {
 	/**
 	 * Update the profile properties of an identity.
 	 * @param properties Properties for the profile, set a properties value to undefined to remove it.
-	 * @param requestContext The context for the request.
+	 * @param identity The identity to perform the profile operation on.
 	 * @returns Nothing.
 	 */
-	update(
-		properties: IIdentityProfileProperty[],
-		requestContext?: IServiceRequestContext
-	): Promise<void>;
+	update(properties: IIdentityProfileProperty[], identity?: string): Promise<void>;
 
 	/**
 	 * Delete the profile for an identity.
-	 * @param requestContext The context for the request.
+	 * @param identity The identity to perform the profile operation on.
 	 * @returns Nothing.
 	 */
-	remove(requestContext?: IServiceRequestContext): Promise<void>;
+	remove(identity?: string): Promise<void>;
 
 	/**
 	 * Get a list of the requested identities.
@@ -55,7 +49,6 @@ export interface IIdentityProfile extends IService {
 	 * @param propertyNames The properties to get for the identities, default to all if undefined.
 	 * @param cursor The cursor for paged requests.
 	 * @param pageSize The maximum number of items in a page.
-	 * @param requestContext The context for the request.
 	 * @returns The list of items and cursor for paging.
 	 */
 	list(
@@ -65,8 +58,7 @@ export interface IIdentityProfile extends IService {
 		}[],
 		propertyNames?: string[],
 		cursor?: string,
-		pageSize?: number,
-		requestContext?: IServiceRequestContext
+		pageSize?: number
 	): Promise<{
 		/**
 		 * The identities.
