@@ -3,7 +3,10 @@
 import { CLIDisplay, CLIOptions, CLIParam } from "@gtsc/cli-core";
 import { Converter, I18n, StringHelper } from "@gtsc/core";
 import { IotaIdentityConnector, IotaIdentityUtils } from "@gtsc/identity-connector-iota";
+import { DocumentHelper } from "@gtsc/identity-models";
 import { VaultConnectorFactory } from "@gtsc/vault-models";
+import { IotaWalletConnector } from "@gtsc/wallet-connector-iota";
+import { WalletConnectorFactory } from "@gtsc/wallet-models";
 import { Command } from "commander";
 import { setupVault } from "./setupCommands";
 
@@ -76,11 +79,22 @@ export async function actionCommandServiceRemove(opts: {
 
 	setupVault();
 
-	const requestContext = { userIdentity: "local", partitionId: "local" };
 	const vaultSeedId = "local-seed";
+	const localIdentity = "local";
 
 	const vaultConnector = VaultConnectorFactory.get("vault");
-	await vaultConnector.setSecret(vaultSeedId, Converter.bytesToBase64(seed), requestContext);
+	await vaultConnector.setSecret(`${localIdentity}/${vaultSeedId}`, Converter.bytesToBase64(seed));
+
+	const iotaWalletConnector = new IotaWalletConnector({
+		config: {
+			clientOptions: {
+				nodes: [nodeEndpoint],
+				localPow: true
+			},
+			vaultSeedId
+		}
+	});
+	WalletConnectorFactory.register("wallet", () => iotaWalletConnector);
 
 	const iotaIdentityConnector = new IotaIdentityConnector({
 		config: {
@@ -97,13 +111,13 @@ export async function actionCommandServiceRemove(opts: {
 
 	CLIDisplay.spinnerStart();
 
-	await iotaIdentityConnector.removeService(id, requestContext);
+	await iotaIdentityConnector.removeService(localIdentity, id);
 
 	CLIDisplay.spinnerStop();
 
 	CLIDisplay.value(
 		I18n.formatMessage("commands.common.labels.explore"),
-		`${StringHelper.trimTrailingSlashes(explorerEndpoint)}/addr/${IotaIdentityUtils.didToAddress(id.split("#")[0])}?tab=DID`
+		`${StringHelper.trimTrailingSlashes(explorerEndpoint)}/addr/${IotaIdentityUtils.didToAddress(DocumentHelper.parse(id).id)}?tab=DID`
 	);
 
 	CLIDisplay.break();

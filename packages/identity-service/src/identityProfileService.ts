@@ -1,27 +1,17 @@
 // Copyright 2024 IOTA Stiftung.
 // SPDX-License-Identifier: Apache-2.0.
+import { BaseError, GeneralError, Guards } from "@gtsc/core";
 import {
-	AlreadyExistsError,
-	BaseError,
-	GeneralError,
-	Guards,
-	Is,
-	NotFoundError,
-	UnauthorizedError
-} from "@gtsc/core";
-import { ComparisonOperator, type EntityCondition } from "@gtsc/entity";
-import {
-	EntityStorageConnectorFactory,
-	type IEntityStorageConnector
-} from "@gtsc/entity-storage-models";
-import type { IIdentityProfile, IIdentityProfileProperty } from "@gtsc/identity-models";
+	IdentityProfileConnectorFactory,
+	type IIdentityProfile,
+	type IIdentityProfileConnector,
+	type IIdentityProfileProperty
+} from "@gtsc/identity-models";
 import { nameof } from "@gtsc/nameof";
-import { PropertyHelper } from "@gtsc/schema";
 import type { IServiceRequestContext } from "@gtsc/services";
-import type { IdentityProfile } from "./entities/identityProfile";
 
 /**
- * Class which implements the identity contract.
+ * Class which implements the identity profile contract.
  */
 export class IdentityProfileService implements IIdentityProfile {
 	/**
@@ -30,91 +20,75 @@ export class IdentityProfileService implements IIdentityProfile {
 	public readonly CLASS_NAME: string = nameof<IdentityProfileService>();
 
 	/**
-	 * The storage connector for the profiles.
+	 * The identity profile connector.
 	 * @internal
 	 */
-	private readonly _profileEntityStorage: IEntityStorageConnector<IdentityProfile>;
+	private readonly _identityProfileConnector: IIdentityProfileConnector;
 
 	/**
-	 * Create a new instance of Identity.
-	 * @param options The dependencies for the identity service.
-	 * @param options.profileEntityStorageType The storage connector for the profiles, default to "identity-profile".
+	 * Create a new instance of IdentityProfileService.
+	 * @param options The dependencies for the identity profile service.
+	 * @param options.profileEntityConnectorType The storage connector for the profiles, default to "identity-profile".
 	 */
-	constructor(options?: { profileEntityStorageType?: string }) {
-		this._profileEntityStorage = EntityStorageConnectorFactory.get(
-			options?.profileEntityStorageType ?? "identity-profile"
+	constructor(options?: { profileEntityConnectorType?: string }) {
+		this._identityProfileConnector = IdentityProfileConnectorFactory.get<IIdentityProfileConnector>(
+			options?.profileEntityConnectorType ?? "identity-profile"
 		);
 	}
 
 	/**
 	 * Create the profile properties for an identity.
-	 * @param identity The identity of the profile to create.
 	 * @param properties The properties to create the profile with.
 	 * @param requestContext The context for the request.
 	 * @returns Nothing.
 	 */
 	public async create(
-		identity: string,
 		properties: IIdentityProfileProperty[],
 		requestContext?: IServiceRequestContext
 	): Promise<void> {
-		Guards.stringValue(this.CLASS_NAME, nameof(identity), identity);
+		Guards.object<IServiceRequestContext>(this.CLASS_NAME, nameof(requestContext), requestContext);
+		Guards.stringValue(
+			this.CLASS_NAME,
+			nameof(requestContext.userIdentity),
+			requestContext.userIdentity
+		);
 
 		try {
-			// To create a profile the identity must match the authenticated user.
-			if (requestContext?.userIdentity !== identity) {
-				throw new UnauthorizedError(this.CLASS_NAME, "mismatch");
-			}
-
-			const profile = await this._profileEntityStorage.get(identity, undefined, requestContext);
-
-			if (!Is.empty(profile)) {
-				throw new AlreadyExistsError(this.CLASS_NAME, "alreadyExists", identity);
-			}
-
-			await this._profileEntityStorage.set(
-				{
-					identity,
-					properties
-				},
-				requestContext
-			);
+			await this._identityProfileConnector.create(requestContext.userIdentity, properties);
 		} catch (error) {
 			if (BaseError.someErrorClass(error, this.CLASS_NAME)) {
 				throw error;
 			}
-			throw new GeneralError(this.CLASS_NAME, "createFailed", { identity }, error);
+			throw new GeneralError(
+				this.CLASS_NAME,
+				"createFailed",
+				{ identity: requestContext.userIdentity },
+				error
+			);
 		}
 	}
 
 	/**
 	 * Get the profile properties for an identity.
-	 * if matching authenticated user private properties are also returned.
-	 * @param identity The identity of the item to get.
 	 * @param propertyNames The properties to get for the item, defaults to all.
 	 * @param requestContext The context for the request.
 	 * @returns The items properties.
 	 */
 	public async get(
-		identity: string,
 		propertyNames?: string[],
 		requestContext?: IServiceRequestContext
 	): Promise<{
 		properties?: IIdentityProfileProperty[];
 	}> {
+		Guards.object<IServiceRequestContext>(this.CLASS_NAME, nameof(requestContext), requestContext);
+		Guards.stringValue(
+			this.CLASS_NAME,
+			nameof(requestContext.userIdentity),
+			requestContext.userIdentity
+		);
+
 		try {
-			const profile = await this._profileEntityStorage.get(identity, undefined, requestContext);
-			if (!profile) {
-				throw new NotFoundError(this.CLASS_NAME, "getFailed", identity);
-			}
-
-			// If the identity matches the authenticated user, include private properties
-			const includePrivate = requestContext?.userIdentity === identity;
-			const props = (profile.properties ?? []).filter(p => includePrivate || p.isPublic);
-
-			return {
-				properties: PropertyHelper.filterInclude<IIdentityProfileProperty>(props, propertyNames)
-			};
+			return this._identityProfileConnector.get(requestContext.userIdentity, true, propertyNames);
 		} catch (error) {
 			if (BaseError.someErrorClass(error, this.CLASS_NAME)) {
 				throw error;
@@ -125,78 +99,61 @@ export class IdentityProfileService implements IIdentityProfile {
 
 	/**
 	 * Update the profile properties of an identity.
-	 * @param identity The identity to update.
 	 * @param properties Properties for the profile, set a properties value to undefined to remove it.
 	 * @param requestContext The context for the request.
 	 * @returns Nothing.
 	 */
 	public async update(
-		identity: string,
 		properties: IIdentityProfileProperty[],
 		requestContext?: IServiceRequestContext
 	): Promise<void> {
-		Guards.stringValue(this.CLASS_NAME, nameof(identity), identity);
+		Guards.object<IServiceRequestContext>(this.CLASS_NAME, nameof(requestContext), requestContext);
+		Guards.stringValue(
+			this.CLASS_NAME,
+			nameof(requestContext.userIdentity),
+			requestContext.userIdentity
+		);
 
 		try {
-			// To update a profile the identity must match the authenticated user.
-			if (requestContext?.userIdentity !== identity) {
-				throw new UnauthorizedError(this.CLASS_NAME, "mismatch");
-			}
-
-			let profile = await this._profileEntityStorage.get(identity, undefined, requestContext);
-			if (Is.empty(profile)) {
-				throw new NotFoundError(this.CLASS_NAME, "notFound", identity);
-			}
-
-			const mergedProps = PropertyHelper.merge<IIdentityProfileProperty>(
-				profile?.properties,
-				properties
-			);
-
-			if (Is.undefined(profile)) {
-				profile = {
-					identity,
-					properties: mergedProps
-				};
-			} else {
-				profile.properties = mergedProps;
-			}
-
-			await this._profileEntityStorage.set(profile, requestContext);
+			await this._identityProfileConnector.update(requestContext.userIdentity, properties);
 		} catch (error) {
 			if (BaseError.someErrorClass(error, this.CLASS_NAME)) {
 				throw error;
 			}
-			throw new GeneralError(this.CLASS_NAME, "updateFailed", { identity }, error);
+			throw new GeneralError(
+				this.CLASS_NAME,
+				"updateFailed",
+				{ identity: requestContext.userIdentity },
+				error
+			);
 		}
 	}
 
 	/**
 	 * Delete the profile for an identity.
-	 * @param identity The identity to delete.
 	 * @param requestContext The context for the request.
 	 * @returns Nothing.
 	 */
-	public async remove(identity: string, requestContext?: IServiceRequestContext): Promise<void> {
-		Guards.stringValue(this.CLASS_NAME, nameof(identity), identity);
+	public async remove(requestContext?: IServiceRequestContext): Promise<void> {
+		Guards.object<IServiceRequestContext>(this.CLASS_NAME, nameof(requestContext), requestContext);
+		Guards.stringValue(
+			this.CLASS_NAME,
+			nameof(requestContext.userIdentity),
+			requestContext.userIdentity
+		);
 
 		try {
-			// To remove a profile the identity must match the authenticated user.
-			if (requestContext?.userIdentity !== identity) {
-				throw new UnauthorizedError(this.CLASS_NAME, "mismatch");
-			}
-
-			const profile = await this._profileEntityStorage.get(identity, undefined, requestContext);
-			if (Is.empty(profile)) {
-				throw new NotFoundError(this.CLASS_NAME, "notFound", identity);
-			}
-
-			await this._profileEntityStorage.remove(identity, requestContext);
+			await this._identityProfileConnector.remove(requestContext.userIdentity);
 		} catch (error) {
 			if (BaseError.someErrorClass(error, this.CLASS_NAME)) {
 				throw error;
 			}
-			throw new GeneralError(this.CLASS_NAME, "removeFailed", { identity }, error);
+			throw new GeneralError(
+				this.CLASS_NAME,
+				"removeFailed",
+				{ identity: requestContext.userIdentity },
+				error
+			);
 		}
 	}
 
@@ -237,46 +194,9 @@ export class IdentityProfileService implements IIdentityProfile {
 		totalEntities: number;
 	}> {
 		try {
-			const conditions: EntityCondition<IIdentityProfileProperty>[] = [];
-
-			if (Is.arrayValue(filters)) {
-				for (const filter of filters) {
-					conditions.push({
-						property: "key",
-						value: filter.propertyName,
-						operator: ComparisonOperator.Equals
-					});
-					conditions.push({
-						property: "value",
-						value: filter.propertyValue,
-						operator: ComparisonOperator.Equals
-					});
-				}
-			}
-
-			const result = await this._profileEntityStorage.query(
-				Is.arrayValue(conditions)
-					? { property: "properties", condition: { conditions } }
-					: undefined,
-				undefined,
-				undefined,
-				cursor,
-				pageSize,
-				requestContext
-			);
-
-			return {
-				items: result.entities.map(entity => ({
-					identity: entity.identity ?? "",
-					properties: PropertyHelper.filterInclude<IIdentityProfileProperty>(
-						entity.properties,
-						propertyNames
-					)
-				})),
-				cursor: result.cursor,
-				pageSize: result.pageSize,
-				totalEntities: result.totalEntities
-			};
+			// We don't want to return private properties for this type of query
+			// as it would expose the values to the REST api
+			return this._identityProfileConnector.list(false, filters, propertyNames, cursor, pageSize);
 		} catch (error) {
 			throw new GeneralError(this.CLASS_NAME, "listFailed", undefined, error);
 		}

@@ -1,4 +1,4 @@
-# Interface: IIdentityProfile
+# Interface: IIdentityProfileConnector
 
 Interface describing a contract which provides profile operations.
 
@@ -102,19 +102,19 @@ Nothing.
 
 ### create()
 
-> **create**(`properties`, `requestContext`?): `Promise`\<`void`\>
+> **create**(`identity`, `properties`): `Promise`\<`void`\>
 
 Create the profile properties for an identity.
 
 #### Parameters
 
+• **identity**: `string`
+
+The identity of the profile to create.
+
 • **properties**: [`IIdentityProfileProperty`](IIdentityProfileProperty.md)[]
 
 The properties to create the profile with.
-
-• **requestContext?**: `IServiceRequestContext`
-
-The context for the request.
 
 #### Returns
 
@@ -126,19 +126,23 @@ Nothing.
 
 ### get()
 
-> **get**(`propertyNames`?, `requestContext`?): `Promise`\<`object`\>
+> **get**(`identity`, `includePrivate`?, `propertyNames`?): `Promise`\<`object`\>
 
 Get the profile properties for an identity.
 
 #### Parameters
 
+• **identity**: `string`
+
+The identity of the item to get.
+
+• **includePrivate?**: `boolean`
+
+Include private properties, defaults to true.
+
 • **propertyNames?**: `string`[]
 
 The properties to get for the item, defaults to all.
-
-• **requestContext?**: `IServiceRequestContext`
-
-The context for the request.
 
 #### Returns
 
@@ -154,19 +158,19 @@ The items properties.
 
 ### update()
 
-> **update**(`properties`, `requestContext`?): `Promise`\<`void`\>
+> **update**(`identity`, `properties`): `Promise`\<`void`\>
 
 Update the profile properties of an identity.
 
 #### Parameters
 
+• **identity**: `string`
+
+The identity to update.
+
 • **properties**: [`IIdentityProfileProperty`](IIdentityProfileProperty.md)[]
 
 Properties for the profile, set a properties value to undefined to remove it.
-
-• **requestContext?**: `IServiceRequestContext`
-
-The context for the request.
 
 #### Returns
 
@@ -178,15 +182,15 @@ Nothing.
 
 ### remove()
 
-> **remove**(`requestContext`?): `Promise`\<`void`\>
+> **remove**(`identity`): `Promise`\<`void`\>
 
 Delete the profile for an identity.
 
 #### Parameters
 
-• **requestContext?**: `IServiceRequestContext`
+• **identity**: `string`
 
-The context for the request.
+The identity to delete.
 
 #### Returns
 
@@ -198,11 +202,15 @@ Nothing.
 
 ### list()
 
-> **list**(`filters`?, `propertyNames`?, `cursor`?, `pageSize`?, `requestContext`?): `Promise`\<`object`\>
+> **list**(`includePrivate`?, `filters`?, `propertyNames`?, `cursor`?, `pageSize`?): `Promise`\<`object`\>
 
 Get a list of the requested identities.
 
 #### Parameters
+
+• **includePrivate?**: `boolean`
+
+Include private properties, defaults to false.
 
 • **filters?**: `object`[]
 
@@ -219,10 +227,6 @@ The cursor for paged requests.
 • **pageSize?**: `number`
 
 The maximum number of items in a page.
-
-• **requestContext?**: `IServiceRequestContext`
-
-The context for the request.
 
 #### Returns
 

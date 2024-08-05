@@ -3,6 +3,7 @@
 import type {
 	IConflictResponse,
 	IHttpRequestContext,
+	INoContentRequest,
 	INoContentResponse,
 	INotFoundResponse,
 	IRestRoute,
@@ -16,8 +17,7 @@ import type {
 	IIdentityProfileListRequest,
 	IIdentityProfileListResponse,
 	IIdentityProfileCreateRequest,
-	IIdentityProfileUpdateRequest,
-	IIdentityProfileRemoveRequest
+	IIdentityProfileUpdateRequest
 } from "@gtsc/identity-models";
 import { nameof } from "@gtsc/nameof";
 import { ServiceFactory } from "@gtsc/services";
@@ -64,8 +64,6 @@ export function generateRestRoutesIdentityProfile(
 						id: "identityProfileCreateRequestExample",
 						request: {
 							body: {
-								identity:
-									"did:iota:tst:0xc57d94b088f4c6d2cb32ded014813d0c786aa00134c8ee22f84b1e2545602a70",
 								properties: [
 									{
 										key: "role",
@@ -109,7 +107,7 @@ export function generateRestRoutesIdentityProfile(
 		summary: "Get the identity profile properties",
 		tag: tagsIdentityProfile[0].name,
 		method: "GET",
-		path: `${baseRouteName}/:identity`,
+		path: `${baseRouteName}/`,
 		handler: async (requestContext, request) => identityGet(requestContext, serviceName, request),
 		requestType: {
 			type: nameof<IIdentityProfileGetRequest>(),
@@ -117,10 +115,6 @@ export function generateRestRoutesIdentityProfile(
 				{
 					id: "identityGetProfileRequestExample",
 					request: {
-						pathParams: {
-							identity:
-								"did:iota:tst:0xc57d94b088f4c6d2cb32ded014813d0c786aa00134c8ee22f84b1e2545602a70"
-						},
 						query: {
 							propertyNames: "role,email,name"
 						}
@@ -173,7 +167,7 @@ export function generateRestRoutesIdentityProfile(
 			summary: "Update an identity profile properties",
 			tag: tagsIdentityProfile[0].name,
 			method: "PUT",
-			path: `${baseRouteName}/:identity`,
+			path: `${baseRouteName}/`,
 			handler: async (requestContext, request) =>
 				identityProfileUpdate(requestContext, serviceName, request),
 			requestType: {
@@ -182,10 +176,6 @@ export function generateRestRoutesIdentityProfile(
 					{
 						id: "identityProfileUpdateRequestExample",
 						request: {
-							pathParams: {
-								identity:
-									"did:iota:tst:0xc57d94b088f4c6d2cb32ded014813d0c786aa00134c8ee22f84b1e2545602a70"
-							},
 							body: {
 								properties: [
 									{
@@ -222,38 +212,23 @@ export function generateRestRoutesIdentityProfile(
 			]
 		};
 
-	const identityProfileRemoveRoute: IRestRoute<IIdentityProfileRemoveRequest, INoContentResponse> =
-		{
-			operationId: "identityProfileRemove",
-			summary: "Remove an identity profile",
-			tag: tagsIdentityProfile[0].name,
-			method: "DELETE",
-			path: `${baseRouteName}/:identity`,
-			handler: async (requestContext, request) =>
-				identityProfileRemove(requestContext, serviceName, request),
-			requestType: {
-				type: nameof<IIdentityProfileRemoveRequest>(),
-				examples: [
-					{
-						id: "identityProfileUpdateRequestExample",
-						request: {
-							pathParams: {
-								identity:
-									"did:iota:tst:0xc57d94b088f4c6d2cb32ded014813d0c786aa00134c8ee22f84b1e2545602a70"
-							}
-						}
-					}
-				]
+	const identityProfileRemoveRoute: IRestRoute<INoContentRequest, INoContentResponse> = {
+		operationId: "identityProfileRemove",
+		summary: "Remove an identity profile",
+		tag: tagsIdentityProfile[0].name,
+		method: "DELETE",
+		path: `${baseRouteName}/`,
+		handler: async (requestContext, request) =>
+			identityProfileRemove(requestContext, serviceName, request),
+		responseType: [
+			{
+				type: nameof<INoContentResponse>()
 			},
-			responseType: [
-				{
-					type: nameof<INoContentResponse>()
-				},
-				{
-					type: nameof<INotFoundResponse>()
-				}
-			]
-		};
+			{
+				type: nameof<INotFoundResponse>()
+			}
+		]
+	};
 
 	const identityProfileListRoute: IRestRoute<
 		IIdentityProfileListRequest,
@@ -263,7 +238,7 @@ export function generateRestRoutesIdentityProfile(
 		summary: "Get the list of profile data for identities",
 		tag: tagsIdentityProfile[0].name,
 		method: "GET",
-		path: `${baseRouteName}/`,
+		path: `${baseRouteName}/query/`,
 		handler: async (requestContext, request) =>
 			identitiesList(requestContext, serviceName, request),
 		requestType: {
@@ -348,7 +323,7 @@ export async function identityProfileCreate(
 
 	const service = ServiceFactory.get<IIdentityProfile>(serviceName);
 
-	await service.create(request.body.identity, request.body.properties, requestContext);
+	await service.create(request.body.properties, requestContext);
 
 	return {
 		statusCode: HttpStatusCode.noContent
@@ -368,24 +343,10 @@ export async function identityGet(
 	request: IIdentityProfileGetRequest
 ): Promise<IIdentityProfileGetResponse> {
 	Guards.object<IIdentityProfileGetRequest>(ROUTES_SOURCE, nameof(request), request);
-	Guards.object<IIdentityProfileGetRequest["pathParams"]>(
-		ROUTES_SOURCE,
-		nameof(request.pathParams),
-		request.pathParams
-	);
-	Guards.stringValue(
-		ROUTES_SOURCE,
-		nameof(request.pathParams?.identity),
-		request.pathParams?.identity
-	);
 
 	const service = ServiceFactory.get<IIdentityProfile>(serviceName);
 
-	const result = await service.get(
-		request.pathParams.identity,
-		request?.query?.propertyNames?.split(","),
-		requestContext
-	);
+	const result = await service.get(request?.query?.propertyNames?.split(","), requestContext);
 
 	return {
 		body: {
@@ -407,16 +368,7 @@ export async function identityProfileUpdate(
 	request: IIdentityProfileUpdateRequest
 ): Promise<INoContentResponse> {
 	Guards.object<IIdentityProfileUpdateRequest>(ROUTES_SOURCE, nameof(request), request);
-	Guards.object<IIdentityProfileUpdateRequest["pathParams"]>(
-		ROUTES_SOURCE,
-		nameof(request.pathParams),
-		request.pathParams
-	);
-	Guards.stringValue(
-		ROUTES_SOURCE,
-		nameof(request.pathParams?.identity),
-		request.pathParams?.identity
-	);
+
 	Guards.object<IIdentityProfileUpdateRequest["body"]>(
 		ROUTES_SOURCE,
 		nameof(request.body),
@@ -424,7 +376,7 @@ export async function identityProfileUpdate(
 	);
 	const service = ServiceFactory.get<IIdentityProfile>(serviceName);
 
-	await service.update(request.pathParams?.identity, request.body.properties, requestContext);
+	await service.update(request.body.properties, requestContext);
 
 	return {
 		statusCode: HttpStatusCode.noContent
@@ -441,23 +393,11 @@ export async function identityProfileUpdate(
 export async function identityProfileRemove(
 	requestContext: IHttpRequestContext,
 	serviceName: string,
-	request: IIdentityProfileRemoveRequest
+	request: INoContentRequest
 ): Promise<INoContentResponse> {
-	Guards.object<IIdentityProfileRemoveRequest>(ROUTES_SOURCE, nameof(request), request);
-	Guards.object<IIdentityProfileRemoveRequest["pathParams"]>(
-		ROUTES_SOURCE,
-		nameof(request.pathParams),
-		request.pathParams
-	);
-	Guards.stringValue(
-		ROUTES_SOURCE,
-		nameof(request.pathParams?.identity),
-		request.pathParams?.identity
-	);
-
 	const service = ServiceFactory.get<IIdentityProfile>(serviceName);
 
-	await service.remove(request.pathParams.identity, requestContext);
+	await service.remove(requestContext);
 
 	return {
 		statusCode: HttpStatusCode.noContent

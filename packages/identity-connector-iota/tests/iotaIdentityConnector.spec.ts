@@ -11,11 +11,8 @@ import type {
 import type { VaultSecret } from "@gtsc/vault-connector-entity-storage";
 import {
 	TEST_CLIENT_OPTIONS,
-	TEST_CONTEXT,
-	TEST_IDENTITY_ADDRESS_BECH32,
 	TEST_IDENTITY_ID,
 	TEST_MNEMONIC_NAME,
-	TEST_PARTITION_ID,
 	setupTestEnv
 } from "./setupTestEnv";
 import { IotaIdentityConnector } from "../src/iotaIdentityConnector";
@@ -111,10 +108,7 @@ describe("IotaIdentityConnector", () => {
 			}
 		});
 
-		const testDocument = await identityConnector.createDocument(
-			TEST_IDENTITY_ADDRESS_BECH32,
-			TEST_CONTEXT
-		);
+		const testDocument = await identityConnector.createDocument(TEST_IDENTITY_ID);
 		testDocumentId = testDocument.id;
 
 		expect(testDocument.id.slice(0, 15)).toEqual(`did:iota:${process.env.TEST_BECH32_HRP}:0x`);
@@ -135,7 +129,7 @@ describe("IotaIdentityConnector", () => {
 			}
 		});
 		await expect(
-			identityConnector.resolveDocument(undefined as unknown as string, TEST_CONTEXT)
+			identityConnector.resolveDocument(undefined as unknown as string)
 		).rejects.toMatchObject({
 			name: "GuardError",
 			message: "guard.string",
@@ -154,7 +148,7 @@ describe("IotaIdentityConnector", () => {
 			}
 		});
 
-		const doc = await identityConnector.resolveDocument(testDocumentId, TEST_CONTEXT);
+		const doc = await identityConnector.resolveDocument(testDocumentId);
 		expect(doc.id.slice(0, 15)).toEqual(`did:iota:${process.env.TEST_BECH32_HRP}:0x`);
 		expect(doc.service).toBeDefined();
 		expect((doc.service?.[0] as IDidService)?.id).toEqual(`${doc.id}#revocation`);
@@ -169,10 +163,10 @@ describe("IotaIdentityConnector", () => {
 		});
 		await expect(
 			identityConnector.addVerificationMethod(
+				TEST_IDENTITY_ID,
 				undefined as unknown as string,
 				undefined as unknown as DidVerificationMethodType,
-				undefined as unknown as string,
-				TEST_CONTEXT
+				undefined as unknown as string
 			)
 		).rejects.toMatchObject({
 			name: "GuardError",
@@ -193,10 +187,10 @@ describe("IotaIdentityConnector", () => {
 		});
 		await expect(
 			identityConnector.addVerificationMethod(
+				TEST_IDENTITY_ID,
 				"foo",
 				undefined as unknown as DidVerificationMethodType,
-				undefined as unknown as string,
-				TEST_CONTEXT
+				undefined as unknown as string
 			)
 		).rejects.toMatchObject({
 			name: "GuardError",
@@ -217,10 +211,10 @@ describe("IotaIdentityConnector", () => {
 		});
 
 		const verificationMethod = await identityConnector.addVerificationMethod(
+			TEST_IDENTITY_ID,
 			testDocumentId,
 			"assertionMethod",
-			"my-verification-id",
-			TEST_CONTEXT
+			"my-verification-id"
 		);
 
 		expect(verificationMethod).toBeDefined();
@@ -230,7 +224,7 @@ describe("IotaIdentityConnector", () => {
 		const keyStore =
 			EntityStorageConnectorFactory.get<MemoryEntityStorageConnector<VaultSecret>>(
 				"vault-key"
-			).getStore(TEST_PARTITION_ID);
+			).getStore();
 		expect(keyStore?.[0].id).toEqual(`${TEST_IDENTITY_ID}/${testDocumentId}#my-verification-id`);
 	});
 
@@ -242,7 +236,7 @@ describe("IotaIdentityConnector", () => {
 			}
 		});
 		await expect(
-			identityConnector.removeVerificationMethod(undefined as unknown as string, TEST_CONTEXT)
+			identityConnector.removeVerificationMethod(TEST_IDENTITY_ID, undefined as unknown as string)
 		).rejects.toMatchObject({
 			name: "GuardError",
 			message: "guard.string",
@@ -262,22 +256,22 @@ describe("IotaIdentityConnector", () => {
 		});
 
 		const vm = await identityConnector.addVerificationMethod(
+			TEST_IDENTITY_ID,
 			testDocumentId,
 			"authentication",
-			"test-method",
-			TEST_CONTEXT
+			"test-method"
 		);
 
-		let doc = await identityConnector.resolveDocument(testDocumentId, TEST_CONTEXT);
+		let doc = await identityConnector.resolveDocument(testDocumentId);
 		expect(doc.authentication).toBeDefined();
 		expect(doc.authentication?.length).toEqual(1);
 		expect(
 			(doc.authentication?.[0] as IDidDocumentVerificationMethod).id.endsWith("test-method")
 		).toEqual(true);
 
-		await identityConnector.removeVerificationMethod(vm.id, TEST_CONTEXT);
+		await identityConnector.removeVerificationMethod(TEST_IDENTITY_ID, vm.id);
 
-		doc = await identityConnector.resolveDocument(testDocumentId, TEST_CONTEXT);
+		doc = await identityConnector.resolveDocument(testDocumentId);
 		expect(doc.authentication).toBeUndefined();
 	});
 
@@ -290,11 +284,11 @@ describe("IotaIdentityConnector", () => {
 		});
 		await expect(
 			identityConnector.addService(
+				TEST_IDENTITY_ID,
 				undefined as unknown as string,
 				undefined as unknown as string,
 				undefined as unknown as string,
-				undefined as unknown as string,
-				TEST_CONTEXT
+				undefined as unknown as string
 			)
 		).rejects.toMatchObject({
 			name: "GuardError",
@@ -315,11 +309,11 @@ describe("IotaIdentityConnector", () => {
 		});
 		await expect(
 			identityConnector.addService(
+				TEST_IDENTITY_ID,
 				"foo",
 				undefined as unknown as string,
 				undefined as unknown as string,
-				undefined as unknown as string,
-				TEST_CONTEXT
+				undefined as unknown as string
 			)
 		).rejects.toMatchObject({
 			name: "GuardError",
@@ -340,11 +334,11 @@ describe("IotaIdentityConnector", () => {
 		});
 		await expect(
 			identityConnector.addService(
+				TEST_IDENTITY_ID,
 				"foo",
 				"foo",
 				undefined as unknown as string,
-				undefined as unknown as string,
-				TEST_CONTEXT
+				undefined as unknown as string
 			)
 		).rejects.toMatchObject({
 			name: "GuardError",
@@ -365,11 +359,11 @@ describe("IotaIdentityConnector", () => {
 		});
 		await expect(
 			identityConnector.addService(
+				TEST_IDENTITY_ID,
 				"foo",
 				"foo",
 				"foo",
-				undefined as unknown as string,
-				TEST_CONTEXT
+				undefined as unknown as string
 			)
 		).rejects.toMatchObject({
 			name: "GuardError",
@@ -390,11 +384,11 @@ describe("IotaIdentityConnector", () => {
 		});
 
 		const service = await identityConnector.addService(
+			TEST_IDENTITY_ID,
 			testDocumentId,
 			"linked-domain",
 			"LinkedDomains",
-			"https://bar.example.com/",
-			TEST_CONTEXT
+			"https://bar.example.com/"
 		);
 
 		expect(service).toBeDefined();
@@ -412,7 +406,7 @@ describe("IotaIdentityConnector", () => {
 			}
 		});
 		await expect(
-			identityConnector.removeService(undefined as unknown as string, TEST_CONTEXT)
+			identityConnector.removeService(TEST_IDENTITY_ID, undefined as unknown as string)
 		).rejects.toMatchObject({
 			name: "GuardError",
 			message: "guard.string",
@@ -431,7 +425,7 @@ describe("IotaIdentityConnector", () => {
 			}
 		});
 
-		await identityConnector.removeService(testServiceId, TEST_CONTEXT);
+		await identityConnector.removeService(TEST_IDENTITY_ID, testServiceId);
 	});
 
 	test("can fail to create a verifiable credential with no verification method id", async () => {
@@ -444,13 +438,13 @@ describe("IotaIdentityConnector", () => {
 
 		await expect(
 			identityConnector.createVerifiableCredential<IDegree>(
+				TEST_IDENTITY_ID,
 				undefined as unknown as string,
 				undefined as unknown as string,
 				undefined as unknown as string,
 				undefined as unknown as IDegree,
 				undefined as unknown as string,
-				undefined as unknown as number,
-				TEST_CONTEXT
+				undefined as unknown as number
 			)
 		).rejects.toMatchObject({
 			name: "GuardError",
@@ -471,13 +465,13 @@ describe("IotaIdentityConnector", () => {
 		});
 		await expect(
 			identityConnector.createVerifiableCredential<IDegree>(
+				TEST_IDENTITY_ID,
 				"foo",
 				"foo",
 				"UniversityDegreeCredential",
 				undefined as unknown as IDegree,
 				undefined as unknown as string,
-				undefined as unknown as number,
-				TEST_CONTEXT
+				undefined as unknown as number
 			)
 		).rejects.toMatchObject({
 			name: "GuardError",
@@ -497,19 +491,17 @@ describe("IotaIdentityConnector", () => {
 			}
 		});
 
-		const holderDocument = await identityConnector.createDocument(
-			TEST_IDENTITY_ADDRESS_BECH32,
-			TEST_CONTEXT
-		);
+		const holderDocument = await identityConnector.createDocument(TEST_IDENTITY_ID);
 		const holderVm = await identityConnector.addVerificationMethod(
+			TEST_IDENTITY_ID,
 			holderDocument.id,
 			"assertionMethod",
-			"my-presentation-id",
-			TEST_CONTEXT
+			"my-presentation-id"
 		);
 		holderDocumentVerificationMethodId = holderVm.id;
 
 		const result = await identityConnector.createVerifiableCredential(
+			TEST_IDENTITY_ID,
 			testDocumentVerificationMethodId,
 			"https://example.edu/credentials/3732",
 			"UniversityDegreeCredential",
@@ -519,8 +511,7 @@ describe("IotaIdentityConnector", () => {
 				degreeName: "Bachelor of Science and Arts"
 			},
 			["https://example.com/my-schema"],
-			TEST_REVOCATION_INDEX,
-			TEST_CONTEXT
+			TEST_REVOCATION_INDEX
 		);
 
 		expect(result.verifiableCredential["@context"]).toEqual([
@@ -557,9 +548,7 @@ describe("IotaIdentityConnector", () => {
 			}
 		});
 
-		await expect(
-			identityConnector.checkVerifiableCredential<IDegree>("", TEST_CONTEXT)
-		).rejects.toMatchObject({
+		await expect(identityConnector.checkVerifiableCredential<IDegree>("")).rejects.toMatchObject({
 			name: "GuardError",
 			message: "guard.stringEmpty",
 			properties: {
@@ -577,10 +566,7 @@ describe("IotaIdentityConnector", () => {
 			}
 		});
 
-		const result = await identityConnector.checkVerifiableCredential<IDegree>(
-			testVcJwt,
-			TEST_CONTEXT
-		);
+		const result = await identityConnector.checkVerifiableCredential<IDegree>(testVcJwt);
 
 		expect(result.revoked).toBeFalsy();
 		expect(result.verifiableCredential?.["@context"]).toEqual([
@@ -616,9 +602,9 @@ describe("IotaIdentityConnector", () => {
 
 		await expect(
 			identityConnector.revokeVerifiableCredentials(
+				TEST_IDENTITY_ID,
 				undefined as unknown as string,
-				undefined as unknown as number[],
-				TEST_CONTEXT
+				undefined as unknown as number[]
 			)
 		).rejects.toMatchObject({
 			name: "GuardError",
@@ -640,9 +626,9 @@ describe("IotaIdentityConnector", () => {
 
 		await expect(
 			identityConnector.revokeVerifiableCredentials(
+				TEST_IDENTITY_ID,
 				testDocumentId,
-				undefined as unknown as number[],
-				TEST_CONTEXT
+				undefined as unknown as number[]
 			)
 		).rejects.toMatchObject({
 			name: "GuardError",
@@ -662,16 +648,11 @@ describe("IotaIdentityConnector", () => {
 			}
 		});
 
-		await identityConnector.revokeVerifiableCredentials(
-			testDocumentId,
-			[TEST_REVOCATION_INDEX],
-			TEST_CONTEXT
-		);
+		await identityConnector.revokeVerifiableCredentials(TEST_IDENTITY_ID, testDocumentId, [
+			TEST_REVOCATION_INDEX
+		]);
 
-		const result = await identityConnector.checkVerifiableCredential<IDegree>(
-			testVcJwt,
-			TEST_CONTEXT
-		);
+		const result = await identityConnector.checkVerifiableCredential<IDegree>(testVcJwt);
 		expect(result.revoked).toBeTruthy();
 	});
 
@@ -685,9 +666,9 @@ describe("IotaIdentityConnector", () => {
 
 		await expect(
 			identityConnector.unrevokeVerifiableCredentials(
+				TEST_IDENTITY_ID,
 				undefined as unknown as string,
-				undefined as unknown as number[],
-				TEST_CONTEXT
+				undefined as unknown as number[]
 			)
 		).rejects.toMatchObject({
 			name: "GuardError",
@@ -709,9 +690,9 @@ describe("IotaIdentityConnector", () => {
 
 		await expect(
 			identityConnector.unrevokeVerifiableCredentials(
+				TEST_IDENTITY_ID,
 				testDocumentId,
-				undefined as unknown as number[],
-				TEST_CONTEXT
+				undefined as unknown as number[]
 			)
 		).rejects.toMatchObject({
 			name: "GuardError",
@@ -731,16 +712,11 @@ describe("IotaIdentityConnector", () => {
 			}
 		});
 
-		await identityConnector.unrevokeVerifiableCredentials(
-			testDocumentId,
-			[TEST_REVOCATION_INDEX],
-			TEST_CONTEXT
-		);
+		await identityConnector.unrevokeVerifiableCredentials(TEST_IDENTITY_ID, testDocumentId, [
+			TEST_REVOCATION_INDEX
+		]);
 
-		const result = await identityConnector.checkVerifiableCredential<IDegree>(
-			testVcJwt,
-			TEST_CONTEXT
-		);
+		const result = await identityConnector.checkVerifiableCredential<IDegree>(testVcJwt);
 		expect(result.revoked).toBeFalsy();
 	});
 
@@ -754,12 +730,12 @@ describe("IotaIdentityConnector", () => {
 
 		await expect(
 			identityConnector.createVerifiablePresentation(
+				TEST_IDENTITY_ID,
 				undefined as unknown as string,
 				undefined as unknown as string[],
 				undefined as unknown as string[],
 				undefined as unknown as string[],
-				undefined as unknown as number,
-				TEST_CONTEXT
+				undefined as unknown as number
 			)
 		).rejects.toMatchObject({
 			name: "GuardError",
@@ -780,12 +756,12 @@ describe("IotaIdentityConnector", () => {
 		});
 		await expect(
 			identityConnector.createVerifiablePresentation(
+				TEST_IDENTITY_ID,
 				"foo",
 				["vp"],
 				undefined as unknown as string[],
 				undefined as unknown as string[],
-				undefined as unknown as number,
-				TEST_CONTEXT
+				undefined as unknown as number
 			)
 		).rejects.toMatchObject({
 			name: "GuardError",
@@ -807,12 +783,12 @@ describe("IotaIdentityConnector", () => {
 
 		await expect(
 			identityConnector.createVerifiablePresentation(
+				TEST_IDENTITY_ID,
 				"foo",
 				["vp"],
 				["jwt"],
 				undefined as unknown as string[],
-				"foo" as unknown as number,
-				TEST_CONTEXT
+				"foo" as unknown as number
 			)
 		).rejects.toMatchObject({
 			name: "GuardError",
@@ -833,12 +809,12 @@ describe("IotaIdentityConnector", () => {
 		});
 
 		const result = await identityConnector.createVerifiablePresentation(
+			TEST_IDENTITY_ID,
 			holderDocumentVerificationMethodId,
 			["ExamplePresentation"],
 			[testVcJwt],
 			["https://example.com/my-schema"],
-			14400,
-			TEST_CONTEXT
+			14400
 		);
 
 		expect(result.verifiablePresentation["@context"]).toEqual([
@@ -864,9 +840,7 @@ describe("IotaIdentityConnector", () => {
 			}
 		});
 
-		await expect(
-			identityConnector.checkVerifiablePresentation("", TEST_CONTEXT)
-		).rejects.toMatchObject({
+		await expect(identityConnector.checkVerifiablePresentation("")).rejects.toMatchObject({
 			name: "GuardError",
 			message: "guard.stringEmpty",
 			properties: {
@@ -884,7 +858,7 @@ describe("IotaIdentityConnector", () => {
 			}
 		});
 
-		const result = await identityConnector.checkVerifiablePresentation(testVpJwt, TEST_CONTEXT);
+		const result = await identityConnector.checkVerifiablePresentation(testVpJwt);
 
 		expect(result.revoked).toBeFalsy();
 		expect(result.verifiablePresentation?.["@context"]).toEqual([
@@ -911,9 +885,9 @@ describe("IotaIdentityConnector", () => {
 		});
 		await expect(
 			identityConnector.createProof(
+				TEST_IDENTITY_ID,
 				undefined as unknown as string,
-				undefined as unknown as Uint8Array,
-				TEST_CONTEXT
+				undefined as unknown as Uint8Array
 			)
 		).rejects.toMatchObject({
 			name: "GuardError",
@@ -933,7 +907,7 @@ describe("IotaIdentityConnector", () => {
 			}
 		});
 		await expect(
-			identityConnector.createProof("foo", undefined as unknown as Uint8Array, TEST_CONTEXT)
+			identityConnector.createProof(TEST_IDENTITY_ID, "foo", undefined as unknown as Uint8Array)
 		).rejects.toMatchObject({
 			name: "GuardError",
 			message: "guard.uint8Array",
@@ -952,9 +926,9 @@ describe("IotaIdentityConnector", () => {
 			}
 		});
 		const proof = await identityConnector.createProof(
+			TEST_IDENTITY_ID,
 			testDocumentVerificationMethodId,
-			new Uint8Array([0, 1, 2, 3, 4]),
-			TEST_CONTEXT
+			new Uint8Array([0, 1, 2, 3, 4])
 		);
 		expect(proof.type).toEqual("Ed25519");
 		expect(proof.value).toBeDefined();
@@ -974,8 +948,7 @@ describe("IotaIdentityConnector", () => {
 				undefined as unknown as string,
 				undefined as unknown as Uint8Array,
 				undefined as unknown as string,
-				undefined as unknown as Uint8Array,
-				TEST_CONTEXT
+				undefined as unknown as Uint8Array
 			)
 		).rejects.toMatchObject({
 			name: "GuardError",
@@ -999,8 +972,7 @@ describe("IotaIdentityConnector", () => {
 				"foo",
 				undefined as unknown as Uint8Array,
 				undefined as unknown as string,
-				undefined as unknown as Uint8Array,
-				TEST_CONTEXT
+				undefined as unknown as Uint8Array
 			)
 		).rejects.toMatchObject({
 			name: "GuardError",
@@ -1024,8 +996,7 @@ describe("IotaIdentityConnector", () => {
 				"foo",
 				Converter.utf8ToBytes("foo"),
 				undefined as unknown as string,
-				undefined as unknown as Uint8Array,
-				TEST_CONTEXT
+				undefined as unknown as Uint8Array
 			)
 		).rejects.toMatchObject({
 			name: "GuardError",
@@ -1049,8 +1020,7 @@ describe("IotaIdentityConnector", () => {
 				"foo",
 				Converter.utf8ToBytes("foo"),
 				"foo",
-				undefined as unknown as Uint8Array,
-				TEST_CONTEXT
+				undefined as unknown as Uint8Array
 			)
 		).rejects.toMatchObject({
 			name: "GuardError",
@@ -1073,8 +1043,7 @@ describe("IotaIdentityConnector", () => {
 			testDocumentVerificationMethodId,
 			new Uint8Array([0, 1, 2, 3, 4]),
 			"Ed25519",
-			testProofSignature,
-			TEST_CONTEXT
+			testProofSignature
 		);
 		expect(verified).toBeTruthy();
 	});

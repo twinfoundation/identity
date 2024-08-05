@@ -14,17 +14,12 @@
 				"seed": {
 					"param": "--seed '<'seed'>'",
 					"description": "The seed for the controller address in hex or base64 used to create the DID, or start with ! to read environment variable."
-				},
-				"controller": {
-					"param": "--controller '<'controller'>'",
-					"description": "The address which controls the identity in bech32 format, or start with ! to read environment variable."
 				}
 			},
 			"progress": {
 				"creatingIdentity": "Creating identity"
 			},
 			"labels": {
-				"controller": "Controller",
 				"identity": "Identity"
 			}
 		},

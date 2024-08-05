@@ -4,6 +4,8 @@ import { CLIDisplay, CLIOptions, CLIParam, CLIUtils, type CliOutputOptions } fro
 import { Converter, I18n, Is, StringHelper } from "@gtsc/core";
 import { IotaIdentityConnector, IotaIdentityUtils } from "@gtsc/identity-connector-iota";
 import { VaultConnectorFactory } from "@gtsc/vault-models";
+import { IotaWalletConnector } from "@gtsc/wallet-connector-iota";
+import { WalletConnectorFactory } from "@gtsc/wallet-models";
 import { Command } from "commander";
 import { setupVault } from "./setupCommands";
 
@@ -102,11 +104,22 @@ export async function actionCommandServiceAdd(
 
 	setupVault();
 
-	const requestContext = { userIdentity: "local", partitionId: "local" };
 	const vaultSeedId = "local-seed";
+	const localIdentity = "local";
 
 	const vaultConnector = VaultConnectorFactory.get("vault");
-	await vaultConnector.setSecret(vaultSeedId, Converter.bytesToBase64(seed), requestContext);
+	await vaultConnector.setSecret(`${localIdentity}/${vaultSeedId}`, Converter.bytesToBase64(seed));
+
+	const iotaWalletConnector = new IotaWalletConnector({
+		config: {
+			clientOptions: {
+				nodes: [nodeEndpoint],
+				localPow: true
+			},
+			vaultSeedId
+		}
+	});
+	WalletConnectorFactory.register("wallet", () => iotaWalletConnector);
 
 	const iotaIdentityConnector = new IotaIdentityConnector({
 		config: {
@@ -123,7 +136,7 @@ export async function actionCommandServiceAdd(
 
 	CLIDisplay.spinnerStart();
 
-	const service = await iotaIdentityConnector.addService(did, id, type, endpoint, requestContext);
+	const service = await iotaIdentityConnector.addService(localIdentity, did, id, type, endpoint);
 
 	CLIDisplay.spinnerStop();
 

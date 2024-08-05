@@ -5,7 +5,6 @@ import { Ed25519 } from "@gtsc/crypto";
 import { MemoryEntityStorageConnector } from "@gtsc/entity-storage-connector-memory";
 import { EntityStorageConnectorFactory } from "@gtsc/entity-storage-models";
 import { nameof } from "@gtsc/nameof";
-import type { IServiceRequestContext } from "@gtsc/services";
 import type { DidVerificationMethodType, IDidDocument, IDidService } from "@gtsc/standards-w3c-did";
 import {
 	EntityStorageVaultConnector,
@@ -48,15 +47,9 @@ interface IDegree {
 let didDocumentEntityStorage: MemoryEntityStorageConnector<IdentityDocument>;
 let vaultKeyEntityStorageConnector: MemoryEntityStorageConnector<VaultKey>;
 
-export const TEST_PARTITION_ID = "test-partition";
 export const TEST_IDENTITY_ID = "test-identity";
 export const TEST_MNEMONIC_NAME = "test-mnemonic";
 export const TEST_CONTROLLER = "test-controller";
-
-export const TEST_CONTEXT: IServiceRequestContext = {
-	partitionId: TEST_PARTITION_ID,
-	userIdentity: TEST_IDENTITY_ID
-};
 
 describe("EntityStorageIdentityConnector", () => {
 	beforeEach(() => {
@@ -85,9 +78,9 @@ describe("EntityStorageIdentityConnector", () => {
 	test("can create a document", async () => {
 		const identityConnector = new EntityStorageIdentityConnector();
 
-		const testDocument = await identityConnector.createDocument(TEST_CONTROLLER, TEST_CONTEXT);
+		const testDocument = await identityConnector.createDocument(TEST_IDENTITY_ID);
 
-		const keyStore = vaultKeyEntityStorageConnector.getStore(TEST_PARTITION_ID);
+		const keyStore = vaultKeyEntityStorageConnector.getStore();
 		testDocumentKey = keyStore?.[0] ?? ({} as VaultKey);
 
 		expect(testDocument.id.slice(0, 21)).toEqual("did:entity-storage:0x");
@@ -102,11 +95,7 @@ describe("EntityStorageIdentityConnector", () => {
 			"data:application/octet-stream;base64,H4sIAAAAAAAAA-3BMQEAAADCoPVPbQwfoAAAAAAAAAAAAAAAAAAAAIC3AYbSVKsAQAAA"
 		);
 
-		testIdentityDocument = didDocumentEntityStorage.getStore(
-			TEST_PARTITION_ID
-		)?.[0] as IdentityDocument;
-
-		TEST_CONTEXT.userIdentity = testIdentityDocument.id;
+		testIdentityDocument = didDocumentEntityStorage.getStore()?.[0] as IdentityDocument;
 	});
 
 	test("can fail to resolve a document with no id", async () => {
@@ -124,11 +113,11 @@ describe("EntityStorageIdentityConnector", () => {
 	});
 
 	test("can resolve a document id", async () => {
-		await didDocumentEntityStorage.set(testIdentityDocument, TEST_CONTEXT);
-		await vaultKeyEntityStorageConnector.set(testDocumentKey, TEST_CONTEXT);
+		await didDocumentEntityStorage.set(testIdentityDocument);
+		await vaultKeyEntityStorageConnector.set(testDocumentKey);
 		const identityConnector = new EntityStorageIdentityConnector();
 
-		const doc = await identityConnector.resolveDocument(testIdentityDocument.id, TEST_CONTEXT);
+		const doc = await identityConnector.resolveDocument(testIdentityDocument.id);
 		expect(doc.id.slice(0, 21)).toEqual("did:entity-storage:0x");
 		expect(doc.service).toBeDefined();
 		expect((doc.service?.[0] as IDidService)?.id).toEqual(`${doc.id}#revocation`);
@@ -138,10 +127,10 @@ describe("EntityStorageIdentityConnector", () => {
 		const identityConnector = new EntityStorageIdentityConnector();
 		await expect(
 			identityConnector.addVerificationMethod(
+				TEST_IDENTITY_ID,
 				undefined as unknown as string,
 				undefined as unknown as DidVerificationMethodType,
-				undefined as unknown as string,
-				TEST_CONTEXT
+				undefined as unknown as string
 			)
 		).rejects.toMatchObject({
 			name: "GuardError",
@@ -157,10 +146,10 @@ describe("EntityStorageIdentityConnector", () => {
 		const identityConnector = new EntityStorageIdentityConnector();
 		await expect(
 			identityConnector.addVerificationMethod(
+				TEST_IDENTITY_ID,
 				"aaa",
 				undefined as unknown as DidVerificationMethodType,
-				undefined as unknown as string,
-				TEST_CONTEXT
+				undefined as unknown as string
 			)
 		).rejects.toMatchObject({
 			name: "GuardError",
@@ -173,36 +162,34 @@ describe("EntityStorageIdentityConnector", () => {
 	});
 
 	test("can add a verification method as assertion method", async () => {
-		await didDocumentEntityStorage.set(testIdentityDocument, TEST_CONTEXT);
-		await vaultKeyEntityStorageConnector.set(testDocumentKey, TEST_CONTEXT);
+		await didDocumentEntityStorage.set(testIdentityDocument);
+		await vaultKeyEntityStorageConnector.set(testDocumentKey);
 		const identityConnector = new EntityStorageIdentityConnector();
 		const verificationMethod = await identityConnector.addVerificationMethod(
+			TEST_IDENTITY_ID,
 			testIdentityDocument.id,
 			"assertionMethod",
-			"my-verification-id",
-			TEST_CONTEXT
+			"my-verification-id"
 		);
 
 		expect(verificationMethod).toBeDefined();
 		expect(verificationMethod?.id).toEqual(`${testIdentityDocument.id}#my-verification-id`);
 
-		testIdentityDocument = didDocumentEntityStorage.getStore(
-			TEST_PARTITION_ID
-		)?.[0] as IdentityDocument;
+		testIdentityDocument = didDocumentEntityStorage.getStore()?.[0] as IdentityDocument;
 
 		const testDocument = JSON.parse(testIdentityDocument.document) as IDidDocument;
 		expect(testDocument?.assertionMethod).toBeDefined();
 
 		testDocumentVerificationMethodId = verificationMethod?.id ?? "";
 
-		const keyStore = vaultKeyEntityStorageConnector.getStore(TEST_PARTITION_ID);
+		const keyStore = vaultKeyEntityStorageConnector.getStore();
 		testDocumentVerificationMethodKey = keyStore?.[1] ?? ({} as VaultKey);
 	});
 
 	test("can fail to remove a verification method with no verification method id", async () => {
 		const identityConnector = new EntityStorageIdentityConnector();
 		await expect(
-			identityConnector.removeVerificationMethod(undefined as unknown as string)
+			identityConnector.removeVerificationMethod(TEST_IDENTITY_ID, undefined as unknown as string)
 		).rejects.toMatchObject({
 			name: "GuardError",
 			message: "guard.string",
@@ -214,13 +201,13 @@ describe("EntityStorageIdentityConnector", () => {
 	});
 
 	test("can remove a verification method", async () => {
-		await didDocumentEntityStorage.set(testIdentityDocument, TEST_CONTEXT);
-		await vaultKeyEntityStorageConnector.set(testDocumentKey, TEST_CONTEXT);
+		await didDocumentEntityStorage.set(testIdentityDocument);
+		await vaultKeyEntityStorageConnector.set(testDocumentKey);
 		const identityConnector = new EntityStorageIdentityConnector();
 
 		await identityConnector.removeVerificationMethod(
-			testDocumentVerificationMethodId,
-			TEST_CONTEXT
+			TEST_IDENTITY_ID,
+			testDocumentVerificationMethodId
 		);
 
 		const testDocument = JSON.parse(testIdentityDocument.document) as IDidDocument;
@@ -231,11 +218,11 @@ describe("EntityStorageIdentityConnector", () => {
 		const identityConnector = new EntityStorageIdentityConnector();
 		await expect(
 			identityConnector.addService(
+				TEST_IDENTITY_ID,
 				undefined as unknown as string,
 				undefined as unknown as string,
 				undefined as unknown as string,
-				undefined as unknown as string,
-				TEST_CONTEXT
+				undefined as unknown as string
 			)
 		).rejects.toMatchObject({
 			name: "GuardError",
@@ -251,11 +238,11 @@ describe("EntityStorageIdentityConnector", () => {
 		const identityConnector = new EntityStorageIdentityConnector();
 		await expect(
 			identityConnector.addService(
+				TEST_IDENTITY_ID,
 				"foo",
 				undefined as unknown as string,
 				undefined as unknown as string,
-				undefined as unknown as string,
-				TEST_CONTEXT
+				undefined as unknown as string
 			)
 		).rejects.toMatchObject({
 			name: "GuardError",
@@ -271,11 +258,11 @@ describe("EntityStorageIdentityConnector", () => {
 		const identityConnector = new EntityStorageIdentityConnector();
 		await expect(
 			identityConnector.addService(
+				TEST_IDENTITY_ID,
 				"foo",
 				"foo",
 				undefined as unknown as string,
-				undefined as unknown as string,
-				TEST_CONTEXT
+				undefined as unknown as string
 			)
 		).rejects.toMatchObject({
 			name: "GuardError",
@@ -291,11 +278,11 @@ describe("EntityStorageIdentityConnector", () => {
 		const identityConnector = new EntityStorageIdentityConnector();
 		await expect(
 			identityConnector.addService(
+				TEST_IDENTITY_ID,
 				"foo",
 				"foo",
 				"foo",
-				undefined as unknown as string,
-				TEST_CONTEXT
+				undefined as unknown as string
 			)
 		).rejects.toMatchObject({
 			name: "GuardError",
@@ -308,16 +295,16 @@ describe("EntityStorageIdentityConnector", () => {
 	});
 
 	test("can add a service", async () => {
-		await didDocumentEntityStorage.set(testIdentityDocument, TEST_CONTEXT);
-		await vaultKeyEntityStorageConnector.set(testDocumentKey, TEST_CONTEXT);
+		await didDocumentEntityStorage.set(testIdentityDocument);
+		await vaultKeyEntityStorageConnector.set(testDocumentKey);
 		const identityConnector = new EntityStorageIdentityConnector();
 
 		const service = await identityConnector.addService(
+			TEST_IDENTITY_ID,
 			testIdentityDocument.id,
 			"linked-domain",
 			"LinkedDomains",
-			"https://bar.example.com/",
-			TEST_CONTEXT
+			"https://bar.example.com/"
 		);
 
 		expect(service).toBeDefined();
@@ -330,7 +317,7 @@ describe("EntityStorageIdentityConnector", () => {
 	test("can fail to remove a service with no service id", async () => {
 		const identityConnector = new EntityStorageIdentityConnector();
 		await expect(
-			identityConnector.removeService(undefined as unknown as string)
+			identityConnector.removeService(TEST_IDENTITY_ID, undefined as unknown as string)
 		).rejects.toMatchObject({
 			name: "GuardError",
 			message: "guard.string",
@@ -342,11 +329,11 @@ describe("EntityStorageIdentityConnector", () => {
 	});
 
 	test("can remove a service", async () => {
-		await didDocumentEntityStorage.set(testIdentityDocument, TEST_CONTEXT);
-		await vaultKeyEntityStorageConnector.set(testDocumentKey, TEST_CONTEXT);
+		await didDocumentEntityStorage.set(testIdentityDocument);
+		await vaultKeyEntityStorageConnector.set(testDocumentKey);
 		const identityConnector = new EntityStorageIdentityConnector();
 
-		await identityConnector.removeService(testServiceId, TEST_CONTEXT);
+		await identityConnector.removeService(TEST_IDENTITY_ID, testServiceId);
 
 		const testDocument = JSON.parse(testIdentityDocument.document) as IDidDocument;
 
@@ -363,13 +350,13 @@ describe("EntityStorageIdentityConnector", () => {
 
 		await expect(
 			identityConnector.createVerifiableCredential<IDegree>(
+				TEST_IDENTITY_ID,
 				undefined as unknown as string,
 				undefined as unknown as string,
 				undefined as unknown as string,
 				undefined as unknown as IDegree,
 				undefined as unknown as string,
-				undefined as unknown as number,
-				TEST_CONTEXT
+				undefined as unknown as number
 			)
 		).rejects.toMatchObject({
 			name: "GuardError",
@@ -385,13 +372,13 @@ describe("EntityStorageIdentityConnector", () => {
 		const identityConnector = new EntityStorageIdentityConnector();
 		await expect(
 			identityConnector.createVerifiableCredential<IDegree>(
+				TEST_IDENTITY_ID,
 				"foo",
 				"foo",
 				"UniversityDegreeCredential",
 				undefined as unknown as IDegree,
 				undefined as unknown as string,
-				undefined as unknown as number,
-				TEST_CONTEXT
+				undefined as unknown as number
 			)
 		).rejects.toMatchObject({
 			name: "GuardError",
@@ -404,15 +391,16 @@ describe("EntityStorageIdentityConnector", () => {
 	});
 
 	test("can create a verifiable credential", async () => {
-		await vaultKeyEntityStorageConnector.set(testDocumentKey, TEST_CONTEXT);
-		await vaultKeyEntityStorageConnector.set(testDocumentVerificationMethodKey, TEST_CONTEXT);
-		await didDocumentEntityStorage.set(testIdentityDocument, TEST_CONTEXT);
+		await vaultKeyEntityStorageConnector.set(testDocumentKey);
+		await vaultKeyEntityStorageConnector.set(testDocumentVerificationMethodKey);
+		await didDocumentEntityStorage.set(testIdentityDocument);
 
 		const identityConnector = new EntityStorageIdentityConnector();
 
-		const holderDocument = await identityConnector.createDocument(TEST_CONTROLLER, TEST_CONTEXT);
+		const holderDocument = await identityConnector.createDocument(TEST_IDENTITY_ID);
 
 		const result = await identityConnector.createVerifiableCredential(
+			TEST_IDENTITY_ID,
 			testDocumentVerificationMethodId,
 			"https://example.edu/credentials/3732",
 			"UniversityDegreeCredential",
@@ -422,8 +410,7 @@ describe("EntityStorageIdentityConnector", () => {
 				degreeName: "Bachelor of Science and Arts"
 			},
 			["https://example.com/my-schema"],
-			5,
-			TEST_CONTEXT
+			5
 		);
 
 		expect(result.verifiableCredential["@context"]).toEqual([
@@ -466,14 +453,11 @@ describe("EntityStorageIdentityConnector", () => {
 	});
 
 	test("can validate a verifiable credential", async () => {
-		await didDocumentEntityStorage.set(testIdentityDocument, TEST_CONTEXT);
-		await vaultKeyEntityStorageConnector.set(testDocumentKey, TEST_CONTEXT);
+		await didDocumentEntityStorage.set(testIdentityDocument);
+		await vaultKeyEntityStorageConnector.set(testDocumentKey);
 		const identityConnector = new EntityStorageIdentityConnector();
 
-		const result = await identityConnector.checkVerifiableCredential<IDegree>(
-			testVcJwt,
-			TEST_CONTEXT
-		);
+		const result = await identityConnector.checkVerifiableCredential<IDegree>(testVcJwt);
 
 		expect(result.revoked).toBeFalsy();
 		expect(result.verifiableCredential?.["@context"]).toEqual([
@@ -503,9 +487,9 @@ describe("EntityStorageIdentityConnector", () => {
 
 		await expect(
 			identityConnector.revokeVerifiableCredentials(
+				TEST_IDENTITY_ID,
 				undefined as unknown as string,
-				undefined as unknown as number[],
-				TEST_CONTEXT
+				undefined as unknown as number[]
 			)
 		).rejects.toMatchObject({
 			name: "GuardError",
@@ -522,9 +506,9 @@ describe("EntityStorageIdentityConnector", () => {
 
 		await expect(
 			identityConnector.revokeVerifiableCredentials(
+				TEST_IDENTITY_ID,
 				testIdentityDocument.id,
-				undefined as unknown as number[],
-				TEST_CONTEXT
+				undefined as unknown as number[]
 			)
 		).rejects.toMatchObject({
 			name: "GuardError",
@@ -537,16 +521,16 @@ describe("EntityStorageIdentityConnector", () => {
 	});
 
 	test("can revoke a verifiable credential", async () => {
-		await didDocumentEntityStorage.set(testIdentityDocument, TEST_CONTEXT);
-		await vaultKeyEntityStorageConnector.set(testDocumentKey, TEST_CONTEXT);
+		await didDocumentEntityStorage.set(testIdentityDocument);
+		await vaultKeyEntityStorageConnector.set(testDocumentKey);
 
 		const identityConnector = new EntityStorageIdentityConnector();
 
-		await identityConnector.revokeVerifiableCredentials(testIdentityDocument.id, [5], TEST_CONTEXT);
+		await identityConnector.revokeVerifiableCredentials(TEST_IDENTITY_ID, testIdentityDocument.id, [
+			5
+		]);
 
-		testIdentityDocument = didDocumentEntityStorage.getStore(
-			TEST_PARTITION_ID
-		)?.[0] as IdentityDocument;
+		testIdentityDocument = didDocumentEntityStorage.getStore()?.[0] as IdentityDocument;
 		const testDocument = JSON.parse(testIdentityDocument.document) as IDidDocument;
 
 		expect(testDocument.service).toBeDefined();
@@ -558,10 +542,7 @@ describe("EntityStorageIdentityConnector", () => {
 			"data:application/octet-stream;base64,H4sIAAAAAAAAA-3BIQEAAAACIKf4f6UzLEADAAAAAAAAAAAAAAAAAAAAvA1-s-l1AEAAAA"
 		);
 
-		const result = await identityConnector.checkVerifiableCredential<IDegree>(
-			testVcJwt,
-			TEST_CONTEXT
-		);
+		const result = await identityConnector.checkVerifiableCredential<IDegree>(testVcJwt);
 		expect(result.revoked).toBeTruthy();
 	});
 
@@ -570,9 +551,9 @@ describe("EntityStorageIdentityConnector", () => {
 
 		await expect(
 			identityConnector.unrevokeVerifiableCredentials(
+				TEST_IDENTITY_ID,
 				undefined as unknown as string,
-				undefined as unknown as number[],
-				TEST_CONTEXT
+				undefined as unknown as number[]
 			)
 		).rejects.toMatchObject({
 			name: "GuardError",
@@ -589,9 +570,9 @@ describe("EntityStorageIdentityConnector", () => {
 
 		await expect(
 			identityConnector.unrevokeVerifiableCredentials(
+				TEST_IDENTITY_ID,
 				testIdentityDocument.id,
-				undefined as unknown as number[],
-				TEST_CONTEXT
+				undefined as unknown as number[]
 			)
 		).rejects.toMatchObject({
 			name: "GuardError",
@@ -604,20 +585,18 @@ describe("EntityStorageIdentityConnector", () => {
 	});
 
 	test("can unrevoke a verifiable credential", async () => {
-		await didDocumentEntityStorage.set(testIdentityDocument, TEST_CONTEXT);
-		await vaultKeyEntityStorageConnector.set(testDocumentKey, TEST_CONTEXT);
+		await didDocumentEntityStorage.set(testIdentityDocument);
+		await vaultKeyEntityStorageConnector.set(testDocumentKey);
 
 		const identityConnector = new EntityStorageIdentityConnector();
 
 		await identityConnector.unrevokeVerifiableCredentials(
+			TEST_IDENTITY_ID,
 			testIdentityDocument.id,
-			[5],
-			TEST_CONTEXT
+			[5]
 		);
 
-		testIdentityDocument = didDocumentEntityStorage.getStore(
-			TEST_PARTITION_ID
-		)?.[0] as IdentityDocument;
+		testIdentityDocument = didDocumentEntityStorage.getStore()?.[0] as IdentityDocument;
 		const testDocument = JSON.parse(testIdentityDocument.document) as IDidDocument;
 
 		const revokeService = testDocument.service?.find(s => s.id === `${testDocument.id}#revocation`);
@@ -626,10 +605,7 @@ describe("EntityStorageIdentityConnector", () => {
 			"data:application/octet-stream;base64,H4sIAAAAAAAAA-3BMQEAAADCoPVPbQwfoAAAAAAAAAAAAAAAAAAAAIC3AYbSVKsAQAAA"
 		);
 
-		const result = await identityConnector.checkVerifiableCredential<IDegree>(
-			testVcJwt,
-			TEST_CONTEXT
-		);
+		const result = await identityConnector.checkVerifiableCredential<IDegree>(testVcJwt);
 		expect(result.revoked).toBeFalsy();
 	});
 
@@ -638,12 +614,12 @@ describe("EntityStorageIdentityConnector", () => {
 
 		await expect(
 			identityConnector.createVerifiablePresentation(
+				TEST_IDENTITY_ID,
 				undefined as unknown as string,
 				undefined as unknown as string[],
 				undefined as unknown as string[],
 				undefined as unknown as string[],
-				undefined,
-				TEST_CONTEXT
+				undefined
 			)
 		).rejects.toMatchObject({
 			name: "GuardError",
@@ -659,12 +635,12 @@ describe("EntityStorageIdentityConnector", () => {
 		const identityConnector = new EntityStorageIdentityConnector();
 		await expect(
 			identityConnector.createVerifiablePresentation(
+				TEST_IDENTITY_ID,
 				"foo",
 				["vp"],
 				undefined as unknown as string[],
 				undefined as unknown as string[],
-				undefined,
-				TEST_CONTEXT
+				undefined
 			)
 		).rejects.toMatchObject({
 			name: "GuardError",
@@ -681,12 +657,12 @@ describe("EntityStorageIdentityConnector", () => {
 
 		await expect(
 			identityConnector.createVerifiablePresentation(
+				TEST_IDENTITY_ID,
 				"foo",
 				["vp"],
 				["jwt"],
 				undefined as unknown as string[],
-				"foo" as unknown as number,
-				TEST_CONTEXT
+				"foo" as unknown as number
 			)
 		).rejects.toMatchObject({
 			name: "GuardError",
@@ -699,19 +675,19 @@ describe("EntityStorageIdentityConnector", () => {
 	});
 
 	test("can create a verifiable presentation", async () => {
-		await vaultKeyEntityStorageConnector.set(testDocumentKey, TEST_CONTEXT);
-		await vaultKeyEntityStorageConnector.set(testDocumentVerificationMethodKey, TEST_CONTEXT);
-		await didDocumentEntityStorage.set(testIdentityDocument, TEST_CONTEXT);
+		await vaultKeyEntityStorageConnector.set(testDocumentKey);
+		await vaultKeyEntityStorageConnector.set(testDocumentVerificationMethodKey);
+		await didDocumentEntityStorage.set(testIdentityDocument);
 
 		const identityConnector = new EntityStorageIdentityConnector();
 
 		const result = await identityConnector.createVerifiablePresentation(
+			TEST_IDENTITY_ID,
 			testDocumentVerificationMethodId,
 			["ExamplePresentation"],
 			[testVcJwt],
 			["https://example.com/my-schema"],
-			14400,
-			TEST_CONTEXT
+			14400
 		);
 
 		expect(result.verifiablePresentation["@context"]).toEqual([
@@ -732,9 +708,7 @@ describe("EntityStorageIdentityConnector", () => {
 	test("can fail to validate a verifiable presentation with no jwt", async () => {
 		const identityConnector = new EntityStorageIdentityConnector();
 
-		await expect(
-			identityConnector.checkVerifiablePresentation("", TEST_CONTEXT)
-		).rejects.toMatchObject({
+		await expect(identityConnector.checkVerifiablePresentation("")).rejects.toMatchObject({
 			name: "GuardError",
 			message: "guard.stringEmpty",
 			properties: {
@@ -745,11 +719,11 @@ describe("EntityStorageIdentityConnector", () => {
 	});
 
 	test("can validate a verifiable presentation", async () => {
-		await didDocumentEntityStorage.set(testIdentityDocument, TEST_CONTEXT);
-		await vaultKeyEntityStorageConnector.set(testDocumentKey, TEST_CONTEXT);
+		await didDocumentEntityStorage.set(testIdentityDocument);
+		await vaultKeyEntityStorageConnector.set(testDocumentKey);
 
 		const identityConnector = new EntityStorageIdentityConnector();
-		const result = await identityConnector.checkVerifiablePresentation(testVpJwt, TEST_CONTEXT);
+		const result = await identityConnector.checkVerifiablePresentation(testVpJwt);
 
 		expect(result.revoked).toBeFalsy();
 		expect(result.verifiablePresentation?.["@context"]).toEqual([
@@ -771,9 +745,9 @@ describe("EntityStorageIdentityConnector", () => {
 		const identityConnector = new EntityStorageIdentityConnector();
 		await expect(
 			identityConnector.createProof(
+				TEST_IDENTITY_ID,
 				undefined as unknown as string,
-				undefined as unknown as Uint8Array,
-				TEST_CONTEXT
+				undefined as unknown as Uint8Array
 			)
 		).rejects.toMatchObject({
 			name: "GuardError",
@@ -788,7 +762,7 @@ describe("EntityStorageIdentityConnector", () => {
 	test("can fail to create a proof with no bytes", async () => {
 		const identityConnector = new EntityStorageIdentityConnector();
 		await expect(
-			identityConnector.createProof("foo", undefined as unknown as Uint8Array, TEST_CONTEXT)
+			identityConnector.createProof(TEST_IDENTITY_ID, "foo", undefined as unknown as Uint8Array)
 		).rejects.toMatchObject({
 			name: "GuardError",
 			message: "guard.uint8Array",
@@ -800,17 +774,17 @@ describe("EntityStorageIdentityConnector", () => {
 	});
 
 	test("can create a proof", async () => {
-		await vaultKeyEntityStorageConnector.set(testDocumentKey, TEST_CONTEXT);
-		await vaultKeyEntityStorageConnector.set(testDocumentVerificationMethodKey, TEST_CONTEXT);
-		await didDocumentEntityStorage.set(testIdentityDocument, TEST_CONTEXT);
+		await vaultKeyEntityStorageConnector.set(testDocumentKey);
+		await vaultKeyEntityStorageConnector.set(testDocumentVerificationMethodKey);
+		await didDocumentEntityStorage.set(testIdentityDocument);
 
 		const identityConnector = new EntityStorageIdentityConnector();
 
 		const bytes = new Uint8Array([0, 1, 2, 3, 4]);
 		const proof = await identityConnector.createProof(
+			TEST_IDENTITY_ID,
 			testDocumentVerificationMethodId,
-			bytes,
-			TEST_CONTEXT
+			bytes
 		);
 		expect(proof.type).toEqual("Ed25519");
 
@@ -830,8 +804,7 @@ describe("EntityStorageIdentityConnector", () => {
 				undefined as unknown as string,
 				undefined as unknown as Uint8Array,
 				undefined as unknown as string,
-				undefined as unknown as Uint8Array,
-				TEST_CONTEXT
+				undefined as unknown as Uint8Array
 			)
 		).rejects.toMatchObject({
 			name: "GuardError",
@@ -850,8 +823,7 @@ describe("EntityStorageIdentityConnector", () => {
 				"foo",
 				undefined as unknown as Uint8Array,
 				undefined as unknown as string,
-				undefined as unknown as Uint8Array,
-				TEST_CONTEXT
+				undefined as unknown as Uint8Array
 			)
 		).rejects.toMatchObject({
 			name: "GuardError",
@@ -870,8 +842,7 @@ describe("EntityStorageIdentityConnector", () => {
 				"foo",
 				Converter.utf8ToBytes("foo"),
 				undefined as unknown as string,
-				undefined as unknown as Uint8Array,
-				TEST_CONTEXT
+				undefined as unknown as Uint8Array
 			)
 		).rejects.toMatchObject({
 			name: "GuardError",
@@ -890,8 +861,7 @@ describe("EntityStorageIdentityConnector", () => {
 				"foo",
 				Converter.utf8ToBytes("foo"),
 				"foo",
-				undefined as unknown as Uint8Array,
-				TEST_CONTEXT
+				undefined as unknown as Uint8Array
 			)
 		).rejects.toMatchObject({
 			name: "GuardError",
@@ -910,8 +880,7 @@ describe("EntityStorageIdentityConnector", () => {
 				"foo#123",
 				Converter.utf8ToBytes("foo"),
 				"foo",
-				Converter.utf8ToBytes("foo"),
-				TEST_CONTEXT
+				Converter.utf8ToBytes("foo")
 			)
 		).rejects.toMatchObject({
 			name: "GeneralError",
@@ -925,9 +894,9 @@ describe("EntityStorageIdentityConnector", () => {
 	});
 
 	test("can verify a proof", async () => {
-		await didDocumentEntityStorage.set(testIdentityDocument, TEST_CONTEXT);
-		await vaultKeyEntityStorageConnector.set(testDocumentKey, TEST_CONTEXT);
-		await vaultKeyEntityStorageConnector.set(testDocumentVerificationMethodKey, TEST_CONTEXT);
+		await didDocumentEntityStorage.set(testIdentityDocument);
+		await vaultKeyEntityStorageConnector.set(testDocumentKey);
+		await vaultKeyEntityStorageConnector.set(testDocumentVerificationMethodKey);
 
 		const identityConnector = new EntityStorageIdentityConnector();
 
@@ -935,37 +904,8 @@ describe("EntityStorageIdentityConnector", () => {
 			testDocumentVerificationMethodId,
 			new Uint8Array([0, 1, 2, 3, 4]),
 			"Ed25519",
-			testProof,
-			TEST_CONTEXT
+			testProof
 		);
 		expect(verified).toBeTruthy();
-	});
-
-	test("can create a full document with keys and verification methods", async () => {
-		const identityConnector = new EntityStorageIdentityConnector();
-
-		const requestContext: IServiceRequestContext = {
-			partitionId: "test"
-		};
-
-		const doc = await identityConnector.createDocument(
-			"tst1pqvhcdyt3lmz752u495977jt2eaqwwswd3yjceqlm5pfmyy3ymdfx6c48gj",
-			requestContext
-		);
-
-		requestContext.userIdentity = doc.id;
-		await identityConnector.addVerificationMethod(
-			doc.id,
-			"assertionMethod",
-			"attestation",
-			requestContext
-		);
-
-		const keyStore = vaultKeyEntityStorageConnector.getStore("test");
-		console.log("key", JSON.stringify(keyStore?.[0], undefined, "\t"));
-
-		const docStore = didDocumentEntityStorage.getStore("test");
-		expect(docStore?.[0].id).toEqual(doc.id);
-		console.log("doc", JSON.stringify(docStore?.[0], undefined, "\t"));
 	});
 });

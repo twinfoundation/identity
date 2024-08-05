@@ -3,12 +3,26 @@
 import { EntitySchemaFactory, EntitySchemaHelper } from "@gtsc/entity";
 import { nameof } from "@gtsc/nameof";
 import { IdentityDocument } from "./entities/identityDocument";
+import { IdentityProfile } from "./entities/identityProfile";
 
 /**
  * Initialize the schema for the identity entity storage connector.
+ * @param options Options for which entities to register.
+ * @param options.includeDocument Whether to include the document entity, defaults to true.
+ * @param options.includeProfile Whether to include the profile entity, defaults to true.
  */
-export function initSchema(): void {
-	EntitySchemaFactory.register(nameof(IdentityDocument), () =>
-		EntitySchemaHelper.getSchema(IdentityDocument)
-	);
+export function initSchema(options?: {
+	includeDocument?: boolean;
+	includeProfile?: boolean;
+}): void {
+	if (options?.includeDocument ?? true) {
+		EntitySchemaFactory.register(nameof(IdentityDocument), () =>
+			EntitySchemaHelper.getSchema(IdentityDocument)
+		);
+	}
+	if (options?.includeProfile ?? true) {
+		EntitySchemaFactory.register(nameof<IdentityProfile>(), () =>
+			EntitySchemaHelper.getSchema(IdentityProfile)
+		);
+	}
 }

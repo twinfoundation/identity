@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0.
 import { BaseRestClient } from "@gtsc/api-core";
 import type { IBaseRestClientConfig } from "@gtsc/api-models";
-import { Guards, StringHelper } from "@gtsc/core";
+import { StringHelper } from "@gtsc/core";
 import type {
 	IIdentity,
 	IIdentityProfile,
@@ -12,7 +12,6 @@ import type {
 	IIdentityProfileListRequest,
 	IIdentityProfileListResponse,
 	IIdentityProfileProperty,
-	IIdentityProfileRemoveRequest,
 	IIdentityProfileUpdateRequest
 } from "@gtsc/identity-models";
 import { nameof } from "@gtsc/nameof";
@@ -36,16 +35,12 @@ export class IdentityProfileClient extends BaseRestClient implements IIdentityPr
 
 	/**
 	 * Create the profile properties for an identity.
-	 * @param identity The identity of the profile to create.
 	 * @param properties The properties to create the profile with.
 	 * @returns Nothing.
 	 */
-	public async create(identity: string, properties: IIdentityProfileProperty[]): Promise<void> {
-		Guards.stringValue(this.CLASS_NAME, nameof(identity), identity);
-
+	public async create(properties: IIdentityProfileProperty[]): Promise<void> {
 		await this.fetch<IIdentityProfileCreateRequest, never>("", "POST", {
 			body: {
-				identity,
 				properties
 			}
 		});
@@ -53,26 +48,16 @@ export class IdentityProfileClient extends BaseRestClient implements IIdentityPr
 
 	/**
 	 * Get the profile properties for an identity.
-	 * if matching authenticated user private properties are also returned.
-	 * @param identity The identity of the item to get.
 	 * @param propertyNames The properties to get for the item, defaults to all.
 	 * @returns The items properties.
 	 */
-	public async get(
-		identity: string,
-		propertyNames?: string[]
-	): Promise<{
+	public async get(propertyNames?: string[]): Promise<{
 		properties?: IIdentityProfileProperty[];
 	}> {
-		Guards.stringValue(this.CLASS_NAME, nameof(identity), identity);
-
 		const response = await this.fetch<IIdentityProfileGetRequest, IIdentityProfileGetResponse>(
-			"/:identity",
+			"/",
 			"GET",
 			{
-				pathParams: {
-					identity
-				},
 				query: {
 					propertyNames: propertyNames?.join(",")
 				}
@@ -84,17 +69,11 @@ export class IdentityProfileClient extends BaseRestClient implements IIdentityPr
 
 	/**
 	 * Update the profile properties of an identity.
-	 * @param identity The identity to update.
 	 * @param properties Properties for the profile, set a properties value to undefined to remove it.
 	 * @returns Nothing.
 	 */
-	public async update(identity: string, properties: IIdentityProfileProperty[]): Promise<void> {
-		Guards.stringValue(this.CLASS_NAME, nameof(identity), identity);
-
-		await this.fetch<IIdentityProfileUpdateRequest, never>("/:identity", "PUT", {
-			pathParams: {
-				identity
-			},
+	public async update(properties: IIdentityProfileProperty[]): Promise<void> {
+		await this.fetch<IIdentityProfileUpdateRequest, never>("/", "PUT", {
 			body: {
 				properties
 			}
@@ -103,17 +82,10 @@ export class IdentityProfileClient extends BaseRestClient implements IIdentityPr
 
 	/**
 	 * Delete the profile for an identity.
-	 * @param identity The identity to delete.
 	 * @returns Nothing.
 	 */
-	public async remove(identity: string): Promise<void> {
-		Guards.stringValue(this.CLASS_NAME, nameof(identity), identity);
-
-		await this.fetch<IIdentityProfileRemoveRequest, never>("/:identity", "DELETE", {
-			pathParams: {
-				identity
-			}
-		});
+	public async remove(): Promise<void> {
+		await this.fetch<never, never>("/", "DELETE");
 	}
 
 	/**
@@ -154,7 +126,7 @@ export class IdentityProfileClient extends BaseRestClient implements IIdentityPr
 		totalEntities: number;
 	}> {
 		const response = await this.fetch<IIdentityProfileListRequest, IIdentityProfileListResponse>(
-			"/",
+			"/query",
 			"GET",
 			{
 				query: {

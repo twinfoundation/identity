@@ -27,6 +27,15 @@
 			"verifyProofFailed": "Verifying the signature for the data failed",
 			"revokeVerifiableCredentialsFailed": "Revoking verifiable credentials failed",
 			"unrevokeVerifiableCredentialsFailed": "Unrevoking verifiable credentials failed"
+		},
+		"entityStorageIdentityProfileConnector": {
+			"alreadyExists": "The identity profile already exists for the identity \"{existingId}\"",
+			"createFailed": "Creating the identity profile failed \"{identity}\"",
+			"getFailed": "Getting the identity profile failed \"{notFoundId}\"",
+			"updateFailed": "Updating the identity profile failed \"{identity}\"",
+			"notFound": "The identity profile failed \"{notFoundId}\"",
+			"removeFailed": "Removing the identity profile failed \"{identity}\"",
+			"listFailed": "Failed listing identities"
 		}
 	}
 }

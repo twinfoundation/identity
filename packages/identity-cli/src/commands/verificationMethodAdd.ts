@@ -6,6 +6,8 @@ import { IotaIdentityConnector, IotaIdentityUtils } from "@gtsc/identity-connect
 import { DidVerificationMethodType } from "@gtsc/standards-w3c-did";
 import { VaultConnectorFactory } from "@gtsc/vault-models";
 
+import { IotaWalletConnector } from "@gtsc/wallet-connector-iota";
+import { WalletConnectorFactory } from "@gtsc/wallet-models";
 import { Command, Option } from "commander";
 import { setupVault } from "./setupCommands";
 
@@ -110,11 +112,22 @@ export async function actionCommandVerificationMethodAdd(
 
 	setupVault();
 
-	const requestContext = { userIdentity: "local", partitionId: "local" };
 	const vaultSeedId = "local-seed";
+	const localIdentity = "local";
 
 	const vaultConnector = VaultConnectorFactory.get("vault");
-	await vaultConnector.setSecret(vaultSeedId, Converter.bytesToBase64(seed), requestContext);
+	await vaultConnector.setSecret(`${localIdentity}/${vaultSeedId}`, Converter.bytesToBase64(seed));
+
+	const iotaWalletConnector = new IotaWalletConnector({
+		config: {
+			clientOptions: {
+				nodes: [nodeEndpoint],
+				localPow: true
+			},
+			vaultSeedId
+		}
+	});
+	WalletConnectorFactory.register("wallet", () => iotaWalletConnector);
 
 	const iotaIdentityConnector = new IotaIdentityConnector({
 		config: {
@@ -134,15 +147,15 @@ export async function actionCommandVerificationMethodAdd(
 	CLIDisplay.spinnerStart();
 
 	const verificationMethod = await iotaIdentityConnector.addVerificationMethod(
+		localIdentity,
 		did,
 		type,
-		opts?.id,
-		requestContext
+		opts?.id
 	);
 
 	CLIDisplay.spinnerStop();
 
-	const keyPair = await vaultConnector.getKey(verificationMethod.id, requestContext);
+	const keyPair = await vaultConnector.getKey(`${localIdentity}/${verificationMethod.id}`);
 	const privateKey = Converter.bytesToBase64(keyPair.privateKey);
 	const publicKey = Converter.bytesToBase64(keyPair.publicKey);
 

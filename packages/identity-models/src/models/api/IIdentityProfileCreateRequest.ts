@@ -11,11 +11,6 @@ export interface IIdentityProfileCreateRequest {
 	 */
 	body: {
 		/**
-		 * The identity to create the profile for.
-		 */
-		identity: string;
-
-		/**
 		 * Properties for the identity.
 		 */
 		properties: IIdentityProfileProperty[];

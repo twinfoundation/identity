@@ -3,6 +3,8 @@
 import { CLIDisplay, CLIOptions, CLIParam, CLIUtils, type CliOutputOptions } from "@gtsc/cli-core";
 import { Converter, I18n, Is } from "@gtsc/core";
 import { IotaIdentityConnector } from "@gtsc/identity-connector-iota";
+import { IotaWalletConnector } from "@gtsc/wallet-connector-iota";
+import { WalletConnectorFactory } from "@gtsc/wallet-models";
 import { Command } from "commander";
 import { setupVault } from "./setupCommands";
 
@@ -88,7 +90,15 @@ export async function actionCommandProofVerify(
 
 	setupVault();
 
-	const requestContext = { userIdentity: "local", partitionId: "local" };
+	const iotaWalletConnector = new IotaWalletConnector({
+		config: {
+			clientOptions: {
+				nodes: [nodeEndpoint],
+				localPow: true
+			}
+		}
+	});
+	WalletConnectorFactory.register("wallet", () => iotaWalletConnector);
 
 	const iotaIdentityConnector = new IotaIdentityConnector({
 		config: {
@@ -104,7 +114,7 @@ export async function actionCommandProofVerify(
 
 	CLIDisplay.spinnerStart();
 
-	const isVerified = await iotaIdentityConnector.verifyProof(id, data, type, value, requestContext);
+	const isVerified = await iotaIdentityConnector.verifyProof(id, data, type, value);
 
 	CLIDisplay.spinnerStop();
 

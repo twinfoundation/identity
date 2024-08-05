@@ -4,6 +4,8 @@ import { CLIDisplay, CLIOptions, CLIParam, CLIUtils, type CliOutputOptions } fro
 import { Converter, I18n, Is, StringHelper } from "@gtsc/core";
 import { IotaIdentityConnector, IotaIdentityUtils } from "@gtsc/identity-connector-iota";
 import { VaultConnectorFactory } from "@gtsc/vault-models";
+import { IotaWalletConnector } from "@gtsc/wallet-connector-iota";
+import { WalletConnectorFactory } from "@gtsc/wallet-models";
 import { Command } from "commander";
 import { setupVault } from "./setupCommands";
 
@@ -20,10 +22,6 @@ export function buildCommandIdentityCreate(): Command {
 		.requiredOption(
 			I18n.formatMessage("commands.identity-create.options.seed.param"),
 			I18n.formatMessage("commands.identity-create.options.seed.description")
-		)
-		.requiredOption(
-			I18n.formatMessage("commands.identity-create.options.controller.param"),
-			I18n.formatMessage("commands.identity-create.options.controller.description")
 		);
 
 	CLIOptions.output(command, {
@@ -53,36 +51,43 @@ export function buildCommandIdentityCreate(): Command {
 /**
  * Action the identity create command.
  * @param opts The options for the command.
- * @param opts.controller The address to fill from the faucet.
  * @param opts.seed The private key for the controller.
  * @param opts.node The node URL.
  * @param opts.explorer The explorer URL.
  */
 export async function actionCommandIdentityCreate(
 	opts: {
-		controller: string;
 		seed: string;
 		node: string;
 		explorer: string;
 	} & CliOutputOptions
 ): Promise<void> {
 	const seed: Uint8Array = CLIParam.hexBase64("seed", opts.seed);
-	const controller: string = CLIParam.bech32("controller", opts.controller);
 	const nodeEndpoint: string = CLIParam.url("node", opts.node);
 	const explorerEndpoint: string = CLIParam.url("explorer", opts.explorer);
 
-	CLIDisplay.value(I18n.formatMessage("commands.identity-create.labels.controller"), controller);
 	CLIDisplay.value(I18n.formatMessage("commands.common.labels.node"), nodeEndpoint);
 	CLIDisplay.value(I18n.formatMessage("commands.common.labels.explorer"), explorerEndpoint);
 	CLIDisplay.break();
 
 	setupVault();
 
-	const requestContext = { userIdentity: "local", partitionId: "local" };
 	const vaultSeedId = "local-seed";
+	const localIdentity = "local";
 
 	const vaultConnector = VaultConnectorFactory.get("vault");
-	await vaultConnector.setSecret(vaultSeedId, Converter.bytesToBase64(seed), requestContext);
+	await vaultConnector.setSecret(`${localIdentity}/${vaultSeedId}`, Converter.bytesToBase64(seed));
+
+	const iotaWalletConnector = new IotaWalletConnector({
+		config: {
+			clientOptions: {
+				nodes: [nodeEndpoint],
+				localPow: true
+			},
+			vaultSeedId
+		}
+	});
+	WalletConnectorFactory.register("wallet", () => iotaWalletConnector);
 
 	const iotaIdentityConnector = new IotaIdentityConnector({
 		config: {
@@ -99,7 +104,7 @@ export async function actionCommandIdentityCreate(
 
 	CLIDisplay.spinnerStart();
 
-	const document = await iotaIdentityConnector.createDocument(controller, requestContext);
+	const document = await iotaIdentityConnector.createDocument(localIdentity);
 
 	CLIDisplay.spinnerStop();
 

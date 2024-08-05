@@ -7,16 +7,6 @@ import type { IIdentityProfileProperty } from "../IIdentityProfileProperty";
  */
 export interface IIdentityProfileUpdateRequest {
 	/**
-	 * The path parameters.
-	 */
-	pathParams: {
-		/**
-		 * The identity to update the profile for.
-		 */
-		identity: string;
-	};
-
-	/**
 	 * The data for the request.
 	 */
 	body: {

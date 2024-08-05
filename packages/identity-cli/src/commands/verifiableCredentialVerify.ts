@@ -4,6 +4,8 @@ import { CLIDisplay, CLIOptions, CLIParam, CLIUtils, type CliOutputOptions } fro
 import { I18n, Is } from "@gtsc/core";
 import { IotaIdentityConnector } from "@gtsc/identity-connector-iota";
 
+import { IotaWalletConnector } from "@gtsc/wallet-connector-iota";
+import { WalletConnectorFactory } from "@gtsc/wallet-models";
 import { Command } from "commander";
 import { setupVault } from "./setupCommands";
 
@@ -62,7 +64,15 @@ export async function actionCommandVerifiableCredentialVerify(
 
 	setupVault();
 
-	const requestContext = { userIdentity: "local", partitionId: "local" };
+	const iotaWalletConnector = new IotaWalletConnector({
+		config: {
+			clientOptions: {
+				nodes: [nodeEndpoint],
+				localPow: true
+			}
+		}
+	});
+	WalletConnectorFactory.register("wallet", () => iotaWalletConnector);
 
 	const iotaIdentityConnector = new IotaIdentityConnector({
 		config: {
@@ -80,7 +90,7 @@ export async function actionCommandVerifiableCredentialVerify(
 
 	CLIDisplay.spinnerStart();
 
-	const verification = await iotaIdentityConnector.checkVerifiableCredential(jwt, requestContext);
+	const verification = await iotaIdentityConnector.checkVerifiableCredential(jwt);
 
 	const isVerified = Is.notEmpty(verification.verifiableCredential);
 	const isRevoked = verification.revoked;

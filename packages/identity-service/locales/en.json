@@ -2,9 +2,11 @@
 	"error": {
 		"identityService": {
 			"noConnectors": "There are no connectors registered with the identity factory",
-			"createFailed": "Creating the identity failed",
 			"resolveFailed": "Resolving the identity failed",
 			"namespaceMismatch": "The namespace in the urn \"{id}\" does not match the namespace of the identity service \"{namespace}\""
+		},
+		"identityProfileConnectorService": {
+			"noConnectors": "There are no connectors registered with the identity profile factory"
 		},
 		"identityProfileService": {
 			"alreadyExists": "The identity profile already exists for the identity \"{existingId}\"",
@@ -13,7 +15,6 @@
 			"updateFailed": "Updating the identity profile failed \"{identity}\"",
 			"notFound": "The identity profile failed \"{notFoundId}\"",
 			"removeFailed": "Removing the identity profile failed \"{identity}\"",
-			"mismatch": "The authenticated user does not match",
 			"listFailed": "Failed listing identities"
 		}
 	}

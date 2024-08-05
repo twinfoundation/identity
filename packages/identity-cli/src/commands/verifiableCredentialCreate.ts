@@ -6,6 +6,8 @@ import { Coerce, GeneralError, Guards, I18n, Is } from "@gtsc/core";
 import { IotaIdentityConnector } from "@gtsc/identity-connector-iota";
 import { VaultConnectorFactory, VaultKeyType } from "@gtsc/vault-models";
 
+import { IotaWalletConnector } from "@gtsc/wallet-connector-iota";
+import { WalletConnectorFactory } from "@gtsc/wallet-models";
 import { Command } from "commander";
 import { setupVault } from "./setupCommands";
 
@@ -142,16 +144,25 @@ export async function actionCommandVerifiableCredentialCreate(
 
 	setupVault();
 
-	const requestContext = { userIdentity: "local", partitionId: "local" };
+	const localIdentity = "local";
 
 	const vaultConnector = VaultConnectorFactory.get("vault");
 	await vaultConnector.addKey(
-		id,
+		`${localIdentity}/${id}`,
 		VaultKeyType.Ed25519,
 		privateKey,
-		new Uint8Array(),
-		requestContext
+		new Uint8Array()
 	);
+
+	const iotaWalletConnector = new IotaWalletConnector({
+		config: {
+			clientOptions: {
+				nodes: [nodeEndpoint],
+				localPow: true
+			}
+		}
+	});
+	WalletConnectorFactory.register("wallet", () => iotaWalletConnector);
 
 	const iotaIdentityConnector = new IotaIdentityConnector({
 		config: {
@@ -185,13 +196,13 @@ export async function actionCommandVerifiableCredentialCreate(
 	CLIDisplay.spinnerStart();
 
 	const verifiableCredential = await iotaIdentityConnector.createVerifiableCredential(
+		localIdentity,
 		id,
 		credentialId,
 		types,
 		jsonData,
 		contexts,
-		revocationIndex,
-		requestContext
+		revocationIndex
 	);
 
 	CLIDisplay.spinnerStop();

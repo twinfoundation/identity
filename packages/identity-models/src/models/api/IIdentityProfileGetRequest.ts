@@ -6,16 +6,6 @@
  */
 export interface IIdentityProfileGetRequest {
 	/**
-	 * The path parameters.
-	 */
-	pathParams: {
-		/**
-		 * The identity to get the profile for.
-		 */
-		identity: string;
-	};
-
-	/**
 	 * The query parameters.
 	 */
 	query: {

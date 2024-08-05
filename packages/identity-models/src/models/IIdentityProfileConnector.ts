@@ -1,72 +1,68 @@
 // Copyright 2024 IOTA Stiftung.
 // SPDX-License-Identifier: Apache-2.0.
-import type { IService, IServiceRequestContext } from "@gtsc/services";
+import type { IService } from "@gtsc/services";
 import type { IIdentityProfileProperty } from "./IIdentityProfileProperty";
 
 /**
  * Interface describing a contract which provides profile operations.
  */
-export interface IIdentityProfile extends IService {
+export interface IIdentityProfileConnector extends IService {
 	/**
 	 * Create the profile properties for an identity.
+	 * @param identity The identity of the profile to create.
 	 * @param properties The properties to create the profile with.
-	 * @param requestContext The context for the request.
 	 * @returns Nothing.
 	 */
-	create(
-		properties: IIdentityProfileProperty[],
-		requestContext?: IServiceRequestContext
-	): Promise<void>;
+	create(identity: string, properties: IIdentityProfileProperty[]): Promise<void>;
 
 	/**
 	 * Get the profile properties for an identity.
+	 * @param identity The identity of the item to get.
+	 * @param includePrivate Include private properties, defaults to true.
 	 * @param propertyNames The properties to get for the item, defaults to all.
-	 * @param requestContext The context for the request.
 	 * @returns The items properties.
 	 */
 	get(
-		propertyNames?: string[],
-		requestContext?: IServiceRequestContext
+		identity: string,
+		includePrivate?: boolean,
+		propertyNames?: string[]
 	): Promise<{
 		properties?: IIdentityProfileProperty[];
 	}>;
 
 	/**
 	 * Update the profile properties of an identity.
+	 * @param identity The identity to update.
 	 * @param properties Properties for the profile, set a properties value to undefined to remove it.
-	 * @param requestContext The context for the request.
 	 * @returns Nothing.
 	 */
-	update(
-		properties: IIdentityProfileProperty[],
-		requestContext?: IServiceRequestContext
-	): Promise<void>;
+	update(identity: string, properties: IIdentityProfileProperty[]): Promise<void>;
 
 	/**
 	 * Delete the profile for an identity.
-	 * @param requestContext The context for the request.
+	 * @param identity The identity to delete.
 	 * @returns Nothing.
 	 */
-	remove(requestContext?: IServiceRequestContext): Promise<void>;
+	remove(identity: string): Promise<void>;
 
 	/**
 	 * Get a list of the requested identities.
+	 * @param includePrivate Include private properties, defaults to false.
 	 * @param filters The filters to apply to the identities.
 	 * @param propertyNames The properties to get for the identities, default to all if undefined.
 	 * @param cursor The cursor for paged requests.
 	 * @param pageSize The maximum number of items in a page.
-	 * @param requestContext The context for the request.
 	 * @returns The list of items and cursor for paging.
 	 */
 	list(
+		includePrivate?: boolean,
 		filters?: {
 			propertyName: string;
 			propertyValue: unknown;
 		}[],
 		propertyNames?: string[],
 		cursor?: string,
-		pageSize?: number,
-		requestContext?: IServiceRequestContext
+		pageSize?: number
 	): Promise<{
 		/**
 		 * The identities.

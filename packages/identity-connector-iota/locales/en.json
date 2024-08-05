@@ -25,7 +25,8 @@
 			"revokeVerifiableCredentialsFailed": "Revoking verifiable credentials failed",
 			"unrevokeVerifiableCredentialsFailed": "Unrevoking verifiable credentials failed",
 			"inclusionFailed": "The transaction generated for the identity was not included in a reasonable amount of time",
-			"insufficientFunds": "There were insufficient funds to complete the operation"
+			"insufficientFunds": "There were insufficient funds to complete the operation",
+			"walletConnectorMissing": "The wallet connector must be available to perform this operation"
 		}
 	}
 }

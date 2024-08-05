@@ -1,32 +1,32 @@
-# Class: IdentityProfileService
+# Class: EntityStorageIdentityProfileConnector
 
-Class which implements the identity profile contract.
+Class which implements the identity profile connector contract.
 
 ## Implements
 
-- `IIdentityProfile`
+- `IIdentityProfileConnector`
 
 ## Constructors
 
-### new IdentityProfileService()
+### new EntityStorageIdentityProfileConnector()
 
-> **new IdentityProfileService**(`options`?): [`IdentityProfileService`](IdentityProfileService.md)
+> **new EntityStorageIdentityProfileConnector**(`options`?): [`EntityStorageIdentityProfileConnector`](EntityStorageIdentityProfileConnector.md)
 
-Create a new instance of IdentityProfileService.
+Create a new instance of Identity.
 
 #### Parameters
 
 • **options?**
 
-The dependencies for the identity profile service.
+The dependencies for the identity service.
 
-• **options.profileEntityConnectorType?**: `string`
+• **options.profileEntityStorageType?**: `string`
 
 The storage connector for the profiles, default to "identity-profile".
 
 #### Returns
 
-[`IdentityProfileService`](IdentityProfileService.md)
+[`EntityStorageIdentityProfileConnector`](EntityStorageIdentityProfileConnector.md)
 
 ## Properties
 
@@ -38,25 +38,25 @@ Runtime name for the class.
 
 #### Implementation of
 
-`IIdentityProfile.CLASS_NAME`
+`IIdentityProfileConnector.CLASS_NAME`
 
 ## Methods
 
 ### create()
 
-> **create**(`properties`, `requestContext`?): `Promise`\<`void`\>
+> **create**(`identity`, `properties`): `Promise`\<`void`\>
 
 Create the profile properties for an identity.
 
 #### Parameters
 
+• **identity**: `string`
+
+The identity of the profile to create.
+
 • **properties**: `IIdentityProfileProperty`[]
 
 The properties to create the profile with.
-
-• **requestContext?**: `IServiceRequestContext`
-
-The context for the request.
 
 #### Returns
 
@@ -66,25 +66,29 @@ Nothing.
 
 #### Implementation of
 
-`IIdentityProfile.create`
+`IIdentityProfileConnector.create`
 
 ***
 
 ### get()
 
-> **get**(`propertyNames`?, `requestContext`?): `Promise`\<`object`\>
+> **get**(`identity`, `includePrivate`?, `propertyNames`?): `Promise`\<`object`\>
 
 Get the profile properties for an identity.
 
 #### Parameters
 
+• **identity**: `string`
+
+The identity of the item to get.
+
+• **includePrivate?**: `boolean`
+
+Include private properties, defaults to true.
+
 • **propertyNames?**: `string`[]
 
 The properties to get for the item, defaults to all.
-
-• **requestContext?**: `IServiceRequestContext`
-
-The context for the request.
 
 #### Returns
 
@@ -98,25 +102,25 @@ The items properties.
 
 #### Implementation of
 
-`IIdentityProfile.get`
+`IIdentityProfileConnector.get`
 
 ***
 
 ### update()
 
-> **update**(`properties`, `requestContext`?): `Promise`\<`void`\>
+> **update**(`identity`, `properties`): `Promise`\<`void`\>
 
 Update the profile properties of an identity.
 
 #### Parameters
 
+• **identity**: `string`
+
+The identity to update.
+
 • **properties**: `IIdentityProfileProperty`[]
 
 Properties for the profile, set a properties value to undefined to remove it.
-
-• **requestContext?**: `IServiceRequestContext`
-
-The context for the request.
 
 #### Returns
 
@@ -126,21 +130,21 @@ Nothing.
 
 #### Implementation of
 
-`IIdentityProfile.update`
+`IIdentityProfileConnector.update`
 
 ***
 
 ### remove()
 
-> **remove**(`requestContext`?): `Promise`\<`void`\>
+> **remove**(`identity`): `Promise`\<`void`\>
 
 Delete the profile for an identity.
 
 #### Parameters
 
-• **requestContext?**: `IServiceRequestContext`
+• **identity**: `string`
 
-The context for the request.
+The identity to delete.
 
 #### Returns
 
@@ -150,17 +154,21 @@ Nothing.
 
 #### Implementation of
 
-`IIdentityProfile.remove`
+`IIdentityProfileConnector.remove`
 
 ***
 
 ### list()
 
-> **list**(`filters`?, `propertyNames`?, `cursor`?, `pageSize`?, `requestContext`?): `Promise`\<`object`\>
+> **list**(`includePrivate`?, `filters`?, `propertyNames`?, `cursor`?, `pageSize`?): `Promise`\<`object`\>
 
 Get a list of the requested types.
 
 #### Parameters
+
+• **includePrivate?**: `boolean`
+
+Include private properties, defaults to false.
 
 • **filters?**: `object`[]
 
@@ -177,10 +185,6 @@ The cursor for paged requests.
 • **pageSize?**: `number`
 
 The maximum number of items in a page.
-
-• **requestContext?**: `IServiceRequestContext`
-
-The context for the request.
 
 #### Returns
 
@@ -214,4 +218,4 @@ Total entities length.
 
 #### Implementation of
 
-`IIdentityProfile.list`
+`IIdentityProfileConnector.list`

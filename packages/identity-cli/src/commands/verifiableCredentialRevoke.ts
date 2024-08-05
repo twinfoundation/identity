@@ -4,6 +4,8 @@ import { CLIDisplay, CLIParam } from "@gtsc/cli-core";
 import { Converter, I18n } from "@gtsc/core";
 import { IotaIdentityConnector } from "@gtsc/identity-connector-iota";
 import { VaultConnectorFactory } from "@gtsc/vault-models";
+import { IotaWalletConnector } from "@gtsc/wallet-connector-iota";
+import { WalletConnectorFactory } from "@gtsc/wallet-models";
 import { Command } from "commander";
 import { setupVault } from "./setupCommands";
 
@@ -72,11 +74,22 @@ export async function actionCommandVerifiableCredentialRevoke(opts: {
 
 	setupVault();
 
-	const requestContext = { userIdentity: "local", partitionId: "local" };
 	const vaultSeedId = "local-seed";
+	const localIdentity = "local";
 
 	const vaultConnector = VaultConnectorFactory.get("vault");
-	await vaultConnector.setSecret(vaultSeedId, Converter.bytesToBase64(seed), requestContext);
+	await vaultConnector.setSecret(`${localIdentity}/${vaultSeedId}`, Converter.bytesToBase64(seed));
+
+	const iotaWalletConnector = new IotaWalletConnector({
+		config: {
+			clientOptions: {
+				nodes: [nodeEndpoint],
+				localPow: true
+			},
+			vaultSeedId
+		}
+	});
+	WalletConnectorFactory.register("wallet", () => iotaWalletConnector);
 
 	const iotaIdentityConnector = new IotaIdentityConnector({
 		config: {
@@ -95,7 +108,7 @@ export async function actionCommandVerifiableCredentialRevoke(opts: {
 
 	CLIDisplay.spinnerStart();
 
-	await iotaIdentityConnector.revokeVerifiableCredentials(did, [revocationIndex], requestContext);
+	await iotaIdentityConnector.revokeVerifiableCredentials(localIdentity, did, [revocationIndex]);
 
 	CLIDisplay.spinnerStop();
 

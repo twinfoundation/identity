@@ -4,48 +4,37 @@ import { I18n } from "@gtsc/core";
 import { MemoryEntityStorageConnector } from "@gtsc/entity-storage-connector-memory";
 import { EntityStorageConnectorFactory } from "@gtsc/entity-storage-models";
 import {
-	EntityStorageIdentityConnector,
-	type IdentityDocument,
-	initSchema as initSchemaIdentity
-} from "@gtsc/identity-connector-entity-storage";
-import {
 	IdentityConnectorFactory,
 	IdentityRole,
 	type IIdentityProfileProperty
 } from "@gtsc/identity-models";
 import { nameof } from "@gtsc/nameof";
 import { PropertyHelper } from "@gtsc/schema";
-import type { IServiceRequestContext } from "@gtsc/services";
 import {
 	EntityStorageVaultConnector,
+	initSchema as initSchemaVault,
 	type VaultKey,
-	type VaultSecret,
-	initSchema as initSchemaVault
+	type VaultSecret
 } from "@gtsc/vault-connector-entity-storage";
 import { VaultConnectorFactory } from "@gtsc/vault-models";
+import type { IdentityDocument } from "../src/entities/identityDocument";
 import type { IdentityProfile } from "../src/entities/identityProfile";
-import { IdentityProfileService } from "../src/identityProfileService";
-import { IdentityService } from "../src/identityService";
+import { EntityStorageIdentityConnector } from "../src/entityStorageIdentityConnector";
+import { EntityStorageIdentityProfileConnector } from "../src/entityStorageIdentityProfileConnector";
 import { initSchema } from "../src/schema";
 
-export const TEST_PARTITION_ID = "test-parition";
 export const TEST_IDENTITY_ID = "test-identity";
 export const TEST_CONTROLLER = "test-controller";
-export const TEST_CONTEXT: IServiceRequestContext = {
-	partitionId: TEST_PARTITION_ID,
-	userIdentity: TEST_IDENTITY_ID
-};
 
 let vaultKeyEntityStorageConnector: MemoryEntityStorageConnector<VaultKey>;
 let identityDocumentEntityStorage: MemoryEntityStorageConnector<IdentityDocument>;
 let identityProfileEntityStorage: MemoryEntityStorageConnector<IdentityProfile>;
 
-describe("IdentityProfileService", () => {
+describe("EntityStorageIdentityProfileConnector", () => {
 	beforeAll(async () => {
 		I18n.addDictionary("en", await import("../locales/en.json"));
 
 		initSchemaVault();
-		initSchemaIdentity();
 		initSchema();
 	});
 
@@ -85,43 +74,40 @@ describe("IdentityProfileService", () => {
 			throw new Error("Test Error");
 		});
 
-		const service = new IdentityProfileService();
+		const service = new EntityStorageIdentityProfileConnector();
 
-		await expect(service.get("foo", undefined, TEST_CONTEXT)).rejects.toMatchObject({
+		await expect(service.get("foo")).rejects.toMatchObject({
 			name: "GeneralError",
-			message: "identityProfileService.getFailed",
+			message: "entityStorageIdentityProfileConnector.getFailed",
 			inner: { name: "Error", message: "Test Error" }
 		});
 
-		expect(I18n.hasMessage("error.identityProfileService.getFailed")).toEqual(true);
+		expect(I18n.hasMessage("error.entityStorageIdentityProfileConnector.getFailed")).toEqual(true);
 	});
 
 	test("Can fail to get an identity when it doesn't exist", async () => {
-		const service = new IdentityProfileService();
+		const service = new EntityStorageIdentityProfileConnector();
 
-		await expect(service.get("foo", undefined, TEST_CONTEXT)).rejects.toMatchObject({
+		await expect(service.get("foo")).rejects.toMatchObject({
 			name: "NotFoundError",
-			message: "identityProfileService.getFailed",
+			message: "entityStorageIdentityProfileConnector.getFailed",
 			properties: { notFoundId: "foo" }
 		});
 
-		expect(I18n.hasMessage("error.identityProfileService.getFailed")).toEqual(true);
+		expect(I18n.hasMessage("error.entityStorageIdentityProfileConnector.getFailed")).toEqual(true);
 	});
 
 	test("Can get an identity", async () => {
-		const identityService = new IdentityService();
-		const identityResult = await identityService.create(TEST_CONTROLLER, undefined, TEST_CONTEXT);
+		const identityService = new EntityStorageIdentityConnector();
+		const identityResult = await identityService.createDocument(TEST_CONTROLLER);
 
-		const service = new IdentityProfileService();
+		const service = new EntityStorageIdentityProfileConnector();
 
 		const properties: IIdentityProfileProperty[] = [];
 		PropertyHelper.setText(properties, "name", "Test Identity", { isPublic: true });
-		await service.create(identityResult.identity, properties, {
-			partitionId: TEST_PARTITION_ID,
-			userIdentity: identityResult.identity
-		});
+		await service.create(identityResult.id, properties);
 
-		const identity = await service.get(identityResult.identity, undefined, TEST_CONTEXT);
+		const identity = await service.get(identityResult.id);
 
 		expect(identity.properties?.length).toEqual(1);
 		expect(identity.properties?.length).toEqual(1);
@@ -137,58 +123,47 @@ describe("IdentityProfileService", () => {
 			throw new Error("Test Error");
 		});
 
-		const service = new IdentityProfileService();
+		const service = new EntityStorageIdentityProfileConnector();
 
-		await expect(service.update(TEST_IDENTITY_ID, [], TEST_CONTEXT)).rejects.toMatchObject({
+		await expect(service.update(TEST_IDENTITY_ID, [])).rejects.toMatchObject({
 			name: "GeneralError",
-			message: "identityProfileService.updateFailed",
+			message: "entityStorageIdentityProfileConnector.updateFailed",
 			inner: { name: "Error", message: "Test Error" }
 		});
 
-		expect(I18n.hasMessage("error.identityProfileService.updateFailed")).toEqual(true);
+		expect(I18n.hasMessage("error.entityStorageIdentityProfileConnector.updateFailed")).toEqual(
+			true
+		);
 	});
 
 	test("Can fail to update an identity when it doesn't exist", async () => {
-		const service = new IdentityProfileService();
+		const service = new EntityStorageIdentityProfileConnector();
 
-		await expect(service.update(TEST_IDENTITY_ID, [], TEST_CONTEXT)).rejects.toMatchObject({
+		await expect(service.update(TEST_IDENTITY_ID, [])).rejects.toMatchObject({
 			name: "NotFoundError",
-			source: "IdentityProfileService",
-			message: "identityProfileService.notFound",
+			source: "EntityStorageIdentityProfileConnector",
+			message: "entityStorageIdentityProfileConnector.notFound",
 			properties: { notFoundId: TEST_IDENTITY_ID }
 		});
 
-		expect(I18n.hasMessage("error.identityProfileService.updateFailed")).toEqual(true);
-	});
-
-	test("Can fail to update an identity when it doesn't match the authenticated user", async () => {
-		const service = new IdentityProfileService();
-
-		await expect(service.update("foo", [], TEST_CONTEXT)).rejects.toMatchObject({
-			name: "UnauthorizedError",
-			source: "IdentityProfileService",
-			message: "identityProfileService.mismatch"
-		});
-
-		expect(I18n.hasMessage("error.identityProfileService.mismatch")).toEqual(true);
+		expect(I18n.hasMessage("error.entityStorageIdentityProfileConnector.updateFailed")).toEqual(
+			true
+		);
 	});
 
 	test("Can update an identity", async () => {
-		const service = new IdentityProfileService();
+		const service = new EntityStorageIdentityProfileConnector();
 
-		const identityService = new IdentityService();
-		const identityResult = await identityService.create(TEST_CONTROLLER, undefined, TEST_CONTEXT);
+		const identityService = new EntityStorageIdentityConnector();
+		const identityResult = await identityService.createDocument(TEST_CONTROLLER);
 
 		const properties1: IIdentityProfileProperty[] = [];
 		PropertyHelper.setText(properties1, "name", "Test Identity 1", { isPublic: true });
 
-		await service.create(identityResult.identity, properties1, {
-			partitionId: TEST_PARTITION_ID,
-			userIdentity: identityResult.identity
-		});
+		await service.create(identityResult.id, properties1);
 
-		const profile = identityProfileEntityStorage.getStore(TEST_PARTITION_ID);
-		expect(profile?.[0].identity).toEqual(identityResult.identity);
+		const profile = identityProfileEntityStorage.getStore();
+		expect(profile?.[0].identity).toEqual(identityResult.id);
 		expect(profile?.[0].properties?.length).toEqual(1);
 		expect(profile?.[0].properties?.[0].key).toEqual("name");
 		expect(profile?.[0].properties?.[0].type).toEqual("https://schema.org/Text");
@@ -198,13 +173,10 @@ describe("IdentityProfileService", () => {
 		const properties2: IIdentityProfileProperty[] = [];
 		PropertyHelper.setText(properties2, "name", "Test Identity 2", { isPublic: false });
 
-		await service.update(identityResult.identity, properties2, {
-			partitionId: TEST_PARTITION_ID,
-			userIdentity: identityResult.identity
-		});
+		await service.update(identityResult.id, properties2);
 
-		const profile2 = identityProfileEntityStorage.getStore(TEST_PARTITION_ID);
-		expect(profile2?.[0].identity).toEqual(identityResult.identity);
+		const profile2 = identityProfileEntityStorage.getStore();
+		expect(profile2?.[0].identity).toEqual(identityResult.id);
 		expect(profile2?.[0].properties?.length).toEqual(1);
 		expect(profile2?.[0].properties?.[0].key).toEqual("name");
 		expect(profile2?.[0].properties?.[0].type).toEqual("https://schema.org/Text");
@@ -218,71 +190,51 @@ describe("IdentityProfileService", () => {
 			throw new Error("Test Error");
 		});
 
-		const service = new IdentityProfileService();
+		const service = new EntityStorageIdentityProfileConnector();
 
-		await expect(
-			service.list(undefined, undefined, undefined, undefined, TEST_CONTEXT)
-		).rejects.toMatchObject({
+		await expect(service.list()).rejects.toMatchObject({
 			name: "GeneralError",
-			message: "identityProfileService.listFailed",
+			message: "entityStorageIdentityProfileConnector.listFailed",
 			inner: { name: "Error", message: "Test Error" }
 		});
 
-		expect(I18n.hasMessage("error.identityProfileService.listFailed")).toEqual(true);
+		expect(I18n.hasMessage("error.entityStorageIdentityProfileConnector.listFailed")).toEqual(true);
 	});
 
 	test("Can get a list of identities", async () => {
-		const identityService = new IdentityService();
-		const service = new IdentityProfileService();
+		const identityService = new EntityStorageIdentityConnector();
+		const service = new EntityStorageIdentityProfileConnector();
 
 		for (let i = 0; i < 3; i++) {
 			const properties: IIdentityProfileProperty[] = [];
 			PropertyHelper.setText(properties, "name", `Test Node Identity ${i}`);
 			PropertyHelper.setText(properties, "role", IdentityRole.Node);
-			const identity = await identityService.create(TEST_CONTROLLER, undefined, TEST_CONTEXT);
-			await service.create(identity.identity, properties, {
-				partitionId: TEST_PARTITION_ID,
-				userIdentity: identity.identity
-			});
+			const identity = await identityService.createDocument(TEST_CONTROLLER);
+			await service.create(identity.id, properties);
 		}
 
 		for (let i = 0; i < 7; i++) {
 			const properties: IIdentityProfileProperty[] = [];
 			PropertyHelper.setText(properties, "name", `Test User Identity ${i}`);
 			PropertyHelper.setText(properties, "role", IdentityRole.User);
-			const identity = await identityService.create(TEST_CONTROLLER, undefined, TEST_CONTEXT);
-			await service.create(identity.identity, properties, {
-				partitionId: TEST_PARTITION_ID,
-				userIdentity: identity.identity
-			});
+			const identity = await identityService.createDocument(TEST_CONTROLLER);
+			await service.create(identity.id, properties);
 		}
 
-		const identitiesNode = await service.list(
-			[
-				{
-					propertyName: "role",
-					propertyValue: IdentityRole.Node
-				}
-			],
-			undefined,
-			undefined,
-			undefined,
-			TEST_CONTEXT
-		);
+		const identitiesNode = await service.list(true, [
+			{
+				propertyName: "role",
+				propertyValue: IdentityRole.Node
+			}
+		]);
 		expect(identitiesNode.items.length).toEqual(3);
 
-		const identitiesUsers = await service.list(
-			[
-				{
-					propertyName: "role",
-					propertyValue: IdentityRole.User
-				}
-			],
-			undefined,
-			undefined,
-			undefined,
-			TEST_CONTEXT
-		);
+		const identitiesUsers = await service.list(true, [
+			{
+				propertyName: "role",
+				propertyValue: IdentityRole.User
+			}
+		]);
 		expect(identitiesUsers.items.length).toEqual(7);
 	});
 });

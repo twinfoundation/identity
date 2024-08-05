@@ -13,7 +13,6 @@ import {
 import { Bip39, Sha256 } from "@gtsc/crypto";
 import type { IIdentityConnector } from "@gtsc/identity-models";
 import { nameof } from "@gtsc/nameof";
-import type { IServiceRequestContext } from "@gtsc/services";
 import {
 	DidVerificationMethodType,
 	type IDidDocument,
@@ -23,6 +22,7 @@ import {
 	type IDidVerifiablePresentation
 } from "@gtsc/standards-w3c-did";
 import { VaultConnectorFactory, VaultKeyType, type IVaultConnector } from "@gtsc/vault-models";
+import { WalletConnectorFactory, type IWalletConnector } from "@gtsc/wallet-models";
 import {
 	Credential,
 	Duration,
@@ -111,6 +111,12 @@ export class IotaIdentityConnector implements IIdentityConnector {
 	private readonly _config: IIotaIdentityConnectorConfig;
 
 	/**
+	 * The wallet for generating addresses, only required for write operations.
+	 * @internal
+	 */
+	private readonly _walletConnector?: IWalletConnector;
+
+	/**
 	 * The vault for the keys.
 	 * @internal
 	 */
@@ -120,9 +126,14 @@ export class IotaIdentityConnector implements IIdentityConnector {
 	 * Create a new instance of IotaIdentityConnector.
 	 * @param options The options for the identity connector.
 	 * @param options.vaultConnectorType The vault connector type for the private keys, defaults to "vault".
+	 * @param options.walletConnectorType The wallet connector type for generating addresses, defaults to "wallet".
 	 * @param options.config The configuration to use.
 	 */
-	constructor(options: { vaultConnectorType?: string; config: IIotaIdentityConnectorConfig }) {
+	constructor(options: {
+		vaultConnectorType?: string;
+		walletConnectorType?: string;
+		config: IIotaIdentityConnectorConfig;
+	}) {
 		Guards.object(this.CLASS_NAME, nameof(options), options);
 		Guards.object<IIotaIdentityConnectorConfig>(
 			this.CLASS_NAME,
@@ -136,6 +147,9 @@ export class IotaIdentityConnector implements IIdentityConnector {
 		);
 
 		this._vaultConnector = VaultConnectorFactory.get(options.vaultConnectorType ?? "vault");
+		this._walletConnector = WalletConnectorFactory.getIfExists(
+			options.walletConnectorType ?? "wallet"
+		);
 		this._config = options.config;
 		this._config.vaultMnemonicId ??= IotaIdentityConnector._DEFAULT_MNEMONIC_SECRET_NAME;
 		this._config.vaultSeedId ??= IotaIdentityConnector._DEFAULT_SEED_SECRET_NAME;
@@ -145,14 +159,10 @@ export class IotaIdentityConnector implements IIdentityConnector {
 
 	/**
 	 * Create a new document.
-	 * @param controller The controller for the document.
-	 * @param requestContext The context for the request.
+	 * @param controller The controller of the identity who can make changes.
 	 * @returns The created document.
 	 */
-	public async createDocument(
-		controller: string,
-		requestContext?: IServiceRequestContext
-	): Promise<IDidDocument> {
+	public async createDocument(controller: string): Promise<IDidDocument> {
 		Guards.stringValue(this.CLASS_NAME, nameof(controller), controller);
 
 		try {
@@ -166,7 +176,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 			const revocationServiceId = document.id().join("#revocation");
 			document.insertService(revocationBitmap.toService(revocationServiceId));
 
-			const newDocument = await this.updateDocument(document, true, controller, requestContext);
+			const newDocument = await this.updateDocument(controller, document, true);
 
 			return newDocument;
 		} catch (error) {
@@ -182,14 +192,10 @@ export class IotaIdentityConnector implements IIdentityConnector {
 	/**
 	 * Resolve a document from its id.
 	 * @param documentId The id of the document to resolve.
-	 * @param requestContext The context for the request.
 	 * @returns The resolved document.
 	 * @throws NotFoundError if the id can not be resolved.
 	 */
-	public async resolveDocument(
-		documentId: string,
-		requestContext?: IServiceRequestContext
-	): Promise<IDidDocument> {
+	public async resolveDocument(documentId: string): Promise<IDidDocument> {
 		Guards.stringValue(this.CLASS_NAME, nameof(documentId), documentId);
 
 		try {
@@ -212,20 +218,21 @@ export class IotaIdentityConnector implements IIdentityConnector {
 
 	/**
 	 * Add a verification method to the document in JSON Web key Format.
+	 * @param controller The controller of the identity who can make changes.
 	 * @param documentId The id of the document to add the verification method to.
 	 * @param verificationMethodType The type of the verification method to add.
 	 * @param verificationMethodId The id of the verification method, if undefined uses the kid of the generated JWK.
-	 * @param requestContext The context for the request.
 	 * @returns The verification method.
 	 * @throws NotFoundError if the id can not be resolved.
 	 * @throws NotSupportedError if the platform does not support multiple keys.
 	 */
 	public async addVerificationMethod(
+		controller: string,
 		documentId: string,
 		verificationMethodType: DidVerificationMethodType,
-		verificationMethodId?: string,
-		requestContext?: IServiceRequestContext
+		verificationMethodId?: string
 	): Promise<IDidDocumentVerificationMethod> {
+		Guards.stringValue(this.CLASS_NAME, nameof(controller), controller);
 		Guards.stringValue(this.CLASS_NAME, nameof(documentId), documentId);
 		Guards.arrayOneOf<DidVerificationMethodType>(
 			this.CLASS_NAME,
@@ -242,16 +249,13 @@ export class IotaIdentityConnector implements IIdentityConnector {
 				throw new NotFoundError(this.CLASS_NAME, "documentNotFound", documentId);
 			}
 
-			const controller = document.metadataStateControllerAddress();
-			if (Is.undefined(controller)) {
-				throw new NotFoundError(this.CLASS_NAME, "stateControllerMissing", documentId);
-			}
-
-			const tempKeyId = `temp-${Converter.bytesToBase64Url(RandomHelper.generate(32))}`;
+			const tempKeyId = this.buildKey(
+				controller,
+				`temp-${Converter.bytesToBase64Url(RandomHelper.generate(32))}`
+			);
 			const verificationPublicKey = await this._vaultConnector.createKey(
 				tempKeyId,
-				VaultKeyType.Ed25519,
-				requestContext
+				VaultKeyType.Ed25519
 			);
 
 			const jwkParams: IJwkParams = {
@@ -274,8 +278,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 
 			await this._vaultConnector.renameKey(
 				tempKeyId,
-				`${document.id().toString()}${methodId}`,
-				requestContext
+				this.buildKey(controller, `${document.id().toString()}${methodId}`)
 			);
 
 			const method = VerificationMethod.newFromJwk(document.id(), jwk, methodId);
@@ -301,7 +304,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 				document.insertMethod(method, MethodScope.CapabilityInvocation());
 			}
 
-			await this.updateDocument(document, false, controller, requestContext);
+			await this.updateDocument(controller, document, false);
 
 			return method.toJSON() as IDidDocumentVerificationMethod;
 		} catch (error) {
@@ -316,16 +319,17 @@ export class IotaIdentityConnector implements IIdentityConnector {
 
 	/**
 	 * Remove a verification method from the document.
+	 * @param controller The controller of the identity who can make changes.
 	 * @param verificationMethodId The id of the verification method.
-	 * @param requestContext The context for the request.
 	 * @returns Nothing.
 	 * @throws NotFoundError if the id can not be resolved.
 	 * @throws NotSupportedError if the platform does not support multiple revocable keys.
 	 */
 	public async removeVerificationMethod(
-		verificationMethodId: string,
-		requestContext?: IServiceRequestContext
+		controller: string,
+		verificationMethodId: string
 	): Promise<void> {
+		Guards.stringValue(this.CLASS_NAME, nameof(controller), controller);
 		Guards.stringValue(this.CLASS_NAME, nameof(verificationMethodId), verificationMethodId);
 
 		try {
@@ -343,11 +347,6 @@ export class IotaIdentityConnector implements IIdentityConnector {
 				throw new NotFoundError(this.CLASS_NAME, "documentNotFound", documentId);
 			}
 
-			const controller = document.metadataStateControllerAddress();
-			if (Is.undefined(controller)) {
-				throw new NotFoundError(this.CLASS_NAME, "stateControllerMissing", documentId);
-			}
-
 			const methods = document.methods();
 			const method = methods.find(m => m.id().toString() === verificationMethodId);
 			if (!method) {
@@ -360,7 +359,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 
 			document.removeMethod(method.id());
 
-			await this.updateDocument(document, false, controller, requestContext);
+			await this.updateDocument(controller, document, false);
 		} catch (error) {
 			throw new GeneralError(
 				this.CLASS_NAME,
@@ -373,21 +372,22 @@ export class IotaIdentityConnector implements IIdentityConnector {
 
 	/**
 	 * Add a service to the document.
+	 * @param controller The controller of the identity who can make changes.
 	 * @param documentId The id of the document to add the service to.
 	 * @param serviceId The id of the service.
 	 * @param serviceType The type of the service.
 	 * @param serviceEndpoint The endpoint for the service.
-	 * @param requestContext The context for the request.
 	 * @returns The service.
 	 * @throws NotFoundError if the id can not be resolved.
 	 */
 	public async addService(
+		controller: string,
 		documentId: string,
 		serviceId: string,
 		serviceType: string,
-		serviceEndpoint: string,
-		requestContext?: IServiceRequestContext
+		serviceEndpoint: string
 	): Promise<IDidService> {
+		Guards.stringValue(this.CLASS_NAME, nameof(controller), controller);
 		Guards.stringValue(this.CLASS_NAME, nameof(documentId), documentId);
 		Guards.stringValue(this.CLASS_NAME, nameof(serviceId), serviceId);
 		Guards.stringValue(this.CLASS_NAME, nameof(serviceType), serviceType);
@@ -399,11 +399,6 @@ export class IotaIdentityConnector implements IIdentityConnector {
 
 			if (Is.undefined(document)) {
 				throw new NotFoundError(this.CLASS_NAME, "documentNotFound", documentId);
-			}
-
-			const controller = document.metadataStateControllerAddress();
-			if (Is.undefined(controller)) {
-				throw new NotFoundError(this.CLASS_NAME, "stateControllerMissing", documentId);
 			}
 
 			const fullServiceId = serviceId.includes("#") ? serviceId : `${documentId}#${serviceId}`;
@@ -422,7 +417,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 			});
 			document.insertService(service);
 
-			await this.updateDocument(document, false, controller, requestContext);
+			await this.updateDocument(controller, document, false);
 
 			return service.toJSON() as IDidService;
 		} catch (error) {
@@ -437,15 +432,13 @@ export class IotaIdentityConnector implements IIdentityConnector {
 
 	/**
 	 * Remove a service from the document.
+	 * @param controller The controller of the identity who can make changes.
 	 * @param serviceId The id of the service.
-	 * @param requestContext The context for the request.
 	 * @returns Nothing.
 	 * @throws NotFoundError if the id can not be resolved.
 	 */
-	public async removeService(
-		serviceId: string,
-		requestContext?: IServiceRequestContext
-	): Promise<void> {
+	public async removeService(controller: string, serviceId: string): Promise<void> {
+		Guards.stringValue(this.CLASS_NAME, nameof(controller), controller);
 		Guards.stringValue(this.CLASS_NAME, nameof(serviceId), serviceId);
 
 		try {
@@ -462,11 +455,6 @@ export class IotaIdentityConnector implements IIdentityConnector {
 				throw new NotFoundError(this.CLASS_NAME, "documentNotFound", documentId);
 			}
 
-			const controller = document.metadataStateControllerAddress();
-			if (Is.undefined(controller)) {
-				throw new NotFoundError(this.CLASS_NAME, "stateControllerMissing", documentId);
-			}
-
 			const services = document.service();
 			const service = services.find(s => s.id().toString() === serviceId);
 
@@ -476,7 +464,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 
 			document.removeService(service.id());
 
-			await this.updateDocument(document, false, controller, requestContext);
+			await this.updateDocument(controller, document, false);
 		} catch (error) {
 			throw new GeneralError(
 				this.CLASS_NAME,
@@ -489,28 +477,29 @@ export class IotaIdentityConnector implements IIdentityConnector {
 
 	/**
 	 * Create a verifiable credential for a verification method.
+	 * @param controller The controller of the identity who can make changes.
 	 * @param verificationMethodId The verification method id to use.
 	 * @param credentialId The id of the credential.
 	 * @param types The type for the data stored in the verifiable credential.
 	 * @param subject The subject data to store for the credential.
 	 * @param contexts Additional contexts to include in the credential.
 	 * @param revocationIndex The bitmap revocation index of the credential, if undefined will not have revocation status.
-	 * @param requestContext The context for the request.
 	 * @returns The created verifiable credential and its token.
 	 * @throws NotFoundError if the id can not be resolved.
 	 */
 	public async createVerifiableCredential<T>(
+		controller: string,
 		verificationMethodId: string,
 		credentialId: string | undefined,
 		types: string | string[] | undefined,
 		subject: T | T[],
 		contexts?: string | string[],
-		revocationIndex?: number,
-		requestContext?: IServiceRequestContext
+		revocationIndex?: number
 	): Promise<{
 		verifiableCredential: IDidVerifiableCredential<T>;
 		jwt: string;
 	}> {
+		Guards.stringValue(this.CLASS_NAME, nameof(controller), controller);
 		Guards.stringValue(this.CLASS_NAME, nameof(verificationMethodId), verificationMethodId);
 		if (!Is.undefined(credentialId)) {
 			Guards.stringValue(this.CLASS_NAME, nameof(credentialId), credentialId);
@@ -589,8 +578,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 			});
 
 			const verificationMethodKey = await this._vaultConnector.getKey(
-				verificationMethodId,
-				requestContext
+				this.buildKey(controller, verificationMethodId)
 			);
 			if (Is.undefined(verificationMethodKey)) {
 				throw new GeneralError(this.CLASS_NAME, "publicKeyJwkMissing");
@@ -646,13 +634,9 @@ export class IotaIdentityConnector implements IIdentityConnector {
 	/**
 	 * Check a verifiable credential is valid.
 	 * @param credentialJwt The credential to verify.
-	 * @param requestContext The context for the request.
 	 * @returns The credential stored in the jwt and the revocation status.
 	 */
-	public async checkVerifiableCredential<T>(
-		credentialJwt: string,
-		requestContext?: IServiceRequestContext
-	): Promise<{
+	public async checkVerifiableCredential<T>(credentialJwt: string): Promise<{
 		revoked: boolean;
 		verifiableCredential?: IDidVerifiableCredential<T>;
 	}> {
@@ -703,16 +687,17 @@ export class IotaIdentityConnector implements IIdentityConnector {
 
 	/**
 	 * Revoke verifiable credential(s).
+	 * @param controller The controller of the identity who can make changes.
 	 * @param issuerDocumentId The id of the document to update the revocation list for.
 	 * @param credentialIndices The revocation bitmap index or indices to revoke.
-	 * @param requestContext The context for the request.
 	 * @returns Nothing.
 	 */
 	public async revokeVerifiableCredentials(
+		controller: string,
 		issuerDocumentId: string,
-		credentialIndices: number[],
-		requestContext?: IServiceRequestContext
+		credentialIndices: number[]
 	): Promise<void> {
+		Guards.stringValue(this.CLASS_NAME, nameof(controller), controller);
 		Guards.stringValue(this.CLASS_NAME, nameof(issuerDocumentId), issuerDocumentId);
 		Guards.arrayValue(this.CLASS_NAME, nameof(credentialIndices), credentialIndices);
 
@@ -724,14 +709,9 @@ export class IotaIdentityConnector implements IIdentityConnector {
 				throw new NotFoundError(this.CLASS_NAME, "documentNotFound", issuerDocumentId);
 			}
 
-			const controller = issuerDocument.metadataStateControllerAddress();
-			if (Is.undefined(controller)) {
-				throw new NotFoundError(this.CLASS_NAME, "stateControllerMissing", issuerDocumentId);
-			}
-
 			issuerDocument.revokeCredentials("revocation", credentialIndices);
 
-			await this.updateDocument(issuerDocument, false, controller, requestContext);
+			await this.updateDocument(controller, issuerDocument, false);
 		} catch (error) {
 			throw new GeneralError(
 				this.CLASS_NAME,
@@ -744,16 +724,17 @@ export class IotaIdentityConnector implements IIdentityConnector {
 
 	/**
 	 * Unrevoke verifiable credential(s).
+	 * @param controller The controller of the identity who can make changes.
 	 * @param issuerDocumentId The id of the document to update the revocation list for.
 	 * @param credentialIndices The revocation bitmap index or indices to un revoke.
-	 * @param requestContext The context for the request.
 	 * @returns Nothing.
 	 */
 	public async unrevokeVerifiableCredentials(
+		controller: string,
 		issuerDocumentId: string,
-		credentialIndices: number[],
-		requestContext?: IServiceRequestContext
+		credentialIndices: number[]
 	): Promise<void> {
+		Guards.stringValue(this.CLASS_NAME, nameof(controller), controller);
 		Guards.stringValue(this.CLASS_NAME, nameof(issuerDocumentId), issuerDocumentId);
 		Guards.arrayValue(this.CLASS_NAME, nameof(credentialIndices), credentialIndices);
 
@@ -765,14 +746,9 @@ export class IotaIdentityConnector implements IIdentityConnector {
 				throw new NotFoundError(this.CLASS_NAME, "documentNotFound", issuerDocumentId);
 			}
 
-			const controller = issuerDocument.metadataStateControllerAddress();
-			if (Is.undefined(controller)) {
-				throw new NotFoundError(this.CLASS_NAME, "stateControllerMissing", issuerDocumentId);
-			}
-
 			issuerDocument.unrevokeCredentials("revocation", credentialIndices);
 
-			await this.updateDocument(issuerDocument, false, controller, requestContext);
+			await this.updateDocument(controller, issuerDocument, false);
 		} catch (error) {
 			throw new GeneralError(
 				this.CLASS_NAME,
@@ -785,26 +761,27 @@ export class IotaIdentityConnector implements IIdentityConnector {
 
 	/**
 	 * Create a verifiable presentation from the supplied verifiable credentials.
+	 * @param controller The controller of the identity who can make changes.
 	 * @param presentationMethodId The method to associate with the presentation.
 	 * @param types The types for the data stored in the verifiable credential.
 	 * @param verifiableCredentials The credentials to use for creating the presentation in jwt format.
 	 * @param contexts Additional contexts to include in the presentation.
 	 * @param expiresInMinutes The time in minutes for the presentation to expire.
-	 * @param requestContext The context for the request.
 	 * @returns The created verifiable presentation and its token.
 	 * @throws NotFoundError if the id can not be resolved.
 	 */
 	public async createVerifiablePresentation(
+		controller: string,
 		presentationMethodId: string,
 		types: string | string[] | undefined,
 		verifiableCredentials: string[],
 		contexts?: string | string[],
-		expiresInMinutes?: number,
-		requestContext?: IServiceRequestContext
+		expiresInMinutes?: number
 	): Promise<{
 		verifiablePresentation: IDidVerifiablePresentation;
 		jwt: string;
 	}> {
+		Guards.stringValue(this.CLASS_NAME, nameof(controller), controller);
 		Guards.stringValue(this.CLASS_NAME, nameof(presentationMethodId), presentationMethodId);
 		if (Is.array(types)) {
 			Guards.arrayValue(this.CLASS_NAME, nameof(types), types);
@@ -868,8 +845,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 			});
 
 			const verificationMethodKey = await this._vaultConnector.getKey(
-				presentationMethodId,
-				requestContext
+				this.buildKey(controller, presentationMethodId)
 			);
 			if (Is.undefined(verificationMethodKey)) {
 				throw new GeneralError(this.CLASS_NAME, "publicKeyJwkMissing");
@@ -929,13 +905,9 @@ export class IotaIdentityConnector implements IIdentityConnector {
 	/**
 	 * Check a verifiable presentation is valid.
 	 * @param presentationJwt The presentation to verify.
-	 * @param requestContext The context for the request.
 	 * @returns The presentation stored in the jwt and the revocation status.
 	 */
-	public async checkVerifiablePresentation(
-		presentationJwt: string,
-		requestContext?: IServiceRequestContext
-	): Promise<{
+	public async checkVerifiablePresentation(presentationJwt: string): Promise<{
 		revoked: boolean;
 		verifiablePresentation?: IDidVerifiablePresentation;
 		issuers?: IDidDocument[];
@@ -1030,19 +1002,20 @@ export class IotaIdentityConnector implements IIdentityConnector {
 
 	/**
 	 * Create a proof for arbitrary data with the specified verification method.
+	 * @param controller The controller of the identity who can make changes.
 	 * @param verificationMethodId The verification method id to use.
 	 * @param bytes The data bytes to sign.
-	 * @param requestContext The context for the request.
 	 * @returns The proof signature type and value.
 	 */
 	public async createProof(
+		controller: string,
 		verificationMethodId: string,
-		bytes: Uint8Array,
-		requestContext?: IServiceRequestContext
+		bytes: Uint8Array
 	): Promise<{
 		type: string;
 		value: Uint8Array;
 	}> {
+		Guards.stringValue(this.CLASS_NAME, nameof(controller), controller);
 		Guards.stringValue(this.CLASS_NAME, nameof(verificationMethodId), verificationMethodId);
 
 		Guards.uint8Array(this.CLASS_NAME, nameof(bytes), bytes);
@@ -1077,8 +1050,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 			const jwkMemStore = new JwkMemStore();
 
 			const verificationMethodKey = await this._vaultConnector.getKey(
-				verificationMethodId,
-				requestContext
+				this.buildKey(controller, verificationMethodId)
 			);
 			if (Is.undefined(verificationMethodKey)) {
 				throw new GeneralError(this.CLASS_NAME, "publicKeyJwkMissing");
@@ -1116,15 +1088,13 @@ export class IotaIdentityConnector implements IIdentityConnector {
 	 * @param bytes The data bytes to verify.
 	 * @param signatureType The type of the signature for the proof.
 	 * @param signatureValue The value of the signature for the proof.
-	 * @param requestContext The context for the request.
 	 * @returns True if the signature is valid.
 	 */
 	public async verifyProof(
 		verificationMethodId: string,
 		bytes: Uint8Array,
 		signatureType: string,
-		signatureValue: Uint8Array,
-		requestContext?: IServiceRequestContext
+		signatureValue: Uint8Array
 	): Promise<boolean> {
 		Guards.stringValue(this.CLASS_NAME, nameof(verificationMethodId), verificationMethodId);
 		Guards.uint8Array(this.CLASS_NAME, nameof(bytes), bytes);
@@ -1169,23 +1139,31 @@ export class IotaIdentityConnector implements IIdentityConnector {
 
 	/**
 	 * Sign and publish a document.
+	 * @param controller The controller of the document.
 	 * @param document The document to sign and publish.
 	 * @param isNewDocument Is this a new document.
-	 * @param controller The controller.
-	 * @param requestContext The context for the request.
 	 * @returns The published document.
 	 * @internal
 	 */
 	private async updateDocument(
-		document: IotaDocument,
-		isNewDocument: boolean,
 		controller: string,
-		requestContext?: IServiceRequestContext
+		document: IotaDocument,
+		isNewDocument: boolean
 	): Promise<IDidDocument> {
+		if (!Is.object(this._walletConnector)) {
+			throw new GeneralError(this.CLASS_NAME, "walletConnectorMissing");
+		}
 		const identityClient = new IotaIdentityClient(new Client(this._config.clientOptions));
 
 		document.setMetadataUpdated(Timestamp.nowUTC());
-		const address = Utils.parseBech32Address(controller);
+
+		const addresses = await this._walletConnector.getAddresses(
+			controller,
+			this._config.walletAddressIndex ?? 0,
+			1
+		);
+
+		const address = Utils.parseBech32Address(addresses[0]);
 
 		const rentStructure = await identityClient.getRentStructure();
 
@@ -1206,13 +1184,9 @@ export class IotaIdentityConnector implements IIdentityConnector {
 			});
 		}
 
-		const blockDetails = await this.prepareAndPostTransaction(
-			identityClient.client,
-			{
-				outputs: [aliasOutput]
-			},
-			requestContext
-		);
+		const blockDetails = await this.prepareAndPostTransaction(controller, identityClient.client, {
+			outputs: [aliasOutput]
+		});
 
 		const networkHrp = await identityClient.getNetworkHrp();
 		const published = await IotaDocument.unpackFromBlock(networkHrp, blockDetails.block);
@@ -1222,18 +1196,18 @@ export class IotaIdentityConnector implements IIdentityConnector {
 
 	/**
 	 * Prepare a transaction for sending, post and wait for inclusion.
+	 * @param controller The identity of the user to access the vault keys.
 	 * @param client The client to use.
 	 * @param options The options for the transaction.
-	 * @param requestContext The context for the request.
 	 * @returns The block id and block.
 	 * @internal
 	 */
 	private async prepareAndPostTransaction(
+		controller: string,
 		client: Client,
-		options: IBuildBlockOptions,
-		requestContext?: IServiceRequestContext
+		options: IBuildBlockOptions
 	): Promise<{ blockId: string; block: Block }> {
-		const seed = await this.getSeed(requestContext);
+		const seed = await this.getSeed(controller);
 		const secretManager = { hexSeed: Converter.bytesToHex(seed, true) };
 
 		const prepared = await client.prepareTransaction(secretManager, {
@@ -1267,22 +1241,20 @@ export class IotaIdentityConnector implements IIdentityConnector {
 
 	/**
 	 * Get the seed from the vault.
-	 * @param requestContext The context for the request.
+	 * @param controller The identity of the user to access the vault keys.
 	 * @returns The seed.
 	 * @internal
 	 */
-	private async getSeed(requestContext?: IServiceRequestContext): Promise<Uint8Array> {
+	private async getSeed(controller: string): Promise<Uint8Array> {
 		try {
 			const seedBase64 = await this._vaultConnector.getSecret<string>(
-				this._config.vaultSeedId ?? IotaIdentityConnector._DEFAULT_SEED_SECRET_NAME,
-				requestContext
+				this.buildSeedKey(controller)
 			);
 			return Converter.base64ToBytes(seedBase64);
 		} catch {}
 
 		const mnemonic = await this._vaultConnector.getSecret<string>(
-			this._config.vaultMnemonicId ?? IotaIdentityConnector._DEFAULT_MNEMONIC_SECRET_NAME,
-			requestContext
+			this.buildMnemonicKey(controller)
 		);
 
 		return Bip39.mnemonicToSeed(mnemonic);
@@ -1307,5 +1279,36 @@ export class IotaIdentityConnector implements IIdentityConnector {
 		}
 
 		return BaseError.fromError(error);
+	}
+
+	/**
+	 * Build the key name to access the mnemonic in the vault.
+	 * @param identity The identity of the user to access the vault keys.
+	 * @returns The vault key.
+	 * @internal
+	 */
+	private buildMnemonicKey(identity: string): string {
+		return `${identity}/${this._config.vaultMnemonicId ?? IotaIdentityConnector._DEFAULT_MNEMONIC_SECRET_NAME}`;
+	}
+
+	/**
+	 * Build the key name to access the seed in the vault.
+	 * @param identity The identity of the user to access the vault keys.
+	 * @returns The vault key.
+	 * @internal
+	 */
+	private buildSeedKey(identity: string): string {
+		return `${identity}/${this._config.vaultSeedId ?? IotaIdentityConnector._DEFAULT_SEED_SECRET_NAME}`;
+	}
+
+	/**
+	 * Build the key name to access the specified key in vault.
+	 * @param identity The identity of the user to access the vault keys.
+	 * @param keyId The id of the key.
+	 * @returns The vault key.
+	 * @internal
+	 */
+	private buildKey(identity: string, keyId: string): string {
+		return `${identity}/${keyId}`;
 	}
 }

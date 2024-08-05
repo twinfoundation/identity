@@ -4,6 +4,8 @@ import { CLIDisplay, CLIOptions, CLIParam, CLIUtils, type CliOutputOptions } fro
 import { Converter, I18n, Is } from "@gtsc/core";
 import { IotaIdentityConnector } from "@gtsc/identity-connector-iota";
 import { VaultConnectorFactory, VaultKeyType } from "@gtsc/vault-models";
+import { IotaWalletConnector } from "@gtsc/wallet-connector-iota";
+import { WalletConnectorFactory } from "@gtsc/wallet-models";
 import { Command } from "commander";
 import { setupVault } from "./setupCommands";
 
@@ -77,16 +79,25 @@ export async function actionCommandProofCreate(
 
 	setupVault();
 
-	const requestContext = { userIdentity: "local", partitionId: "local" };
+	const localIdentity = "local";
 
 	const vaultConnector = VaultConnectorFactory.get("vault");
 	await vaultConnector.addKey(
-		id,
+		`${localIdentity}/${id}`,
 		VaultKeyType.Ed25519,
 		privateKey,
-		new Uint8Array(),
-		requestContext
+		new Uint8Array()
 	);
+
+	const iotaWalletConnector = new IotaWalletConnector({
+		config: {
+			clientOptions: {
+				nodes: [nodeEndpoint],
+				localPow: true
+			}
+		}
+	});
+	WalletConnectorFactory.register("wallet", () => iotaWalletConnector);
 
 	const iotaIdentityConnector = new IotaIdentityConnector({
 		config: {
@@ -102,7 +113,7 @@ export async function actionCommandProofCreate(
 
 	CLIDisplay.spinnerStart();
 
-	const proof = await iotaIdentityConnector.createProof(id, data, requestContext);
+	const proof = await iotaIdentityConnector.createProof(localIdentity, id, data);
 
 	const proofValue = Converter.bytesToBase64(proof.value);
 
