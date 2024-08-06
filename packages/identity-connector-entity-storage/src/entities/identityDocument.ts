@@ -1,6 +1,7 @@
 // Copyright 2024 IOTA Stiftung.
 // SPDX-License-Identifier: Apache-2.0.
 import { entity, property } from "@gtsc/entity";
+import type { IDidDocument } from "@gtsc/standards-w3c-did";
 
 /**
  * Class describing the identity document.
@@ -14,10 +15,10 @@ export class IdentityDocument {
 	public id!: string;
 
 	/**
-	 * The JSON stringified version of the DID document.
+	 * The DID document.
 	 */
-	@property({ type: "string" })
-	public document!: string;
+	@property({ type: "object" })
+	public document!: IDidDocument;
 
 	/**
 	 * The signature of the document.

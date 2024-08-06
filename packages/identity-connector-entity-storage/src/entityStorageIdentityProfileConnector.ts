@@ -16,6 +16,11 @@ import type { IdentityProfile } from "./entities/identityProfile";
  */
 export class EntityStorageIdentityProfileConnector implements IIdentityProfileConnector {
 	/**
+	 * The namespace supported by the identity profile connector.
+	 */
+	public static readonly NAMESPACE: string = "entity-storage";
+
+	/**
 	 * Runtime name for the class.
 	 */
 	public readonly CLASS_NAME: string = nameof<EntityStorageIdentityProfileConnector>();

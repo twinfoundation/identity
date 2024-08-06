@@ -30,6 +30,14 @@ The storage connector for the profiles, default to "identity-profile".
 
 ## Properties
 
+### NAMESPACE
+
+> `static` `readonly` **NAMESPACE**: `string` = `"entity-storage"`
+
+The namespace supported by the identity profile connector.
+
+***
+
 ### CLASS\_NAME
 
 > `readonly` **CLASS\_NAME**: `string`

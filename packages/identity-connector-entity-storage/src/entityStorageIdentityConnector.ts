@@ -128,7 +128,7 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 			}
 			await this.verifyDocument(didIdentityDocument);
 
-			return JSON.parse(didIdentityDocument.document) as IDidDocument;
+			return didIdentityDocument.document;
 		} catch (error) {
 			throw new GeneralError(this.CLASS_NAME, "resolveDocumentFailed", undefined, error);
 		}
@@ -166,7 +166,7 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 			}
 			await this.verifyDocument(didIdentityDocument);
 
-			const didDocument = JSON.parse(didIdentityDocument.document) as IDidDocument;
+			const didDocument = didIdentityDocument.document;
 
 			const tempKeyId = `temp-${Converter.bytesToBase64Url(RandomHelper.generate(32))}`;
 			const verificationPublicKey = await this._vaultConnector.createKey(
@@ -256,7 +256,7 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 				throw new NotFoundError(this.CLASS_NAME, "documentNotFound", idParts.id);
 			}
 			await this.verifyDocument(didIdentityDocument);
-			const didDocument = JSON.parse(didIdentityDocument.document) as IDidDocument;
+			const didDocument = didIdentityDocument.document;
 
 			const methods = this.getAllMethods(didDocument);
 			const existingMethodIndex = methods.findIndex(m => {
@@ -319,7 +319,7 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 				throw new NotFoundError(this.CLASS_NAME, "documentNotFound", documentId);
 			}
 			await this.verifyDocument(didIdentityDocument);
-			const didDocument = JSON.parse(didIdentityDocument.document) as IDidDocument;
+			const didDocument = didIdentityDocument.document;
 
 			const fullServiceId = serviceId.includes("#") ? serviceId : `${documentId}#${serviceId}`;
 
@@ -369,7 +369,7 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 				throw new NotFoundError(this.CLASS_NAME, "documentNotFound", idParts.id);
 			}
 			await this.verifyDocument(didIdentityDocument);
-			const didDocument = JSON.parse(didIdentityDocument.document) as IDidDocument;
+			const didDocument = didIdentityDocument.document;
 
 			if (Is.array(didDocument.service)) {
 				const existingServiceIndex = didDocument.service.findIndex(s => s.id === serviceId);
@@ -448,7 +448,7 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 				throw new NotFoundError(this.CLASS_NAME, "documentNotFound", idParts.id);
 			}
 			await this.verifyDocument(issuerIdentityDocument);
-			const issuerDidDocument = JSON.parse(issuerIdentityDocument.document) as IDidDocument;
+			const issuerDidDocument = issuerIdentityDocument.document;
 
 			const methods = this.getAllMethods(issuerDidDocument);
 			const methodAndArray = methods.find(m => {
@@ -588,7 +588,7 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 				throw new NotFoundError(this.CLASS_NAME, "documentNotFound", issuerDocumentId);
 			}
 			await this.verifyDocument(issuerIdentityDocument);
-			const issuerDidDocument = JSON.parse(issuerIdentityDocument.document) as IDidDocument;
+			const issuerDidDocument = issuerIdentityDocument.document;
 
 			const methods = this.getAllMethods(issuerDidDocument);
 			const methodAndArray = methods.find(m => {
@@ -678,7 +678,7 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 				throw new NotFoundError(this.CLASS_NAME, "documentNotFound", issuerDocumentId);
 			}
 			await this.verifyDocument(issuerIdentityDocument);
-			const issuerDidDocument = JSON.parse(issuerIdentityDocument.document) as IDidDocument;
+			const issuerDidDocument = issuerIdentityDocument.document;
 
 			const revocationService = issuerDidDocument.service?.find(s => s.id.endsWith("#revocation"));
 			if (
@@ -741,7 +741,7 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 				throw new NotFoundError(this.CLASS_NAME, "documentNotFound", issuerDocumentId);
 			}
 			await this.verifyDocument(issuerIdentityDocument);
-			const issuerDidDocument = JSON.parse(issuerIdentityDocument.document) as IDidDocument;
+			const issuerDidDocument = issuerIdentityDocument.document;
 
 			const revocationService = issuerDidDocument.service?.find(s => s.id.endsWith("#revocation"));
 			if (
@@ -832,7 +832,7 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 				throw new NotFoundError(this.CLASS_NAME, "documentNotFound", idParts.id);
 			}
 			await this.verifyDocument(holderIdentityDocument);
-			const holderDidDocument = JSON.parse(holderIdentityDocument.document) as IDidDocument;
+			const holderDidDocument = holderIdentityDocument.document;
 
 			const methods = this.getAllMethods(holderDidDocument);
 			const methodAndArray = methods.find(m => {
@@ -1042,7 +1042,7 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 				throw new NotFoundError(this.CLASS_NAME, "documentNotFound", idParts.id);
 			}
 			await this.verifyDocument(didIdentityDocument);
-			const didDocument = JSON.parse(didIdentityDocument.document) as IDidDocument;
+			const didDocument = didIdentityDocument.document;
 
 			const methods = this.getAllMethods(didDocument);
 			const methodAndArray = methods.find(m => {
@@ -1105,7 +1105,7 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 				throw new NotFoundError(this.CLASS_NAME, "documentNotFound", idParts.id);
 			}
 			await this.verifyDocument(didIdentityDocument);
-			const didDocument = JSON.parse(didIdentityDocument.document) as IDidDocument;
+			const didDocument = didIdentityDocument.document;
 
 			const methods = this.getAllMethods(didDocument);
 			const methodAndArray = methods.find(m => {
@@ -1206,17 +1206,17 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 
 	/**
 	 * Verify the document in storage.
-	 * @param didIdentityDocument The did document that was stored.
+	 * @param didDocument The did document that was stored.
 	 * @internal
 	 */
-	private async verifyDocument(didIdentityDocument: IdentityDocument): Promise<void> {
-		const stringifiedDocument = didIdentityDocument.document;
+	private async verifyDocument(didDocument: IdentityDocument): Promise<void> {
+		const stringifiedDocument = JSON.stringify(didDocument.document);
 		const docBytes = Converter.utf8ToBytes(stringifiedDocument);
 
 		const verified = await this._vaultConnector.verify(
-			this.buildVaultKey(didIdentityDocument.id, didIdentityDocument.id),
+			this.buildVaultKey(didDocument.id, didDocument.id),
 			docBytes,
-			Converter.base64ToBytes(didIdentityDocument.signature)
+			Converter.base64ToBytes(didDocument.signature)
 		);
 
 		if (!verified) {
@@ -1241,7 +1241,7 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 
 		await this._didDocumentEntityStorage.set({
 			id: didDocument.id,
-			document: stringifiedDocument,
+			document: didDocument,
 			signature: Converter.bytesToBase64(signature),
 			controller
 		});

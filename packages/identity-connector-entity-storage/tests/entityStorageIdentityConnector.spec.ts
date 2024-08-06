@@ -1,11 +1,11 @@
 // Copyright 2024 IOTA Stiftung.
 // SPDX-License-Identifier: Apache-2.0.
-import { Converter, Is } from "@gtsc/core";
+import { Converter, Is, ObjectHelper } from "@gtsc/core";
 import { Ed25519 } from "@gtsc/crypto";
 import { MemoryEntityStorageConnector } from "@gtsc/entity-storage-connector-memory";
 import { EntityStorageConnectorFactory } from "@gtsc/entity-storage-models";
 import { nameof } from "@gtsc/nameof";
-import type { DidVerificationMethodType, IDidDocument, IDidService } from "@gtsc/standards-w3c-did";
+import type { DidVerificationMethodType, IDidService } from "@gtsc/standards-w3c-did";
 import {
 	EntityStorageVaultConnector,
 	type VaultKey,
@@ -95,7 +95,7 @@ describe("EntityStorageIdentityConnector", () => {
 			"data:application/octet-stream;base64,H4sIAAAAAAAAA-3BMQEAAADCoPVPbQwfoAAAAAAAAAAAAAAAAAAAAIC3AYbSVKsAQAAA"
 		);
 
-		testIdentityDocument = didDocumentEntityStorage.getStore()?.[0] as IdentityDocument;
+		testIdentityDocument = ObjectHelper.clone(didDocumentEntityStorage.getStore()?.[0] as IdentityDocument);
 	});
 
 	test("can fail to resolve a document with no id", async () => {
@@ -175,9 +175,9 @@ describe("EntityStorageIdentityConnector", () => {
 		expect(verificationMethod).toBeDefined();
 		expect(verificationMethod?.id).toEqual(`${testIdentityDocument.id}#my-verification-id`);
 
-		testIdentityDocument = didDocumentEntityStorage.getStore()?.[0] as IdentityDocument;
+		testIdentityDocument = ObjectHelper.clone(didDocumentEntityStorage.getStore()?.[0] as IdentityDocument);
 
-		const testDocument = JSON.parse(testIdentityDocument.document) as IDidDocument;
+		const testDocument = testIdentityDocument.document;
 		expect(testDocument?.assertionMethod).toBeDefined();
 
 		testDocumentVerificationMethodId = verificationMethod?.id ?? "";
@@ -210,8 +210,10 @@ describe("EntityStorageIdentityConnector", () => {
 			testDocumentVerificationMethodId
 		);
 
-		const testDocument = JSON.parse(testIdentityDocument.document) as IDidDocument;
+		const testDocument = testIdentityDocument.document;
 		expect(testDocument?.verificationMethod).toBeUndefined();
+
+		testIdentityDocument = ObjectHelper.clone(didDocumentEntityStorage.getStore()?.[0] as IdentityDocument);
 	});
 
 	test("can fail to add a service with no document id", async () => {
@@ -312,6 +314,7 @@ describe("EntityStorageIdentityConnector", () => {
 		expect(service?.serviceEndpoint).toEqual("https://bar.example.com/");
 
 		testServiceId = service?.id ?? "";
+		testIdentityDocument = ObjectHelper.clone(didDocumentEntityStorage.getStore()?.[0] as IdentityDocument);
 	});
 
 	test("can fail to remove a service with no service id", async () => {
@@ -335,7 +338,7 @@ describe("EntityStorageIdentityConnector", () => {
 
 		await identityConnector.removeService(TEST_IDENTITY_ID, testServiceId);
 
-		const testDocument = JSON.parse(testIdentityDocument.document) as IDidDocument;
+		const testDocument = testIdentityDocument.document;
 
 		expect(testDocument?.service).toBeDefined();
 
@@ -343,6 +346,7 @@ describe("EntityStorageIdentityConnector", () => {
 			s => s.id === `${testDocument.id}#linked-domain`
 		);
 		expect(service).toBeUndefined();
+		testIdentityDocument = ObjectHelper.clone(didDocumentEntityStorage.getStore()?.[0] as IdentityDocument);
 	});
 
 	test("can fail to create a verifiable credential with no verification method id", async () => {
@@ -397,6 +401,13 @@ describe("EntityStorageIdentityConnector", () => {
 
 		const identityConnector = new EntityStorageIdentityConnector();
 
+		await identityConnector.addVerificationMethod(
+			TEST_IDENTITY_ID,
+			testIdentityDocument.id,
+			"assertionMethod",
+			"my-verification-id"
+		);
+
 		const holderDocument = await identityConnector.createDocument(TEST_IDENTITY_ID);
 
 		const result = await identityConnector.createVerifiableCredential(
@@ -437,6 +448,7 @@ describe("EntityStorageIdentityConnector", () => {
 		expect(result.jwt.split(".").length).toEqual(3);
 
 		testVcJwt = result.jwt;
+		testIdentityDocument = ObjectHelper.clone(didDocumentEntityStorage.getStore()?.[0] as IdentityDocument);
 	});
 
 	test("can fail to validate a verifiable credential with no jwt", async () => {
@@ -530,8 +542,8 @@ describe("EntityStorageIdentityConnector", () => {
 			5
 		]);
 
-		testIdentityDocument = didDocumentEntityStorage.getStore()?.[0] as IdentityDocument;
-		const testDocument = JSON.parse(testIdentityDocument.document) as IDidDocument;
+		testIdentityDocument = ObjectHelper.clone(didDocumentEntityStorage.getStore()?.[0] as IdentityDocument);
+		const testDocument = testIdentityDocument.document;
 
 		expect(testDocument.service).toBeDefined();
 		const revokeService = testDocument.service?.find(
@@ -544,6 +556,7 @@ describe("EntityStorageIdentityConnector", () => {
 
 		const result = await identityConnector.checkVerifiableCredential<IDegree>(testVcJwt);
 		expect(result.revoked).toBeTruthy();
+		testIdentityDocument = ObjectHelper.clone(didDocumentEntityStorage.getStore()?.[0] as IdentityDocument);
 	});
 
 	test("can fail to unrevoke a verifiable credential with no documentId", async () => {
@@ -596,8 +609,8 @@ describe("EntityStorageIdentityConnector", () => {
 			[5]
 		);
 
-		testIdentityDocument = didDocumentEntityStorage.getStore()?.[0] as IdentityDocument;
-		const testDocument = JSON.parse(testIdentityDocument.document) as IDidDocument;
+		testIdentityDocument = ObjectHelper.clone(didDocumentEntityStorage.getStore()?.[0] as IdentityDocument);
+		const testDocument = testIdentityDocument.document;
 
 		const revokeService = testDocument.service?.find(s => s.id === `${testDocument.id}#revocation`);
 		expect(revokeService).toBeDefined();
@@ -607,6 +620,7 @@ describe("EntityStorageIdentityConnector", () => {
 
 		const result = await identityConnector.checkVerifiableCredential<IDegree>(testVcJwt);
 		expect(result.revoked).toBeFalsy();
+		testIdentityDocument = ObjectHelper.clone(didDocumentEntityStorage.getStore()?.[0] as IdentityDocument);
 	});
 
 	test("can fail to create a verifiable presentation with no presentation method id", async () => {
