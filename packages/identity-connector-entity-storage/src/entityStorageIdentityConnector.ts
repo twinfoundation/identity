@@ -9,6 +9,7 @@ import {
 	GeneralError,
 	Guards,
 	Is,
+	JsonHelper,
 	NotFoundError,
 	ObjectHelper,
 	RandomHelper
@@ -1210,7 +1211,7 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 	 * @internal
 	 */
 	private async verifyDocument(didDocument: IdentityDocument): Promise<void> {
-		const stringifiedDocument = JSON.stringify(didDocument.document);
+		const stringifiedDocument = JsonHelper.canonicalize(didDocument.document);
 		const docBytes = Converter.utf8ToBytes(stringifiedDocument);
 
 		const verified = await this._vaultConnector.verify(
@@ -1231,7 +1232,7 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 	 * @internal
 	 */
 	private async updateDocument(controller: string, didDocument: IDidDocument): Promise<void> {
-		const stringifiedDocument = JSON.stringify(didDocument);
+		const stringifiedDocument = JsonHelper.canonicalize(didDocument);
 		const docBytes = Converter.utf8ToBytes(stringifiedDocument);
 
 		const signature = await this._vaultConnector.sign(
