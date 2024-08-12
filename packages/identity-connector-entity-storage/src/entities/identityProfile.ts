@@ -1,7 +1,7 @@
 // Copyright 2024 IOTA Stiftung.
 // SPDX-License-Identifier: Apache-2.0.
 import { entity, property } from "@gtsc/entity";
-import type { IIdentityProfileProperty } from "@gtsc/identity-models";
+import type { IdentityProfileProperty } from "./identityProfileProperty";
 
 /**
  * Class representing profile details for the identity.
@@ -17,6 +17,8 @@ export class IdentityProfile {
 	/**
 	 * The properties for the profile.
 	 */
-	@property({ type: "array", itemType: "object" })
-	public properties?: IIdentityProfileProperty[];
+	@property({ type: "object", itemTypeRef: "IdentityProfileProperty" })
+	public properties?: {
+		[key: string]: IdentityProfileProperty;
+	};
 }

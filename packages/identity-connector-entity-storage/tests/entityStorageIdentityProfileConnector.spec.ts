@@ -109,8 +109,25 @@ describe("EntityStorageIdentityProfileConnector", () => {
 
 		const identity = await service.get(identityResult.id);
 
-		expect(identity.properties?.length).toEqual(1);
-		expect(identity.properties?.length).toEqual(1);
+		expect(identity.properties?.[0].key).toEqual("name");
+		expect(identity.properties?.[0].type).toEqual("https://schema.org/Text");
+		expect(identity.properties?.[0].value).toEqual("Test Identity");
+		expect(identity.properties?.[0].isPublic).toEqual(true);
+	});
+
+	test("Can get an identity only public properties", async () => {
+		const identityService = new EntityStorageIdentityConnector();
+		const identityResult = await identityService.createDocument(TEST_CONTROLLER);
+
+		const service = new EntityStorageIdentityProfileConnector();
+
+		const properties: IIdentityProfileProperty[] = [];
+		PropertyHelper.setText(properties, "name", "Test Identity", { isPublic: true });
+		PropertyHelper.setText(properties, "type", "Test", { isPublic: false });
+		await service.create(identityResult.id, properties);
+
+		const identity = await service.get(identityResult.id, false);
+
 		expect(identity.properties?.[0].key).toEqual("name");
 		expect(identity.properties?.[0].type).toEqual("https://schema.org/Text");
 		expect(identity.properties?.[0].value).toEqual("Test Identity");
@@ -164,11 +181,9 @@ describe("EntityStorageIdentityProfileConnector", () => {
 
 		const profile = identityProfileEntityStorage.getStore();
 		expect(profile?.[0].identity).toEqual(identityResult.id);
-		expect(profile?.[0].properties?.length).toEqual(1);
-		expect(profile?.[0].properties?.[0].key).toEqual("name");
-		expect(profile?.[0].properties?.[0].type).toEqual("https://schema.org/Text");
-		expect(profile?.[0].properties?.[0].value).toEqual("Test Identity 1");
-		expect(profile?.[0].properties?.[0].isPublic).toEqual(true);
+		expect(profile?.[0].properties?.name?.type).toEqual("https://schema.org/Text");
+		expect(profile?.[0].properties?.name?.value).toEqual("Test Identity 1");
+		expect(profile?.[0].properties?.name?.isPublic).toEqual(true);
 
 		const properties2: IIdentityProfileProperty[] = [];
 		PropertyHelper.setText(properties2, "name", "Test Identity 2", { isPublic: false });
@@ -177,11 +192,9 @@ describe("EntityStorageIdentityProfileConnector", () => {
 
 		const profile2 = identityProfileEntityStorage.getStore();
 		expect(profile2?.[0].identity).toEqual(identityResult.id);
-		expect(profile2?.[0].properties?.length).toEqual(1);
-		expect(profile2?.[0].properties?.[0].key).toEqual("name");
-		expect(profile2?.[0].properties?.[0].type).toEqual("https://schema.org/Text");
-		expect(profile2?.[0].properties?.[0].value).toEqual("Test Identity 2");
-		expect(profile2?.[0].properties?.[0].isPublic).toEqual(false);
+		expect(profile2?.[0].properties?.name?.type).toEqual("https://schema.org/Text");
+		expect(profile2?.[0].properties?.name?.value).toEqual("Test Identity 2");
+		expect(profile2?.[0].properties?.name?.isPublic).toEqual(false);
 	});
 
 	test("Can fail get a list of identities when connector fails", async () => {
@@ -201,7 +214,7 @@ describe("EntityStorageIdentityProfileConnector", () => {
 		expect(I18n.hasMessage("error.entityStorageIdentityProfileConnector.listFailed")).toEqual(true);
 	});
 
-	test("Can get a list of identities", async () => {
+	test("Can get a list of identities including private properties", async () => {
 		const identityService = new EntityStorageIdentityConnector();
 		const service = new EntityStorageIdentityProfileConnector();
 
@@ -236,5 +249,31 @@ describe("EntityStorageIdentityProfileConnector", () => {
 			}
 		]);
 		expect(identitiesUsers.items.length).toEqual(7);
+	});
+
+	test("Can get a list of identities including only public properties", async () => {
+		const identityService = new EntityStorageIdentityConnector();
+		const service = new EntityStorageIdentityProfileConnector();
+
+		for (let i = 0; i < 3; i++) {
+			const properties: IIdentityProfileProperty[] = [];
+			PropertyHelper.setText(properties, "name", `Test Node Identity ${i}`, { isPublic: true });
+			PropertyHelper.setText(properties, "role", IdentityRole.Node, { isPublic: true });
+			PropertyHelper.setText(properties, "foo", "bar", { isPublic: false });
+			const identity = await identityService.createDocument(TEST_CONTROLLER);
+			await service.create(identity.id, properties);
+		}
+
+		const identitiesNode = await service.list(false, [
+			{
+				propertyName: "role",
+				propertyValue: IdentityRole.Node
+			}
+		]);
+
+		expect(identitiesNode.items.length).toEqual(3);
+		expect(identitiesNode.items[0].properties?.length).toEqual(2);
+		expect(identitiesNode.items[0].properties?.[0]?.value).toEqual("Test Node Identity 0");
+		expect(identitiesNode.items[0].properties?.[1]?.value).toEqual(IdentityRole.Node);
 	});
 });
