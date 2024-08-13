@@ -11,7 +11,8 @@
 		"identityProfileService": {
 			"alreadyExists": "The identity profile already exists for the identity \"{existingId}\"",
 			"createFailed": "Creating the identity profile failed \"{identity}\"",
-			"getFailed": "Getting the identity profile failed \"{notFoundId}\"",
+			"getFailed": "Getting the identity profile failed",
+			"getPublicFailed": "Getting the public identity profile failed",
 			"updateFailed": "Updating the identity profile failed \"{identity}\"",
 			"notFound": "The identity profile failed \"{notFoundId}\"",
 			"removeFailed": "Removing the identity profile failed \"{identity}\"",

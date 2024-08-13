@@ -12,6 +12,8 @@
 - [IIdentityProfileConnector](interfaces/IIdentityProfileConnector.md)
 - [IIdentityProfileProperty](interfaces/IIdentityProfileProperty.md)
 - [IIdentityProfileCreateRequest](interfaces/IIdentityProfileCreateRequest.md)
+- [IIdentityProfileGetPublicRequest](interfaces/IIdentityProfileGetPublicRequest.md)
+- [IIdentityProfileGetPublicResponse](interfaces/IIdentityProfileGetPublicResponse.md)
 - [IIdentityProfileGetRequest](interfaces/IIdentityProfileGetRequest.md)
 - [IIdentityProfileGetResponse](interfaces/IIdentityProfileGetResponse.md)
 - [IIdentityProfileListRequest](interfaces/IIdentityProfileListRequest.md)

@@ -1,5 +1,6 @@
 // Copyright 2024 IOTA Stiftung.
 // SPDX-License-Identifier: Apache-2.0.
+import type { IProperty } from "@gtsc/schema";
 import type { IService } from "@gtsc/services";
 import type { IIdentityProfileProperty } from "./IIdentityProfileProperty";
 
@@ -19,13 +20,27 @@ export interface IIdentityProfile extends IService {
 	 * Get the profile properties for an identity.
 	 * @param propertyNames The properties to get for the item, defaults to all.
 	 * @param identity The identity to perform the profile operation on.
-	 * @returns The items properties.
+	 * @returns The items identity and the properties.
 	 */
 	get(
 		propertyNames?: string[],
 		identity?: string
 	): Promise<{
+		identity: string;
 		properties?: IIdentityProfileProperty[];
+	}>;
+
+	/**
+	 * Get the public profile properties for an identity.
+	 * @param propertyNames The properties to get for the item, defaults to all.
+	 * @param identity The identity to perform the profile operation on.
+	 * @returns The items properties.
+	 */
+	getPublic(
+		propertyNames?: string[],
+		identity?: string
+	): Promise<{
+		properties?: IProperty[];
 	}>;
 
 	/**

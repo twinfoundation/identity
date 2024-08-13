@@ -90,7 +90,11 @@ The identity to perform the profile operation on.
 
 `Promise`\<`object`\>
 
-The items properties.
+The items identity and the properties.
+
+##### identity
+
+> **identity**: `string`
 
 ##### properties?
 
@@ -99,6 +103,38 @@ The items properties.
 #### Implementation of
 
 `IIdentityProfile.get`
+
+***
+
+### getPublic()
+
+> **getPublic**(`propertyNames`, `identity`): `Promise`\<`object`\>
+
+Get the public profile properties for an identity.
+
+#### Parameters
+
+• **propertyNames**: `undefined` \| `string`[]
+
+The properties to get for the item, defaults to all.
+
+• **identity**: `string`
+
+The identity to perform the profile operation on.
+
+#### Returns
+
+`Promise`\<`object`\>
+
+The items properties.
+
+##### properties?
+
+> `optional` **properties**: `IProperty`[]
+
+#### Implementation of
+
+`IIdentityProfile.getPublic`
 
 ***
 

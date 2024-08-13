@@ -142,7 +142,11 @@ The properties to get for the item, defaults to all.
 
 `Promise`\<`object`\>
 
-The items properties.
+The identity and the items properties.
+
+##### identity
+
+> **identity**: `string`
 
 ##### properties?
 
@@ -151,6 +155,38 @@ The items properties.
 #### Implementation of
 
 `IIdentityProfile.get`
+
+***
+
+### getPublic()
+
+> **getPublic**(`propertyNames`, `identity`): `Promise`\<`object`\>
+
+Get the public profile properties for an identity.
+
+#### Parameters
+
+• **propertyNames**: `undefined` \| `string`[]
+
+The properties to get for the item, defaults to all.
+
+• **identity**: `string`
+
+The identity to get the profile for.
+
+#### Returns
+
+`Promise`\<`object`\>
+
+The identity and the items properties.
+
+##### properties?
+
+> `optional` **properties**: `IProperty`[]
+
+#### Implementation of
+
+`IIdentityProfile.getPublic`
 
 ***
 

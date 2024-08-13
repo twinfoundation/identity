@@ -2,11 +2,13 @@
 // SPDX-License-Identifier: Apache-2.0.
 import { BaseRestClient } from "@gtsc/api-core";
 import type { IBaseRestClientConfig } from "@gtsc/api-models";
-import { StringHelper } from "@gtsc/core";
+import { Guards, StringHelper } from "@gtsc/core";
 import type {
 	IIdentity,
 	IIdentityProfile,
 	IIdentityProfileCreateRequest,
+	IIdentityProfileGetPublicRequest,
+	IIdentityProfileGetPublicResponse,
 	IIdentityProfileGetRequest,
 	IIdentityProfileGetResponse,
 	IIdentityProfileListRequest,
@@ -15,6 +17,7 @@ import type {
 	IIdentityProfileUpdateRequest
 } from "@gtsc/identity-models";
 import { nameof } from "@gtsc/nameof";
+import type { IProperty } from "@gtsc/schema";
 
 /**
  * Client for performing identity through to REST endpoints.
@@ -49,9 +52,10 @@ export class IdentityProfileClient extends BaseRestClient implements IIdentityPr
 	/**
 	 * Get the profile properties for an identity.
 	 * @param propertyNames The properties to get for the item, defaults to all.
-	 * @returns The items properties.
+	 * @returns The identity and the items properties.
 	 */
 	public async get(propertyNames?: string[]): Promise<{
+		identity: string;
 		properties?: IIdentityProfileProperty[];
 	}> {
 		const response = await this.fetch<IIdentityProfileGetRequest, IIdentityProfileGetResponse>(
@@ -63,6 +67,35 @@ export class IdentityProfileClient extends BaseRestClient implements IIdentityPr
 				}
 			}
 		);
+
+		return response.body;
+	}
+
+	/**
+	 * Get the public profile properties for an identity.
+	 * @param propertyNames The properties to get for the item, defaults to all.
+	 * @param identity The identity to get the profile for.
+	 * @returns The identity and the items properties.
+	 */
+	public async getPublic(
+		propertyNames: string[] | undefined,
+		identity: string
+	): Promise<{
+		properties?: IProperty[];
+	}> {
+		Guards.string(this.CLASS_NAME, nameof(identity), identity);
+
+		const response = await this.fetch<
+			IIdentityProfileGetPublicRequest,
+			IIdentityProfileGetPublicResponse
+		>("/:identity/public", "GET", {
+			pathParams: {
+				identity
+			},
+			query: {
+				propertyNames: propertyNames?.join(",")
+			}
+		});
 
 		return response.body;
 	}

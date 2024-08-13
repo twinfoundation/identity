@@ -11,6 +11,11 @@ export interface IIdentityProfileGetResponse {
 	 */
 	body: {
 		/**
+		 * The identity of the profile, this is the authenticated user identity.
+		 */
+		identity: string;
+
+		/**
 		 * The properties for the identity.
 		 */
 		properties?: IIdentityProfileProperty[];

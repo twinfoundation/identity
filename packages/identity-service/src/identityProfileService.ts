@@ -8,6 +8,7 @@ import {
 	type IIdentityProfileProperty
 } from "@gtsc/identity-models";
 import { nameof } from "@gtsc/nameof";
+import type { IProperty } from "@gtsc/schema";
 
 /**
  * Class which implements the identity profile contract.
@@ -58,23 +59,59 @@ export class IdentityProfileService implements IIdentityProfile {
 	 * Get the profile properties for an identity.
 	 * @param propertyNames The properties to get for the item, defaults to all.
 	 * @param identity The identity to perform the profile operation on.
-	 * @returns The items properties.
+	 * @returns The items identity and the properties.
 	 */
 	public async get(
 		propertyNames?: string[],
 		identity?: string
 	): Promise<{
+		identity: string;
 		properties?: IIdentityProfileProperty[];
 	}> {
 		Guards.stringValue(this.CLASS_NAME, nameof(identity), identity);
 
 		try {
-			return this._identityProfileConnector.get(identity, true, propertyNames);
+			const result = await this._identityProfileConnector.get(identity, true, propertyNames);
+			return {
+				identity,
+				properties: result.properties
+			};
 		} catch (error) {
 			if (BaseError.someErrorClass(error, this.CLASS_NAME)) {
 				throw error;
 			}
 			throw new GeneralError(this.CLASS_NAME, "getFailed", undefined, error);
+		}
+	}
+
+	/**
+	 * Get the public profile properties for an identity.
+	 * @param propertyNames The properties to get for the item, defaults to all.
+	 * @param identity The identity to perform the profile operation on.
+	 * @returns The items properties.
+	 */
+	public async getPublic(
+		propertyNames: string[] | undefined,
+		identity: string
+	): Promise<{
+		properties?: IProperty[];
+	}> {
+		Guards.stringValue(this.CLASS_NAME, nameof(identity), identity);
+
+		try {
+			const result = await this._identityProfileConnector.get(identity, false, propertyNames);
+			return {
+				properties: (result.properties ?? []).map(property => ({
+					key: property.key,
+					type: property.type,
+					value: property.value
+				}))
+			};
+		} catch (error) {
+			if (BaseError.someErrorClass(error, this.CLASS_NAME)) {
+				throw error;
+			}
+			throw new GeneralError(this.CLASS_NAME, "getPublicFailed", undefined, error);
 		}
 	}
 

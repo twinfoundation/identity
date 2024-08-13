@@ -17,7 +17,9 @@ import type {
 	IIdentityProfileListRequest,
 	IIdentityProfileListResponse,
 	IIdentityProfileCreateRequest,
-	IIdentityProfileUpdateRequest
+	IIdentityProfileUpdateRequest,
+	IIdentityProfileGetPublicRequest,
+	IIdentityProfileGetPublicResponse
 } from "@gtsc/identity-models";
 import { nameof } from "@gtsc/nameof";
 import { ServiceFactory } from "@gtsc/services";
@@ -131,6 +133,8 @@ export function generateRestRoutesIdentityProfile(
 						id: "identityGetResponseExample",
 						response: {
 							body: {
+								identity:
+									"did:iota:tst:0xc57d94b088f4c6d2cb32ded014813d0c786aa00134c8ee22f84b1e2545602a70",
 								properties: [
 									{
 										key: "role",
@@ -149,6 +153,70 @@ export function generateRestRoutesIdentityProfile(
 										type: "https://schema.org/Text",
 										value: "John Smith",
 										isPublic: true
+									}
+								]
+							}
+						}
+					}
+				]
+			},
+			{
+				type: nameof<INotFoundResponse>()
+			}
+		]
+	};
+
+	const identityProfileGetPublicRoute: IRestRoute<
+		IIdentityProfileGetPublicRequest,
+		IIdentityProfileGetPublicResponse
+	> = {
+		operationId: "identityProfileGetPublic",
+		summary: "Get the identity profile public properties",
+		tag: tagsIdentityProfile[0].name,
+		method: "GET",
+		path: `${baseRouteName}/:identity/public`,
+		handler: async (httpRequestContext, request) =>
+			identityGetPublic(httpRequestContext, serviceName, request),
+		requestType: {
+			type: nameof<IIdentityProfileGetPublicRequest>(),
+			examples: [
+				{
+					id: "identityGetPublicProfileRequestExample",
+					request: {
+						pathParams: {
+							identity:
+								"did:iota:tst:0xc57d94b088f4c6d2cb32ded014813d0c786aa00134c8ee22f84b1e2545602a70"
+						},
+						query: {
+							propertyNames: "role,email,name"
+						}
+					}
+				}
+			]
+		},
+		responseType: [
+			{
+				type: nameof<IIdentityProfileGetPublicResponse>(),
+				examples: [
+					{
+						id: "identityGetPublicResponseExample",
+						response: {
+							body: {
+								properties: [
+									{
+										key: "role",
+										type: "https://schema.org/Text",
+										value: "User"
+									},
+									{
+										key: "email",
+										type: "https://schema.org/Text",
+										value: "john@example.com"
+									},
+									{
+										key: "name",
+										type: "https://schema.org/Text",
+										value: "John Smith"
 									}
 								]
 							}
@@ -297,6 +365,7 @@ export function generateRestRoutesIdentityProfile(
 	return [
 		identityProfileCreateRoute,
 		identityProfileGetRoute,
+		identityProfileGetPublicRoute,
 		identityProfileUpdateRoute,
 		identityProfileRemoveRoute,
 		identityProfileListRoute
@@ -350,6 +419,40 @@ export async function identityGet(
 	const result = await service.get(
 		request?.query?.propertyNames?.split(","),
 		httpRequestContext.userIdentity
+	);
+
+	return {
+		body: {
+			identity: result.identity,
+			properties: result.properties
+		}
+	};
+}
+
+/**
+ * Get the identity public profile.
+ * @param httpRequestContext The request context for the API.
+ * @param serviceName The name of the service to use in the routes.
+ * @param request The request.
+ * @returns The response object with additional http response properties.
+ */
+export async function identityGetPublic(
+	httpRequestContext: IHttpRequestContext,
+	serviceName: string,
+	request: IIdentityProfileGetPublicRequest
+): Promise<IIdentityProfileGetPublicResponse> {
+	Guards.object<IIdentityProfileGetPublicRequest>(ROUTES_SOURCE, nameof(request), request);
+	Guards.stringValue(
+		ROUTES_SOURCE,
+		nameof(request.pathParams?.identity),
+		request.pathParams?.identity
+	);
+
+	const service = ServiceFactory.get<IIdentityProfile>(serviceName);
+
+	const result = await service.getPublic(
+		request?.query?.propertyNames?.split(","),
+		request?.pathParams.identity
 	);
 
 	return {
