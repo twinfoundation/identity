@@ -77,7 +77,8 @@ export function generateRestRoutesIdentity(
 					}
 				]
 			}
-		]
+		],
+		skipAuth: true
 	};
 
 	return [identityResolveRoute];

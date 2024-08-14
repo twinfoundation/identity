@@ -45,11 +45,7 @@
                         "example": "did:iota:tst:0xe3088ba9aa8c28e1d139708a14e8c0fdff11ee8223baac4aa5bcf3321e4bfc6a"
                     }
                 ],
-                "security": [
-                    {
-                        "jwtBearerAuthScheme": []
-                    }
-                ],
+                "security": [],
                 "responses": {
                     "200": {
                         "description": "Response to resolving an identity.",
@@ -90,24 +86,6 @@
                                             "properties": {
                                                 "foo": "bar"
                                             }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "You are not authorized to use the API or no credentials were supplied, see the error field for more details.",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/Error"
-                                },
-                                "examples": {
-                                    "exampleResponse": {
-                                        "value": {
-                                            "name": "UnauthorizedError",
-                                            "message": "component.error"
                                         }
                                     }
                                 }
