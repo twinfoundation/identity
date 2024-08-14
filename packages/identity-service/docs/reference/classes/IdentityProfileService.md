@@ -4,7 +4,7 @@ Class which implements the identity profile contract.
 
 ## Implements
 
-- `IIdentityProfile`
+- `IIdentityProfileComponent`
 
 ## Constructors
 
@@ -38,7 +38,7 @@ Runtime name for the class.
 
 #### Implementation of
 
-`IIdentityProfile.CLASS_NAME`
+`IIdentityProfileComponent.CLASS_NAME`
 
 ## Methods
 
@@ -66,7 +66,7 @@ Nothing.
 
 #### Implementation of
 
-`IIdentityProfile.create`
+`IIdentityProfileComponent.create`
 
 ***
 
@@ -102,7 +102,7 @@ The items identity and the properties.
 
 #### Implementation of
 
-`IIdentityProfile.get`
+`IIdentityProfileComponent.get`
 
 ***
 
@@ -134,7 +134,7 @@ The items properties.
 
 #### Implementation of
 
-`IIdentityProfile.getPublic`
+`IIdentityProfileComponent.getPublic`
 
 ***
 
@@ -162,7 +162,7 @@ Nothing.
 
 #### Implementation of
 
-`IIdentityProfile.update`
+`IIdentityProfileComponent.update`
 
 ***
 
@@ -186,7 +186,7 @@ Nothing.
 
 #### Implementation of
 
-`IIdentityProfile.remove`
+`IIdentityProfileComponent.remove`
 
 ***
 
@@ -246,4 +246,4 @@ Total entities length.
 
 #### Implementation of
 
-`IIdentityProfile.list`
+`IIdentityProfileComponent.list`

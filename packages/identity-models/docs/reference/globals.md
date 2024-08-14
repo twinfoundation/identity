@@ -6,9 +6,9 @@
 
 ## Interfaces
 
-- [IIdentity](interfaces/IIdentity.md)
+- [IIdentityComponent](interfaces/IIdentityComponent.md)
 - [IIdentityConnector](interfaces/IIdentityConnector.md)
-- [IIdentityProfile](interfaces/IIdentityProfile.md)
+- [IIdentityProfileComponent](interfaces/IIdentityProfileComponent.md)
 - [IIdentityProfileConnector](interfaces/IIdentityProfileConnector.md)
 - [IIdentityProfileProperty](interfaces/IIdentityProfileProperty.md)
 - [IIdentityProfileCreateRequest](interfaces/IIdentityProfileCreateRequest.md)

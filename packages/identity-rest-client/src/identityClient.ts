@@ -2,9 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0.
 import { BaseRestClient } from "@gtsc/api-core";
 import type { IBaseRestClientConfig } from "@gtsc/api-models";
-import { StringHelper, Urn } from "@gtsc/core";
+import { Urn } from "@gtsc/core";
 import type {
-	IIdentity,
+	IIdentityComponent,
 	IIdentityResolveRequest,
 	IIdentityResolveResponse
 } from "@gtsc/identity-models";
@@ -14,7 +14,7 @@ import type { IDidDocument } from "@gtsc/standards-w3c-did";
 /**
  * Client for performing identity through to REST endpoints.
  */
-export class IdentityClient extends BaseRestClient implements IIdentity {
+export class IdentityClient extends BaseRestClient implements IIdentityComponent {
 	/**
 	 * Runtime name for the class.
 	 */
@@ -25,7 +25,7 @@ export class IdentityClient extends BaseRestClient implements IIdentity {
 	 * @param config The configuration for the client.
 	 */
 	constructor(config: IBaseRestClientConfig) {
-		super(nameof<IdentityClient>(), config, StringHelper.kebabCase(nameof<IIdentity>()));
+		super(nameof<IdentityClient>(), config, "identity");
 	}
 
 	/**

@@ -1,12 +1,12 @@
 // Copyright 2024 IOTA Stiftung.
 // SPDX-License-Identifier: Apache-2.0.
-import type { IService } from "@gtsc/services";
+import type { IComponent } from "@gtsc/core";
 import type { IIdentityProfileProperty } from "./IIdentityProfileProperty";
 
 /**
  * Interface describing a contract which provides profile operations.
  */
-export interface IIdentityProfileConnector extends IService {
+export interface IIdentityProfileConnector extends IComponent {
 	/**
 	 * Create the profile properties for an identity.
 	 * @param identity The identity of the profile to create.

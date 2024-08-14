@@ -2,10 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0.
 import { BaseRestClient } from "@gtsc/api-core";
 import type { IBaseRestClientConfig } from "@gtsc/api-models";
-import { Guards, StringHelper } from "@gtsc/core";
+import { Guards } from "@gtsc/core";
 import type {
-	IIdentity,
-	IIdentityProfile,
+	IIdentityProfileComponent,
 	IIdentityProfileCreateRequest,
 	IIdentityProfileGetPublicRequest,
 	IIdentityProfileGetPublicResponse,
@@ -22,7 +21,7 @@ import type { IProperty } from "@gtsc/schema";
 /**
  * Client for performing identity through to REST endpoints.
  */
-export class IdentityProfileClient extends BaseRestClient implements IIdentityProfile {
+export class IdentityProfileClient extends BaseRestClient implements IIdentityProfileComponent {
 	/**
 	 * Runtime name for the class.
 	 */
@@ -33,7 +32,7 @@ export class IdentityProfileClient extends BaseRestClient implements IIdentityPr
 	 * @param config The configuration for the client.
 	 */
 	constructor(config: IBaseRestClientConfig) {
-		super(nameof<IdentityProfileClient>(), config, StringHelper.kebabCase(nameof<IIdentity>()));
+		super(nameof<IdentityProfileClient>(), config, "identity/profile");
 	}
 
 	/**

@@ -3,7 +3,7 @@
 import { GeneralError, Urn } from "@gtsc/core";
 import {
 	IdentityConnectorFactory,
-	type IIdentity,
+	type IIdentityComponent,
 	type IIdentityConnector
 } from "@gtsc/identity-models";
 import { nameof } from "@gtsc/nameof";
@@ -13,7 +13,7 @@ import type { IIdentityServiceConfig } from "./models/IIdentityServiceConfig";
 /**
  * Class which implements the identity contract.
  */
-export class IdentityService implements IIdentity {
+export class IdentityService implements IIdentityComponent {
 	/**
 	 * The namespace supported by the identity service.
 	 */

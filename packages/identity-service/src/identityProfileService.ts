@@ -3,7 +3,7 @@
 import { BaseError, GeneralError, Guards } from "@gtsc/core";
 import {
 	IdentityProfileConnectorFactory,
-	type IIdentityProfile,
+	type IIdentityProfileComponent,
 	type IIdentityProfileConnector,
 	type IIdentityProfileProperty
 } from "@gtsc/identity-models";
@@ -13,7 +13,7 @@ import type { IProperty } from "@gtsc/schema";
 /**
  * Class which implements the identity profile contract.
  */
-export class IdentityProfileService implements IIdentityProfile {
+export class IdentityProfileService implements IIdentityProfileComponent {
 	/**
 	 * Runtime name for the class.
 	 */

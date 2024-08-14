@@ -1,6 +1,6 @@
 // Copyright 2024 IOTA Stiftung.
 // SPDX-License-Identifier: Apache-2.0.
-import type { IService } from "@gtsc/services";
+import type { IComponent } from "@gtsc/core";
 import type {
 	DidVerificationMethodType,
 	IDidDocument,
@@ -13,7 +13,7 @@ import type {
 /**
  * Interface describing an identity connector.
  */
-export interface IIdentityConnector extends IService {
+export interface IIdentityConnector extends IComponent {
 	/**
 	 * Create a new document.
 	 * @param controller The controller of the identity who can make changes.

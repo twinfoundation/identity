@@ -1,14 +1,13 @@
 // Copyright 2024 IOTA Stiftung.
 // SPDX-License-Identifier: Apache-2.0.
 import type { IHttpRequestContext, IRestRoute, ITag } from "@gtsc/api-models";
-import { Guards } from "@gtsc/core";
+import { ComponentFactory, Guards } from "@gtsc/core";
 import type {
-	IIdentity,
+	IIdentityComponent,
 	IIdentityResolveRequest,
 	IIdentityResolveResponse
 } from "@gtsc/identity-models";
 import { nameof } from "@gtsc/nameof";
-import { ServiceFactory } from "@gtsc/services";
 
 /**
  * The source used when communicating about these routes.
@@ -28,12 +27,12 @@ export const tagsIdentity: ITag[] = [
 /**
  * The REST routes for identity.
  * @param baseRouteName Prefix to prepend to the paths.
- * @param serviceName The name of the service to use in the routes.
+ * @param componentName The name of the component to use in the routes stored in the ComponentFactory.
  * @returns The generated routes.
  */
 export function generateRestRoutesIdentity(
 	baseRouteName: string,
-	serviceName: string
+	componentName: string
 ): IRestRoute[] {
 	const identityResolveRoute: IRestRoute<IIdentityResolveRequest, IIdentityResolveResponse> = {
 		operationId: "identityResolve",
@@ -42,7 +41,7 @@ export function generateRestRoutesIdentity(
 		method: "GET",
 		path: `${baseRouteName}/:id`,
 		handler: async (httpRequestContext, request) =>
-			identityResolve(httpRequestContext, serviceName, request),
+			identityResolve(httpRequestContext, componentName, request),
 		requestType: {
 			type: nameof<IIdentityResolveRequest>(),
 			examples: [
@@ -87,13 +86,13 @@ export function generateRestRoutesIdentity(
 /**
  * Resolve an identity.
  * @param httpRequestContext The request context for the API.
- * @param serviceName The name of the service to use in the routes.
+ * @param componentName The name of the component to use in the routes stored in the ComponentFactory.
  * @param request The request.
  * @returns The response object with additional http response properties.
  */
 export async function identityResolve(
 	httpRequestContext: IHttpRequestContext,
-	serviceName: string,
+	componentName: string,
 	request: IIdentityResolveRequest
 ): Promise<IIdentityResolveResponse> {
 	Guards.object<IIdentityResolveRequest>(ROUTES_SOURCE, nameof(request), request);
@@ -103,9 +102,9 @@ export async function identityResolve(
 		request.pathParams
 	);
 
-	const service = ServiceFactory.get<IIdentity>(serviceName);
+	const component = ComponentFactory.get<IIdentityComponent>(componentName);
 
-	const result = await service.resolve(request.pathParams.id);
+	const result = await component.resolve(request.pathParams.id);
 
 	return {
 		body: result

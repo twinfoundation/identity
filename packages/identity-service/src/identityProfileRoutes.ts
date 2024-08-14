@@ -9,20 +9,19 @@ import type {
 	IRestRoute,
 	ITag
 } from "@gtsc/api-models";
-import { Coerce, Guards } from "@gtsc/core";
+import { Coerce, ComponentFactory, Guards } from "@gtsc/core";
 import type {
-	IIdentityProfile,
+	IIdentityProfileComponent,
+	IIdentityProfileCreateRequest,
+	IIdentityProfileGetPublicRequest,
+	IIdentityProfileGetPublicResponse,
 	IIdentityProfileGetRequest,
 	IIdentityProfileGetResponse,
 	IIdentityProfileListRequest,
 	IIdentityProfileListResponse,
-	IIdentityProfileCreateRequest,
-	IIdentityProfileUpdateRequest,
-	IIdentityProfileGetPublicRequest,
-	IIdentityProfileGetPublicResponse
+	IIdentityProfileUpdateRequest
 } from "@gtsc/identity-models";
 import { nameof } from "@gtsc/nameof";
-import { ServiceFactory } from "@gtsc/services";
 import { HttpStatusCode } from "@gtsc/web";
 
 /**
@@ -43,12 +42,12 @@ export const tagsIdentityProfile: ITag[] = [
 /**
  * The REST routes for identity.
  * @param baseRouteName Prefix to prepend to the paths.
- * @param serviceName The name of the service to use in the routes.
+ * @param componentName The name of the component to use in the routes stored in the ComponentFactory.
  * @returns The generated routes.
  */
 export function generateRestRoutesIdentityProfile(
 	baseRouteName: string,
-	serviceName: string
+	componentName: string
 ): IRestRoute[] {
 	const identityProfileCreateRoute: IRestRoute<IIdentityProfileCreateRequest, INoContentResponse> =
 		{
@@ -58,7 +57,7 @@ export function generateRestRoutesIdentityProfile(
 			method: "POST",
 			path: `${baseRouteName}/`,
 			handler: async (httpRequestContext, request) =>
-				identityProfileCreate(httpRequestContext, serviceName, request),
+				identityProfileCreate(httpRequestContext, componentName, request),
 			requestType: {
 				type: nameof<IIdentityProfileCreateRequest>(),
 				examples: [
@@ -111,7 +110,7 @@ export function generateRestRoutesIdentityProfile(
 		method: "GET",
 		path: `${baseRouteName}/`,
 		handler: async (httpRequestContext, request) =>
-			identityGet(httpRequestContext, serviceName, request),
+			identityGet(httpRequestContext, componentName, request),
 		requestType: {
 			type: nameof<IIdentityProfileGetRequest>(),
 			examples: [
@@ -176,7 +175,7 @@ export function generateRestRoutesIdentityProfile(
 		method: "GET",
 		path: `${baseRouteName}/:identity/public`,
 		handler: async (httpRequestContext, request) =>
-			identityGetPublic(httpRequestContext, serviceName, request),
+			identityGetPublic(httpRequestContext, componentName, request),
 		requestType: {
 			type: nameof<IIdentityProfileGetPublicRequest>(),
 			examples: [
@@ -239,7 +238,7 @@ export function generateRestRoutesIdentityProfile(
 			method: "PUT",
 			path: `${baseRouteName}/`,
 			handler: async (httpRequestContext, request) =>
-				identityProfileUpdate(httpRequestContext, serviceName, request),
+				identityProfileUpdate(httpRequestContext, componentName, request),
 			requestType: {
 				type: nameof<IIdentityProfileUpdateRequest>(),
 				examples: [
@@ -289,7 +288,7 @@ export function generateRestRoutesIdentityProfile(
 		method: "DELETE",
 		path: `${baseRouteName}/`,
 		handler: async (httpRequestContext, request) =>
-			identityProfileRemove(httpRequestContext, serviceName, request),
+			identityProfileRemove(httpRequestContext, componentName, request),
 		responseType: [
 			{
 				type: nameof<INoContentResponse>()
@@ -310,7 +309,7 @@ export function generateRestRoutesIdentityProfile(
 		method: "GET",
 		path: `${baseRouteName}/query/`,
 		handler: async (httpRequestContext, request) =>
-			identitiesList(httpRequestContext, serviceName, request),
+			identitiesList(httpRequestContext, componentName, request),
 		requestType: {
 			type: nameof<IIdentityProfileListRequest>(),
 			examples: [
@@ -376,13 +375,13 @@ export function generateRestRoutesIdentityProfile(
 /**
  * Create an identity profile.
  * @param httpRequestContext The request context for the API.
- * @param serviceName The name of the service to use in the routes.
+ * @param componentName The name of the component to use in the routes stored in the ComponentFactory.
  * @param request The request.
  * @returns The response object with additional http response properties.
  */
 export async function identityProfileCreate(
 	httpRequestContext: IHttpRequestContext,
-	serviceName: string,
+	componentName: string,
 	request: IIdentityProfileCreateRequest
 ): Promise<INoContentResponse> {
 	Guards.object<IIdentityProfileCreateRequest>(ROUTES_SOURCE, nameof(request), request);
@@ -392,9 +391,9 @@ export async function identityProfileCreate(
 		request.body
 	);
 
-	const service = ServiceFactory.get<IIdentityProfile>(serviceName);
+	const component = ComponentFactory.get<IIdentityProfileComponent>(componentName);
 
-	await service.create(request.body.properties, httpRequestContext.userIdentity);
+	await component.create(request.body.properties, httpRequestContext.userIdentity);
 
 	return {
 		statusCode: HttpStatusCode.noContent
@@ -404,20 +403,20 @@ export async function identityProfileCreate(
 /**
  * Get the identity profile.
  * @param httpRequestContext The request context for the API.
- * @param serviceName The name of the service to use in the routes.
+ * @param componentName The name of the component to use in the routes stored in the ComponentFactory.
  * @param request The request.
  * @returns The response object with additional http response properties.
  */
 export async function identityGet(
 	httpRequestContext: IHttpRequestContext,
-	serviceName: string,
+	componentName: string,
 	request: IIdentityProfileGetRequest
 ): Promise<IIdentityProfileGetResponse> {
 	Guards.object<IIdentityProfileGetRequest>(ROUTES_SOURCE, nameof(request), request);
 
-	const service = ServiceFactory.get<IIdentityProfile>(serviceName);
+	const component = ComponentFactory.get<IIdentityProfileComponent>(componentName);
 
-	const result = await service.get(
+	const result = await component.get(
 		request?.query?.propertyNames?.split(","),
 		httpRequestContext.userIdentity
 	);
@@ -433,13 +432,13 @@ export async function identityGet(
 /**
  * Get the identity public profile.
  * @param httpRequestContext The request context for the API.
- * @param serviceName The name of the service to use in the routes.
+ * @param componentName The name of the component to use in the routes stored in the ComponentFactory.
  * @param request The request.
  * @returns The response object with additional http response properties.
  */
 export async function identityGetPublic(
 	httpRequestContext: IHttpRequestContext,
-	serviceName: string,
+	componentName: string,
 	request: IIdentityProfileGetPublicRequest
 ): Promise<IIdentityProfileGetPublicResponse> {
 	Guards.object<IIdentityProfileGetPublicRequest>(ROUTES_SOURCE, nameof(request), request);
@@ -449,9 +448,9 @@ export async function identityGetPublic(
 		request.pathParams?.identity
 	);
 
-	const service = ServiceFactory.get<IIdentityProfile>(serviceName);
+	const component = ComponentFactory.get<IIdentityProfileComponent>(componentName);
 
-	const result = await service.getPublic(
+	const result = await component.getPublic(
 		request?.query?.propertyNames?.split(","),
 		request?.pathParams.identity
 	);
@@ -466,13 +465,13 @@ export async function identityGetPublic(
 /**
  * Update an identity profile.
  * @param httpRequestContext The request context for the API.
- * @param serviceName The name of the service to use in the routes.
+ * @param componentName The name of the component to use in the routes stored in the ComponentFactory.
  * @param request The request.
  * @returns The response object with additional http response properties.
  */
 export async function identityProfileUpdate(
 	httpRequestContext: IHttpRequestContext,
-	serviceName: string,
+	componentName: string,
 	request: IIdentityProfileUpdateRequest
 ): Promise<INoContentResponse> {
 	Guards.object<IIdentityProfileUpdateRequest>(ROUTES_SOURCE, nameof(request), request);
@@ -482,9 +481,9 @@ export async function identityProfileUpdate(
 		nameof(request.body),
 		request.body
 	);
-	const service = ServiceFactory.get<IIdentityProfile>(serviceName);
+	const component = ComponentFactory.get<IIdentityProfileComponent>(componentName);
 
-	await service.update(request.body.properties, httpRequestContext.userIdentity);
+	await component.update(request.body.properties, httpRequestContext.userIdentity);
 
 	return {
 		statusCode: HttpStatusCode.noContent
@@ -494,18 +493,18 @@ export async function identityProfileUpdate(
 /**
  * Remove an identity profile.
  * @param httpRequestContext The request context for the API.
- * @param serviceName The name of the service to use in the routes.
+ * @param componentName The name of the component to use in the routes stored in the ComponentFactory.
  * @param request The request.
  * @returns The response object with additional http response properties.
  */
 export async function identityProfileRemove(
 	httpRequestContext: IHttpRequestContext,
-	serviceName: string,
+	componentName: string,
 	request: INoContentRequest
 ): Promise<INoContentResponse> {
-	const service = ServiceFactory.get<IIdentityProfile>(serviceName);
+	const component = ComponentFactory.get<IIdentityProfileComponent>(componentName);
 
-	await service.remove(httpRequestContext.userIdentity);
+	await component.remove(httpRequestContext.userIdentity);
 
 	return {
 		statusCode: HttpStatusCode.noContent
@@ -515,16 +514,16 @@ export async function identityProfileRemove(
 /**
  * Get the list of organizations.
  * @param httpRequestContext The request context for the API.
- * @param serviceName The name of the service to use in the routes.
+ * @param componentName The name of the component to use in the routes stored in the ComponentFactory.
  * @param request The request.
  * @returns The response object with additional http response properties.
  */
 export async function identitiesList(
 	httpRequestContext: IHttpRequestContext,
-	serviceName: string,
+	componentName: string,
 	request: IIdentityProfileListRequest
 ): Promise<IIdentityProfileListResponse> {
-	const service = ServiceFactory.get<IIdentityProfile>(serviceName);
+	const component = ComponentFactory.get<IIdentityProfileComponent>(componentName);
 
 	const filterPairs = request?.query?.filters?.split(",") ?? [];
 	const filters = filterPairs.map(pair => {
@@ -536,7 +535,7 @@ export async function identitiesList(
 	});
 
 	return {
-		body: await service.list(
+		body: await component.list(
 			filters,
 			request?.query?.propertyNames?.split(","),
 			request?.query?.cursor,
