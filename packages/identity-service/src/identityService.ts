@@ -26,9 +26,10 @@ export class IdentityService implements IIdentityComponent {
 
 	/**
 	 * Create a new instance of IdentityService.
-	 * @param config The configuration for the service.
+	 * @param options The options for the service.
+	 * @param options.config The configuration for the service.
 	 */
-	constructor(config?: IIdentityServiceConfig) {
+	constructor(options?: { config?: IIdentityServiceConfig }) {
 		const names = IdentityConnectorFactory.names();
 		if (names.length === 0) {
 			throw new GeneralError(this.CLASS_NAME, "noConnectors");
