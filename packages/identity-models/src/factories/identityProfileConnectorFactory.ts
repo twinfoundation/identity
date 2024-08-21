@@ -8,5 +8,5 @@ import type { IIdentityProfileConnector } from "../models/IIdentityProfileConnec
  */
 // eslint-disable-next-line @typescript-eslint/naming-convention
 export const IdentityProfileConnectorFactory = Factory.createFactory<IIdentityProfileConnector>(
-	"identityProfileConnector"
+	"identity-profile-connector"
 );

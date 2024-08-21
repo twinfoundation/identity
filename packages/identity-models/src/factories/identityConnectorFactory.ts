@@ -8,4 +8,4 @@ import type { IIdentityConnector } from "../models/IIdentityConnector";
  */
 // eslint-disable-next-line @typescript-eslint/naming-convention
 export const IdentityConnectorFactory =
-	Factory.createFactory<IIdentityConnector>("identityConnector");
+	Factory.createFactory<IIdentityConnector>("identity-connector");
