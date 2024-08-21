@@ -1159,6 +1159,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 
 		const addresses = await this._walletConnector.getAddresses(
 			controller,
+			0,
 			this._config.walletAddressIndex ?? 0,
 			1
 		);
