@@ -1,5 +1,6 @@
 // Copyright 2024 IOTA Stiftung.
 // SPDX-License-Identifier: Apache-2.0.
+import { Is } from "@gtsc/core";
 
 /**
  * Helper methods for documents.
@@ -14,6 +15,13 @@ export class DocumentHelper {
 		id: string;
 		hash: string | undefined;
 	} {
+		if (!Is.stringValue(documentId)) {
+			return {
+				id: "",
+				hash: ""
+			};
+		}
+
 		const hashIndex = documentId.indexOf("#");
 
 		return {

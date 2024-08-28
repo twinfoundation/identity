@@ -11,7 +11,7 @@ import {
 	type IError
 } from "@gtsc/core";
 import { Bip39, Sha256 } from "@gtsc/crypto";
-import type { IIdentityConnector } from "@gtsc/identity-models";
+import { DocumentHelper, type IIdentityConnector } from "@gtsc/identity-models";
 import { nameof } from "@gtsc/nameof";
 import {
 	DidVerificationMethodType,
@@ -333,18 +333,16 @@ export class IotaIdentityConnector implements IIdentityConnector {
 		Guards.stringValue(this.CLASS_NAME, nameof(verificationMethodId), verificationMethodId);
 
 		try {
-			const hashIndex = verificationMethodId.indexOf("#");
-			if (hashIndex <= 0) {
+			const idParts = DocumentHelper.parse(verificationMethodId);
+			if (Is.empty(idParts.hash)) {
 				throw new NotFoundError(this.CLASS_NAME, "missingDid", verificationMethodId);
 			}
 
-			const documentId = verificationMethodId.slice(0, hashIndex);
-
 			const identityClient = new IotaIdentityClient(new Client(this._config.clientOptions));
-			const document = await identityClient.resolveDid(IotaDID.parse(documentId));
+			const document = await identityClient.resolveDid(IotaDID.parse(idParts.id));
 
 			if (Is.undefined(document)) {
-				throw new NotFoundError(this.CLASS_NAME, "documentNotFound", documentId);
+				throw new NotFoundError(this.CLASS_NAME, "documentNotFound", idParts.id);
 			}
 
 			const methods = document.methods();
@@ -442,17 +440,16 @@ export class IotaIdentityConnector implements IIdentityConnector {
 		Guards.stringValue(this.CLASS_NAME, nameof(serviceId), serviceId);
 
 		try {
-			const hashIndex = serviceId.indexOf("#");
-			if (hashIndex <= 0) {
+			const idParts = DocumentHelper.parse(serviceId);
+			if (Is.empty(idParts.hash)) {
 				throw new NotFoundError(this.CLASS_NAME, "missingDid", serviceId);
 			}
 
-			const documentId = serviceId.slice(0, hashIndex);
 			const identityClient = new IotaIdentityClient(new Client(this._config.clientOptions));
-			const document = await identityClient.resolveDid(IotaDID.parse(documentId));
+			const document = await identityClient.resolveDid(IotaDID.parse(idParts.id));
 
 			if (Is.undefined(document)) {
-				throw new NotFoundError(this.CLASS_NAME, "documentNotFound", documentId);
+				throw new NotFoundError(this.CLASS_NAME, "documentNotFound", idParts.id);
 			}
 
 			const services = document.service();
@@ -524,17 +521,16 @@ export class IotaIdentityConnector implements IIdentityConnector {
 		}
 
 		try {
-			const hashIndex = verificationMethodId.indexOf("#");
-			if (hashIndex <= 0) {
+			const idParts = DocumentHelper.parse(verificationMethodId);
+			if (Is.empty(idParts.hash)) {
 				throw new NotFoundError(this.CLASS_NAME, "missingDid", verificationMethodId);
 			}
 
-			const issuerDocumentId = verificationMethodId.slice(0, hashIndex);
 			const identityClient = new IotaIdentityClient(new Client(this._config.clientOptions));
-			const issuerDocument = await identityClient.resolveDid(IotaDID.parse(issuerDocumentId));
+			const issuerDocument = await identityClient.resolveDid(IotaDID.parse(idParts.id));
 
 			if (Is.undefined(issuerDocument)) {
-				throw new NotFoundError(this.CLASS_NAME, "documentNotFound", issuerDocumentId);
+				throw new NotFoundError(this.CLASS_NAME, "documentNotFound", idParts.id);
 			}
 
 			const methods = issuerDocument.methods();
@@ -566,7 +562,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 				context: finalContexts,
 				id: credentialId,
 				type: finalTypes,
-				issuer: issuerDocumentId,
+				issuer: idParts.id,
 				credentialSubject: subject as Subject,
 				credentialStatus: Is.undefined(revocationIndex)
 					? undefined
@@ -798,18 +794,16 @@ export class IotaIdentityConnector implements IIdentityConnector {
 			Guards.integer(this.CLASS_NAME, nameof(expiresInMinutes), expiresInMinutes);
 		}
 		try {
-			const hashIndex = presentationMethodId.indexOf("#");
-			if (hashIndex <= 0) {
+			const idParts = DocumentHelper.parse(presentationMethodId);
+			if (Is.empty(idParts.hash)) {
 				throw new NotFoundError(this.CLASS_NAME, "missingDid", presentationMethodId);
 			}
 
-			const holderDocumentId = presentationMethodId.slice(0, hashIndex);
-
 			const identityClient = new IotaIdentityClient(new Client(this._config.clientOptions));
-			const issuerDocument = await identityClient.resolveDid(IotaDID.parse(holderDocumentId));
+			const issuerDocument = await identityClient.resolveDid(IotaDID.parse(idParts.id));
 
 			if (Is.undefined(issuerDocument)) {
-				throw new NotFoundError(this.CLASS_NAME, "documentNotFound", holderDocumentId);
+				throw new NotFoundError(this.CLASS_NAME, "documentNotFound", idParts.id);
 			}
 
 			const methods = issuerDocument.methods();
@@ -841,7 +835,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 				context: finalContexts,
 				verifiableCredential: verifiableCredentials.map(j => new Jwt(j)),
 				type: finalTypes,
-				holder: holderDocumentId
+				holder: idParts.id
 			});
 
 			const verificationMethodKey = await this._vaultConnector.getKey(
@@ -1021,18 +1015,16 @@ export class IotaIdentityConnector implements IIdentityConnector {
 		Guards.uint8Array(this.CLASS_NAME, nameof(bytes), bytes);
 
 		try {
-			const hashIndex = verificationMethodId.indexOf("#");
-			if (hashIndex <= 0) {
+			const idParts = DocumentHelper.parse(verificationMethodId);
+			if (Is.empty(idParts.hash)) {
 				throw new NotFoundError(this.CLASS_NAME, "missingDid", verificationMethodId);
 			}
 
-			const documentId = verificationMethodId.slice(0, hashIndex);
-
 			const identityClient = new IotaIdentityClient(new Client(this._config.clientOptions));
-			const document = await identityClient.resolveDid(IotaDID.parse(documentId));
+			const document = await identityClient.resolveDid(IotaDID.parse(idParts.id));
 
 			if (Is.undefined(document)) {
-				throw new NotFoundError(this.CLASS_NAME, "documentNotFound", documentId);
+				throw new NotFoundError(this.CLASS_NAME, "documentNotFound", idParts.id);
 			}
 
 			const methods = document.methods();
@@ -1102,18 +1094,16 @@ export class IotaIdentityConnector implements IIdentityConnector {
 		Guards.uint8Array(this.CLASS_NAME, nameof(signatureValue), signatureValue);
 
 		try {
-			const hashIndex = verificationMethodId.indexOf("#");
-			if (hashIndex <= 0) {
+			const idParts = DocumentHelper.parse(verificationMethodId);
+			if (Is.empty(idParts.hash)) {
 				throw new NotFoundError(this.CLASS_NAME, "missingDid", verificationMethodId);
 			}
 
-			const documentId = verificationMethodId.slice(0, hashIndex);
-
 			const identityClient = new IotaIdentityClient(new Client(this._config.clientOptions));
-			const document = await identityClient.resolveDid(IotaDID.parse(documentId));
+			const document = await identityClient.resolveDid(IotaDID.parse(idParts.id));
 
 			if (Is.undefined(document)) {
-				throw new NotFoundError(this.CLASS_NAME, "documentNotFound", documentId);
+				throw new NotFoundError(this.CLASS_NAME, "documentNotFound", idParts.id);
 			}
 
 			const methods = document.methods();
