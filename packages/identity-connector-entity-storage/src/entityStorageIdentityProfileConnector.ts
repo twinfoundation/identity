@@ -241,7 +241,7 @@ export class EntityStorageIdentityProfileConnector implements IIdentityProfileCo
 					conditions.push({
 						property: `properties.${filter.propertyName}.value`,
 						value: filter.propertyValue,
-						operator: ComparisonOperator.Equals
+						comparison: ComparisonOperator.Equals
 					});
 				}
 			}

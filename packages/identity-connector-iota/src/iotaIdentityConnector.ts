@@ -1,16 +1,8 @@
 // Copyright 2024 IOTA Stiftung.
 // SPDX-License-Identifier: Apache-2.0.
-import {
-	BaseError,
-	Converter,
-	GeneralError,
-	Guards,
-	Is,
-	NotFoundError,
-	RandomHelper,
-	type IError
-} from "@gtsc/core";
-import { Bip39, Sha256 } from "@gtsc/crypto";
+import { Converter, GeneralError, Guards, Is, NotFoundError, RandomHelper } from "@gtsc/core";
+import { Sha256 } from "@gtsc/crypto";
+import { Iota } from "@gtsc/dlt-iota";
 import { DocumentHelper, type IIdentityConnector } from "@gtsc/identity-models";
 import { nameof } from "@gtsc/nameof";
 import {
@@ -22,7 +14,6 @@ import {
 	type IDidVerifiablePresentation
 } from "@gtsc/standards-w3c-did";
 import { VaultConnectorFactory, VaultKeyType, type IVaultConnector } from "@gtsc/vault-models";
-import { WalletConnectorFactory, type IWalletConnector } from "@gtsc/wallet-models";
 import {
 	Credential,
 	Duration,
@@ -58,13 +49,7 @@ import {
 	type IJwkParams,
 	type Subject
 } from "@iota/identity-wasm/node/index.js";
-import {
-	Client,
-	CoinType,
-	Utils,
-	type Block,
-	type IBuildBlockOptions
-} from "@iota/sdk-wasm/node/lib/index.js";
+import { Client, Utils } from "@iota/sdk-wasm/node/lib/index.js";
 import type { IIotaIdentityConnectorConfig } from "./models/IIotaIdentityConnectorConfig";
 
 /**
@@ -75,29 +60,6 @@ export class IotaIdentityConnector implements IIdentityConnector {
 	 * The namespace supported by the identity connector.
 	 */
 	public static readonly NAMESPACE: string = "iota";
-
-	/**
-	 * Default name for the seed secret.
-	 */
-	private static readonly _DEFAULT_SEED_SECRET_NAME: string = "seed";
-
-	/**
-	 * Default name for the mnemonic secret.
-	 * @internal
-	 */
-	private static readonly _DEFAULT_MNEMONIC_SECRET_NAME: string = "mnemonic";
-
-	/**
-	 * Default coin type.
-	 * @internal
-	 */
-	private static readonly _DEFAULT_COIN_TYPE: number = CoinType.IOTA;
-
-	/**
-	 * The default length of time to wait for the inclusion of a transaction in seconds.
-	 * @internal
-	 */
-	private static readonly _DEFAULT_INCLUSION_TIMEOUT: number = 60;
 
 	/**
 	 * Runtime name for the class.
@@ -111,12 +73,6 @@ export class IotaIdentityConnector implements IIdentityConnector {
 	private readonly _config: IIotaIdentityConnectorConfig;
 
 	/**
-	 * The wallet for generating addresses, only required for write operations.
-	 * @internal
-	 */
-	private readonly _walletConnector?: IWalletConnector;
-
-	/**
 	 * The vault for the keys.
 	 * @internal
 	 */
@@ -126,14 +82,9 @@ export class IotaIdentityConnector implements IIdentityConnector {
 	 * Create a new instance of IotaIdentityConnector.
 	 * @param options The options for the identity connector.
 	 * @param options.vaultConnectorType The vault connector type for the private keys, defaults to "vault".
-	 * @param options.walletConnectorType The wallet connector type for generating addresses, defaults to "wallet".
 	 * @param options.config The configuration to use.
 	 */
-	constructor(options: {
-		vaultConnectorType?: string;
-		walletConnectorType?: string;
-		config: IIotaIdentityConnectorConfig;
-	}) {
+	constructor(options: { vaultConnectorType?: string; config: IIotaIdentityConnectorConfig }) {
 		Guards.object(this.CLASS_NAME, nameof(options), options);
 		Guards.object<IIotaIdentityConnectorConfig>(
 			this.CLASS_NAME,
@@ -147,14 +98,8 @@ export class IotaIdentityConnector implements IIdentityConnector {
 		);
 
 		this._vaultConnector = VaultConnectorFactory.get(options.vaultConnectorType ?? "vault");
-		this._walletConnector = WalletConnectorFactory.getIfExists(
-			options.walletConnectorType ?? "wallet"
-		);
 		this._config = options.config;
-		this._config.vaultMnemonicId ??= IotaIdentityConnector._DEFAULT_MNEMONIC_SECRET_NAME;
-		this._config.vaultSeedId ??= IotaIdentityConnector._DEFAULT_SEED_SECRET_NAME;
-		this._config.coinType ??= IotaIdentityConnector._DEFAULT_COIN_TYPE;
-		this._config.inclusionTimeoutSeconds ??= IotaIdentityConnector._DEFAULT_INCLUSION_TIMEOUT;
+		Iota.populateConfig(this._config);
 	}
 
 	/**
@@ -184,7 +129,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 				this.CLASS_NAME,
 				"createDocumentFailed",
 				undefined,
-				this.extractPayloadError(error)
+				Iota.extractPayloadError(error)
 			);
 		}
 	}
@@ -211,7 +156,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 				this.CLASS_NAME,
 				"resolveDocumentFailed",
 				undefined,
-				this.extractPayloadError(error)
+				Iota.extractPayloadError(error)
 			);
 		}
 	}
@@ -312,7 +257,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 				this.CLASS_NAME,
 				"addVerificationMethodFailed",
 				undefined,
-				this.extractPayloadError(error)
+				Iota.extractPayloadError(error)
 			);
 		}
 	}
@@ -363,7 +308,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 				this.CLASS_NAME,
 				"removeVerificationMethodFailed",
 				undefined,
-				this.extractPayloadError(error)
+				Iota.extractPayloadError(error)
 			);
 		}
 	}
@@ -423,7 +368,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 				this.CLASS_NAME,
 				"addServiceFailed",
 				undefined,
-				this.extractPayloadError(error)
+				Iota.extractPayloadError(error)
 			);
 		}
 	}
@@ -467,7 +412,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 				this.CLASS_NAME,
 				"removeServiceFailed",
 				undefined,
-				this.extractPayloadError(error)
+				Iota.extractPayloadError(error)
 			);
 		}
 	}
@@ -622,7 +567,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 				this.CLASS_NAME,
 				"createVerifiableCredentialFailed",
 				undefined,
-				this.extractPayloadError(error)
+				Iota.extractPayloadError(error)
 			);
 		}
 	}
@@ -676,7 +621,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 				this.CLASS_NAME,
 				"checkingVerifiableCredentialFailed",
 				undefined,
-				this.extractPayloadError(error)
+				Iota.extractPayloadError(error)
 			);
 		}
 	}
@@ -713,7 +658,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 				this.CLASS_NAME,
 				"revokeVerifiableCredentialsFailed",
 				undefined,
-				this.extractPayloadError(error)
+				Iota.extractPayloadError(error)
 			);
 		}
 	}
@@ -750,7 +695,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 				this.CLASS_NAME,
 				"unrevokeVerifiableCredentialsFailed",
 				undefined,
-				this.extractPayloadError(error)
+				Iota.extractPayloadError(error)
 			);
 		}
 	}
@@ -891,7 +836,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 				this.CLASS_NAME,
 				"createVerifiablePresentationFailed",
 				undefined,
-				this.extractPayloadError(error)
+				Iota.extractPayloadError(error)
 			);
 		}
 	}
@@ -989,7 +934,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 				this.CLASS_NAME,
 				"checkingVerifiablePresentationFailed",
 				undefined,
-				this.extractPayloadError(error)
+				Iota.extractPayloadError(error)
 			);
 		}
 	}
@@ -1069,7 +1014,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 				this.CLASS_NAME,
 				"createProofFailed",
 				undefined,
-				this.extractPayloadError(error)
+				Iota.extractPayloadError(error)
 			);
 		}
 	}
@@ -1122,7 +1067,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 				this.CLASS_NAME,
 				"verifyProofFailed",
 				undefined,
-				this.extractPayloadError(error)
+				Iota.extractPayloadError(error)
 			);
 		}
 	}
@@ -1140,14 +1085,13 @@ export class IotaIdentityConnector implements IIdentityConnector {
 		document: IotaDocument,
 		isNewDocument: boolean
 	): Promise<IDidDocument> {
-		if (!Is.object(this._walletConnector)) {
-			throw new GeneralError(this.CLASS_NAME, "walletConnectorMissing");
-		}
 		const identityClient = new IotaIdentityClient(new Client(this._config.clientOptions));
 
 		document.setMetadataUpdated(Timestamp.nowUTC());
 
-		const addresses = await this._walletConnector.getAddresses(
+		const addresses = await Iota.getAddresses(
+			this._config,
+			this._vaultConnector,
 			controller,
 			0,
 			this._config.walletAddressIndex ?? 0,
@@ -1175,121 +1119,20 @@ export class IotaIdentityConnector implements IIdentityConnector {
 			});
 		}
 
-		const blockDetails = await this.prepareAndPostTransaction(controller, identityClient.client, {
-			outputs: [aliasOutput]
-		});
+		const blockDetails = await Iota.prepareAndPostTransaction(
+			this._config,
+			this._vaultConnector,
+			controller,
+			identityClient.client,
+			{
+				outputs: [aliasOutput]
+			}
+		);
 
 		const networkHrp = await identityClient.getNetworkHrp();
 		const published = await IotaDocument.unpackFromBlock(networkHrp, blockDetails.block);
 
 		return published[0].toJSON() as IDidDocument;
-	}
-
-	/**
-	 * Prepare a transaction for sending, post and wait for inclusion.
-	 * @param controller The identity of the user to access the vault keys.
-	 * @param client The client to use.
-	 * @param options The options for the transaction.
-	 * @returns The block id and block.
-	 * @internal
-	 */
-	private async prepareAndPostTransaction(
-		controller: string,
-		client: Client,
-		options: IBuildBlockOptions
-	): Promise<{ blockId: string; block: Block }> {
-		const seed = await this.getSeed(controller);
-		const secretManager = { hexSeed: Converter.bytesToHex(seed, true) };
-
-		const prepared = await client.prepareTransaction(secretManager, {
-			coinType: this._config.coinType ?? IotaIdentityConnector._DEFAULT_COIN_TYPE,
-			...options
-		});
-
-		const signed = await client.signTransaction(secretManager, prepared);
-
-		const blockIdAndBlock = await client.postBlockPayload(signed);
-
-		try {
-			const timeoutSeconds =
-				this._config.inclusionTimeoutSeconds ?? IotaIdentityConnector._DEFAULT_INCLUSION_TIMEOUT;
-
-			await client.retryUntilIncluded(blockIdAndBlock[0], 2, Math.ceil(timeoutSeconds / 2));
-		} catch (error) {
-			throw new GeneralError(
-				this.CLASS_NAME,
-				"inclusionFailed",
-				undefined,
-				this.extractPayloadError(error)
-			);
-		}
-
-		return {
-			blockId: blockIdAndBlock[0],
-			block: blockIdAndBlock[1]
-		};
-	}
-
-	/**
-	 * Get the seed from the vault.
-	 * @param controller The identity of the user to access the vault keys.
-	 * @returns The seed.
-	 * @internal
-	 */
-	private async getSeed(controller: string): Promise<Uint8Array> {
-		try {
-			const seedBase64 = await this._vaultConnector.getSecret<string>(
-				this.buildSeedKey(controller)
-			);
-			return Converter.base64ToBytes(seedBase64);
-		} catch {}
-
-		const mnemonic = await this._vaultConnector.getSecret<string>(
-			this.buildMnemonicKey(controller)
-		);
-
-		return Bip39.mnemonicToSeed(mnemonic);
-	}
-
-	/**
-	 * Extract error from SDK payload.
-	 * @param error The error to extract.
-	 * @returns The extracted error.
-	 */
-	private extractPayloadError(error: unknown): IError {
-		if (Is.json(error)) {
-			const obj = JSON.parse(error);
-			const message = obj.payload?.error;
-			if (message === "no input with matching ed25519 address provided") {
-				return new GeneralError(this.CLASS_NAME, "insufficientFunds");
-			}
-			return {
-				name: "IOTA",
-				message
-			};
-		}
-
-		return BaseError.fromError(error);
-	}
-
-	/**
-	 * Build the key name to access the mnemonic in the vault.
-	 * @param identity The identity of the user to access the vault keys.
-	 * @returns The vault key.
-	 * @internal
-	 */
-	private buildMnemonicKey(identity: string): string {
-		return `${identity}/${this._config.vaultMnemonicId ?? IotaIdentityConnector._DEFAULT_MNEMONIC_SECRET_NAME}`;
-	}
-
-	/**
-	 * Build the key name to access the seed in the vault.
-	 * @param identity The identity of the user to access the vault keys.
-	 * @returns The vault key.
-	 * @internal
-	 */
-	private buildSeedKey(identity: string): string {
-		return `${identity}/${this._config.vaultSeedId ?? IotaIdentityConnector._DEFAULT_SEED_SECRET_NAME}`;
 	}
 
 	/**
