@@ -1139,6 +1139,7 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 	 * Get all the methods from a document.
 	 * @param document The document to get the methods from.
 	 * @returns The methods.
+	 * @internal
 	 */
 	private getAllMethods(
 		document: IDidDocument
@@ -1170,6 +1171,7 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 	 * @param document The document to check.
 	 * @param revocationBitmapIndex The revocation index to check.
 	 * @returns True if the index is revoked.
+	 * @internal
 	 */
 	private async checkRevocation(
 		document: IDidDocument,
