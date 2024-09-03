@@ -458,7 +458,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 		}
 		if (Is.array(contexts)) {
 			Guards.arrayValue(this.CLASS_NAME, nameof(contexts), contexts);
-		} else if (Is.stringValue(types)) {
+		} else if (Is.stringValue(contexts)) {
 			Guards.stringValue(this.CLASS_NAME, nameof(contexts), contexts);
 		}
 		if (!Is.undefined(revocationIndex)) {
