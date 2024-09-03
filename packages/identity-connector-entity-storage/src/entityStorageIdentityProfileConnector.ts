@@ -224,14 +224,6 @@ export class EntityStorageIdentityProfileConnector implements IIdentityProfileCo
 		 * An optional cursor, when defined can be used to call find to get more entities.
 		 */
 		cursor?: string;
-		/**
-		 * Number of entities to return.
-		 */
-		pageSize?: number;
-		/**
-		 * Total entities length.
-		 */
-		totalEntities: number;
 	}> {
 		try {
 			const conditions = [];
@@ -285,9 +277,7 @@ export class EntityStorageIdentityProfileConnector implements IIdentityProfileCo
 
 			return {
 				items,
-				cursor: result.cursor,
-				pageSize: result.pageSize,
-				totalEntities: result.totalEntities
+				cursor: result.cursor
 			};
 		} catch (error) {
 			throw new GeneralError(this.CLASS_NAME, "listFailed", undefined, error);

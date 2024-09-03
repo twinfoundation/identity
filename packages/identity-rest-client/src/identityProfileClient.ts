@@ -148,14 +148,6 @@ export class IdentityProfileClient extends BaseRestClient implements IIdentityPr
 		 * An optional cursor, when defined can be used to call find to get more entities.
 		 */
 		cursor?: string;
-		/**
-		 * Number of entities to return.
-		 */
-		pageSize?: number;
-		/**
-		 * Total entities length.
-		 */
-		totalEntities: number;
 	}> {
 		const response = await this.fetch<IIdentityProfileListRequest, IIdentityProfileListResponse>(
 			"/query",
