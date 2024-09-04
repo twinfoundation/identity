@@ -3,6 +3,7 @@
 import { BaseRestClient } from "@gtsc/api-core";
 import type { IBaseRestClientConfig } from "@gtsc/api-models";
 import { Guards } from "@gtsc/core";
+import type { IProperty } from "@gtsc/data-core";
 import type {
 	IIdentityProfileComponent,
 	IIdentityProfileCreateRequest,
@@ -16,7 +17,6 @@ import type {
 	IIdentityProfileUpdateRequest
 } from "@gtsc/identity-models";
 import { nameof } from "@gtsc/nameof";
-import type { IProperty } from "@gtsc/schema";
 
 /**
  * Client for performing identity through to REST endpoints.

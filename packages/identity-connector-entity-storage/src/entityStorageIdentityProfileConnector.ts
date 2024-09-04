@@ -1,6 +1,7 @@
 // Copyright 2024 IOTA Stiftung.
 // SPDX-License-Identifier: Apache-2.0.
 import { AlreadyExistsError, BaseError, GeneralError, Guards, Is, NotFoundError } from "@gtsc/core";
+import { PropertyHelper } from "@gtsc/data-core";
 import { ComparisonOperator } from "@gtsc/entity";
 import {
 	EntityStorageConnectorFactory,
@@ -8,7 +9,6 @@ import {
 } from "@gtsc/entity-storage-models";
 import type { IIdentityProfileConnector, IIdentityProfileProperty } from "@gtsc/identity-models";
 import { nameof } from "@gtsc/nameof";
-import { PropertyHelper } from "@gtsc/schema";
 import type { IdentityProfile } from "./entities/identityProfile";
 import type { IdentityProfileProperty } from "./entities/identityProfileProperty";
 

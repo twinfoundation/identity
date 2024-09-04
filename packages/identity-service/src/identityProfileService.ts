@@ -1,6 +1,7 @@
 // Copyright 2024 IOTA Stiftung.
 // SPDX-License-Identifier: Apache-2.0.
 import { BaseError, GeneralError, Guards } from "@gtsc/core";
+import type { IProperty } from "@gtsc/data-core";
 import {
 	IdentityProfileConnectorFactory,
 	type IIdentityProfileComponent,
@@ -8,7 +9,6 @@ import {
 	type IIdentityProfileProperty
 } from "@gtsc/identity-models";
 import { nameof } from "@gtsc/nameof";
-import type { IProperty } from "@gtsc/schema";
 
 /**
  * Class which implements the identity profile contract.

@@ -1,6 +1,7 @@
 // Copyright 2024 IOTA Stiftung.
 // SPDX-License-Identifier: Apache-2.0.
 import { I18n } from "@gtsc/core";
+import { PropertyHelper } from "@gtsc/data-core";
 import { MemoryEntityStorageConnector } from "@gtsc/entity-storage-connector-memory";
 import { EntityStorageConnectorFactory } from "@gtsc/entity-storage-models";
 import {
@@ -9,7 +10,6 @@ import {
 	type IIdentityProfileProperty
 } from "@gtsc/identity-models";
 import { nameof } from "@gtsc/nameof";
-import { PropertyHelper } from "@gtsc/schema";
 import {
 	EntityStorageVaultConnector,
 	initSchema as initSchemaVault,
@@ -104,13 +104,15 @@ describe("EntityStorageIdentityProfileConnector", () => {
 		const service = new EntityStorageIdentityProfileConnector();
 
 		const properties: IIdentityProfileProperty[] = [];
-		PropertyHelper.setText(properties, "name", "Test Identity", { isPublic: true });
+		PropertyHelper.setValue(properties, "name", "text", "Test Identity", {
+			isPublic: true
+		});
 		await service.create(identityResult.id, properties);
 
 		const identity = await service.get(identityResult.id);
 
 		expect(identity.properties?.[0].key).toEqual("name");
-		expect(identity.properties?.[0].type).toEqual("https://schema.org/Text");
+		expect(identity.properties?.[0].type).toEqual("text");
 		expect(identity.properties?.[0].value).toEqual("Test Identity");
 		expect(identity.properties?.[0].isPublic).toEqual(true);
 	});
@@ -122,14 +124,16 @@ describe("EntityStorageIdentityProfileConnector", () => {
 		const service = new EntityStorageIdentityProfileConnector();
 
 		const properties: IIdentityProfileProperty[] = [];
-		PropertyHelper.setText(properties, "name", "Test Identity", { isPublic: true });
-		PropertyHelper.setText(properties, "type", "Test", { isPublic: false });
+		PropertyHelper.setValue(properties, "name", "text", "Test Identity", {
+			isPublic: true
+		});
+		PropertyHelper.setValue(properties, "type", "text", "Test", { isPublic: false });
 		await service.create(identityResult.id, properties);
 
 		const identity = await service.get(identityResult.id, false);
 
 		expect(identity.properties?.[0].key).toEqual("name");
-		expect(identity.properties?.[0].type).toEqual("https://schema.org/Text");
+		expect(identity.properties?.[0].type).toEqual("text");
 		expect(identity.properties?.[0].value).toEqual("Test Identity");
 		expect(identity.properties?.[0].isPublic).toEqual(true);
 	});
@@ -175,24 +179,24 @@ describe("EntityStorageIdentityProfileConnector", () => {
 		const identityResult = await identityService.createDocument(TEST_CONTROLLER);
 
 		const properties1: IIdentityProfileProperty[] = [];
-		PropertyHelper.setText(properties1, "name", "Test Identity 1", { isPublic: true });
+		PropertyHelper.setValue(properties1, "name", "text", "Test Identity 1", { isPublic: true });
 
 		await service.create(identityResult.id, properties1);
 
 		const profile = identityProfileEntityStorage.getStore();
 		expect(profile?.[0].identity).toEqual(identityResult.id);
-		expect(profile?.[0].properties?.name?.type).toEqual("https://schema.org/Text");
+		expect(profile?.[0].properties?.name?.type).toEqual("text");
 		expect(profile?.[0].properties?.name?.value).toEqual("Test Identity 1");
 		expect(profile?.[0].properties?.name?.isPublic).toEqual(true);
 
 		const properties2: IIdentityProfileProperty[] = [];
-		PropertyHelper.setText(properties2, "name", "Test Identity 2", { isPublic: false });
+		PropertyHelper.setValue(properties2, "name", "text", "Test Identity 2", { isPublic: false });
 
 		await service.update(identityResult.id, properties2);
 
 		const profile2 = identityProfileEntityStorage.getStore();
 		expect(profile2?.[0].identity).toEqual(identityResult.id);
-		expect(profile2?.[0].properties?.name?.type).toEqual("https://schema.org/Text");
+		expect(profile2?.[0].properties?.name?.type).toEqual("text");
 		expect(profile2?.[0].properties?.name?.value).toEqual("Test Identity 2");
 		expect(profile2?.[0].properties?.name?.isPublic).toEqual(false);
 	});
@@ -220,16 +224,16 @@ describe("EntityStorageIdentityProfileConnector", () => {
 
 		for (let i = 0; i < 3; i++) {
 			const properties: IIdentityProfileProperty[] = [];
-			PropertyHelper.setText(properties, "name", `Test Node Identity ${i}`);
-			PropertyHelper.setText(properties, "role", IdentityRole.Node);
+			PropertyHelper.setValue(properties, "name", "text", `Test Node Identity ${i}`);
+			PropertyHelper.setValue(properties, "role", "text", IdentityRole.Node);
 			const identity = await identityService.createDocument(TEST_CONTROLLER);
 			await service.create(identity.id, properties);
 		}
 
 		for (let i = 0; i < 7; i++) {
 			const properties: IIdentityProfileProperty[] = [];
-			PropertyHelper.setText(properties, "name", `Test User Identity ${i}`);
-			PropertyHelper.setText(properties, "role", IdentityRole.User);
+			PropertyHelper.setValue(properties, "name", "text", `Test User Identity ${i}`);
+			PropertyHelper.setValue(properties, "role", "text", IdentityRole.User);
 			const identity = await identityService.createDocument(TEST_CONTROLLER);
 			await service.create(identity.id, properties);
 		}
@@ -257,9 +261,11 @@ describe("EntityStorageIdentityProfileConnector", () => {
 
 		for (let i = 0; i < 3; i++) {
 			const properties: IIdentityProfileProperty[] = [];
-			PropertyHelper.setText(properties, "name", `Test Node Identity ${i}`, { isPublic: true });
-			PropertyHelper.setText(properties, "role", IdentityRole.Node, { isPublic: true });
-			PropertyHelper.setText(properties, "foo", "bar", { isPublic: false });
+			PropertyHelper.setValue(properties, "name", "text", `Test Node Identity ${i}`, {
+				isPublic: true
+			});
+			PropertyHelper.setValue(properties, "role", "text", IdentityRole.Node, { isPublic: true });
+			PropertyHelper.setValue(properties, "foo", "text", "bar", { isPublic: false });
 			const identity = await identityService.createDocument(TEST_CONTROLLER);
 			await service.create(identity.id, properties);
 		}
