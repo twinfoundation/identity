@@ -5,7 +5,8 @@ import type { IComponent } from "@gtsc/core";
 /**
  * Interface describing a contract which provides profile operations.
  */
-export interface IIdentityProfileConnector extends IComponent {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export interface IIdentityProfileConnector<T = any, U = any> extends IComponent {
 	/**
 	 * Create the profile properties for an identity.
 	 * @param identity The identity of the profile to create.
@@ -13,7 +14,7 @@ export interface IIdentityProfileConnector extends IComponent {
 	 * @param privateProfile The private profile data as JSON-LD.
 	 * @returns Nothing.
 	 */
-	create(identity: string, publicProfile?: unknown, privateProfile?: unknown): Promise<void>;
+	create(identity: string, publicProfile?: T, privateProfile?: U): Promise<void>;
 
 	/**
 	 * Get the profile properties for an identity.
@@ -24,11 +25,11 @@ export interface IIdentityProfileConnector extends IComponent {
 	 */
 	get(
 		identity: string,
-		publicPropertyNames?: string[],
-		privatePropertyNames?: string[]
+		publicPropertyNames?: (keyof T)[],
+		privatePropertyNames?: (keyof U)[]
 	): Promise<{
-		publicProfile?: unknown;
-		privateProfile?: unknown;
+		publicProfile?: Partial<T>;
+		privateProfile?: Partial<U>;
 	}>;
 
 	/**
@@ -38,7 +39,7 @@ export interface IIdentityProfileConnector extends IComponent {
 	 * @param privateProfile The private profile data as JSON-LD.
 	 * @returns Nothing.
 	 */
-	update(identity: string, publicProfile?: unknown, privateProfile?: unknown): Promise<void>;
+	update(identity: string, publicProfile?: T, privateProfile?: U): Promise<void>;
 
 	/**
 	 * Delete the profile for an identity.
@@ -66,8 +67,8 @@ export interface IIdentityProfileConnector extends IComponent {
 			propertyName: string;
 			propertyValue: unknown;
 		}[],
-		publicPropertyNames?: string[],
-		privatePropertyNames?: string[],
+		publicPropertyNames?: (keyof T)[],
+		privatePropertyNames?: (keyof U)[],
 		cursor?: string,
 		pageSize?: number
 	): Promise<{
@@ -76,8 +77,8 @@ export interface IIdentityProfileConnector extends IComponent {
 		 */
 		items: {
 			identity: string;
-			publicProfile?: unknown;
-			privateProfile?: unknown;
+			publicProfile?: Partial<T>;
+			privateProfile?: Partial<U>;
 		}[];
 		/**
 		 * An optional cursor, when defined can be used to call find to get more entities.

@@ -11,7 +11,8 @@ import { nameof } from "@gtsc/nameof";
 /**
  * Class which implements the identity profile contract.
  */
-export class IdentityProfileService implements IIdentityProfileComponent {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export class IdentityProfileService<T = any, U = any> implements IIdentityProfileComponent<T, U> {
 	/**
 	 * Runtime name for the class.
 	 */
@@ -21,7 +22,7 @@ export class IdentityProfileService implements IIdentityProfileComponent {
 	 * The identity profile connector.
 	 * @internal
 	 */
-	private readonly _identityProfileConnector: IIdentityProfileConnector;
+	private readonly _identityProfileConnector: IIdentityProfileConnector<T, U>;
 
 	/**
 	 * Create a new instance of IdentityProfileService.
@@ -41,11 +42,7 @@ export class IdentityProfileService implements IIdentityProfileComponent {
 	 * @param identity The identity to perform the profile operation on.
 	 * @returns Nothing.
 	 */
-	public async create(
-		publicProfile?: unknown,
-		privateProfile?: unknown,
-		identity?: string
-	): Promise<void> {
+	public async create(publicProfile?: T, privateProfile?: U, identity?: string): Promise<void> {
 		Guards.stringValue(this.CLASS_NAME, nameof(identity), identity);
 
 		try {
@@ -66,13 +63,13 @@ export class IdentityProfileService implements IIdentityProfileComponent {
 	 * @returns The items identity and the properties.
 	 */
 	public async get(
-		publicPropertyNames?: string[],
-		privatePropertyNames?: string[],
+		publicPropertyNames?: (keyof T)[],
+		privatePropertyNames?: (keyof U)[],
 		identity?: string
 	): Promise<{
 		identity: string;
-		publicProfile?: unknown;
-		privateProfile?: unknown;
+		publicProfile?: Partial<T>;
+		privateProfile?: Partial<U>;
 	}> {
 		Guards.stringValue(this.CLASS_NAME, nameof(identity), identity);
 
@@ -101,7 +98,10 @@ export class IdentityProfileService implements IIdentityProfileComponent {
 	 * @param propertyNames The properties to get for the item, defaults to all.
 	 * @returns The items properties.
 	 */
-	public async getPublic(identity: string, propertyNames?: string[]): Promise<unknown> {
+	public async getPublic(
+		identity: string,
+		propertyNames?: (keyof T)[]
+	): Promise<Partial<T> | undefined> {
 		Guards.stringValue(this.CLASS_NAME, nameof(identity), identity);
 
 		try {
@@ -122,11 +122,7 @@ export class IdentityProfileService implements IIdentityProfileComponent {
 	 * @param identity The identity to perform the profile operation on.
 	 * @returns Nothing.
 	 */
-	public async update(
-		publicProfile?: unknown,
-		privateProfile?: unknown,
-		identity?: string
-	): Promise<void> {
+	public async update(publicProfile?: T, privateProfile?: U, identity?: string): Promise<void> {
 		Guards.stringValue(this.CLASS_NAME, nameof(identity), identity);
 
 		try {
@@ -160,9 +156,7 @@ export class IdentityProfileService implements IIdentityProfileComponent {
 	/**
 	 * Get a list of the requested types.
 	 * @param publicFilters The filters to apply to the identities public profiles.
-	 * @param privateFilters The filters to apply to the identities private profiles.
 	 * @param publicPropertyNames The public properties to get for the profile, defaults to all.
-	 * @param privatePropertyNames The private properties to get for the profile, defaults to all.
 	 * @param cursor The cursor for paged requests.
 	 * @param pageSize The maximum number of items in a page.
 	 * @returns The list of items and cursor for paging.
@@ -172,32 +166,27 @@ export class IdentityProfileService implements IIdentityProfileComponent {
 			propertyName: string;
 			propertyValue: unknown;
 		}[],
-		privateFilters?: {
-			propertyName: string;
-			propertyValue: unknown;
-		}[],
-		publicPropertyNames?: string[],
-		privatePropertyNames?: string[],
+		publicPropertyNames?: (keyof T)[],
 		cursor?: string,
 		pageSize?: number
 	): Promise<{
 		/**
 		 * The identities.
 		 */
-		items: { identity: string; publicProfile?: unknown; privateProfile?: unknown }[];
+		items: { identity: string; publicProfile?: Partial<T>; privateProfile?: Partial<U> }[];
 		/**
 		 * An optional cursor, when defined can be used to call find to get more entities.
 		 */
 		cursor?: string;
 	}> {
 		try {
-			// We don't want to return private properties for this type of query
+			// We don't want to return private profile for this type of query
 			// as it would expose the values to the REST api
 			return this._identityProfileConnector.list(
 				publicFilters,
-				privateFilters,
+				undefined,
 				publicPropertyNames,
-				privatePropertyNames,
+				undefined,
 				cursor,
 				pageSize
 			);

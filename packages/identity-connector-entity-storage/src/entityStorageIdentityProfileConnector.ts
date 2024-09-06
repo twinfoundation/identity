@@ -21,7 +21,10 @@ import type { IdentityProfile } from "./entities/identityProfile";
 /**
  * Class which implements the identity profile connector contract.
  */
-export class EntityStorageIdentityProfileConnector implements IIdentityProfileConnector {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export class EntityStorageIdentityProfileConnector<T = any, U = any>
+	implements IIdentityProfileConnector
+{
 	/**
 	 * The namespace supported by the identity profile connector.
 	 */
@@ -56,11 +59,7 @@ export class EntityStorageIdentityProfileConnector implements IIdentityProfileCo
 	 * @param privateProfile The private profile data.
 	 * @returns Nothing.
 	 */
-	public async create(
-		identity: string,
-		publicProfile?: unknown,
-		privateProfile?: unknown
-	): Promise<void> {
+	public async create(identity: string, publicProfile?: T, privateProfile?: U): Promise<void> {
 		Guards.stringValue(this.CLASS_NAME, nameof(identity), identity);
 
 		try {
@@ -92,11 +91,11 @@ export class EntityStorageIdentityProfileConnector implements IIdentityProfileCo
 	 */
 	public async get(
 		identity: string,
-		publicPropertyNames?: string[],
-		privatePropertyNames?: string[]
+		publicPropertyNames?: (keyof T)[],
+		privatePropertyNames?: (keyof U)[]
 	): Promise<{
-		publicProfile?: unknown;
-		privateProfile?: unknown;
+		publicProfile?: Partial<T>;
+		privateProfile?: Partial<U>;
 	}> {
 		try {
 			const profile = await this._profileEntityStorage.get(identity);
@@ -120,11 +119,7 @@ export class EntityStorageIdentityProfileConnector implements IIdentityProfileCo
 	 * @param privateProfile The private profile data.
 	 * @returns Nothing.
 	 */
-	public async update(
-		identity: string,
-		publicProfile?: unknown,
-		privateProfile?: unknown
-	): Promise<void> {
+	public async update(identity: string, publicProfile?: T, privateProfile?: U): Promise<void> {
 		Guards.stringValue(this.CLASS_NAME, nameof(identity), identity);
 
 		try {
@@ -187,8 +182,8 @@ export class EntityStorageIdentityProfileConnector implements IIdentityProfileCo
 			propertyName: string;
 			propertyValue: unknown;
 		}[],
-		publicPropertyNames?: string[],
-		privatePropertyNames?: string[],
+		publicPropertyNames?: (keyof T)[],
+		privatePropertyNames?: (keyof U)[],
 		cursor?: string,
 		pageSize?: number
 	): Promise<{
@@ -197,8 +192,8 @@ export class EntityStorageIdentityProfileConnector implements IIdentityProfileCo
 		 */
 		items: {
 			identity: string;
-			publicProfile?: unknown;
-			privateProfile?: unknown;
+			publicProfile?: Partial<T>;
+			privateProfile?: Partial<U>;
 		}[];
 		/**
 		 * An optional cursor, when defined can be used to call find to get more entities.
@@ -241,8 +236,8 @@ export class EntityStorageIdentityProfileConnector implements IIdentityProfileCo
 
 			const items: {
 				identity: string;
-				publicProfile?: unknown;
-				privateProfile?: unknown;
+				publicProfile?: Partial<T>;
+				privateProfile?: Partial<U>;
 			}[] = [];
 			for (const resultEntity of result.entities) {
 				items.push({
@@ -270,25 +265,19 @@ export class EntityStorageIdentityProfileConnector implements IIdentityProfileCo
 	 */
 	private pickProperties(
 		profile: Partial<IdentityProfile>,
-		publicPropertyNames?: string[],
-		privatePropertyNames?: string[]
+		publicPropertyNames?: (keyof T)[],
+		privatePropertyNames?: (keyof U)[]
 	): {
-		publicProfile?: unknown;
-		privateProfile?: unknown;
+		publicProfile?: Partial<T>;
+		privateProfile?: Partial<U>;
 	} {
 		return {
 			publicProfile: Is.array(publicPropertyNames)
-				? ObjectHelper.pick(
-						profile.publicProfile as { [prop: string]: unknown },
-						publicPropertyNames
-					)
-				: profile.publicProfile,
+				? ObjectHelper.pick<T>(profile.publicProfile as T, publicPropertyNames)
+				: (profile.publicProfile as T),
 			privateProfile: Is.array(privatePropertyNames)
-				? ObjectHelper.pick(
-						profile.privateProfile as { [prop: string]: unknown },
-						privatePropertyNames
-					)
-				: profile.privateProfile
+				? ObjectHelper.pick<U>(profile.privateProfile as U, privatePropertyNames)
+				: (profile.privateProfile as U)
 		};
 	}
 }

@@ -735,26 +735,8 @@
                         }
                     },
                     {
-                        "name": "privateFilters",
-                        "description": "The private filters to apply to the list, comma separated list with color between key and value for each pair e.g. prop1:value1,prop2:value2.",
-                        "in": "query",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
                         "name": "publicPropertyNames",
                         "description": "The public properties to get for the profile, defaults to all, should be a comma separated list.",
-                        "in": "query",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "privatePropertyNames",
-                        "description": "The private properties to get for the profile, defaults to all, should be a comma separated list.",
                         "in": "query",
                         "required": false,
                         "schema": {
@@ -804,12 +786,6 @@
                                                         "@type": "Person",
                                                         "jobTitle": "Professor",
                                                         "name": "Jane Doe"
-                                                    },
-                                                    "privateProfile": {
-                                                        "@context": "http://schema.org/",
-                                                        "@type": "Person",
-                                                        "telephone": "(425) 123-4567",
-                                                        "url": "http://www.janedoe.com"
                                                     }
                                                 }
                                             ],
@@ -1356,9 +1332,6 @@
                                 },
                                 "publicProfile": {
                                     "description": "The public profile data."
-                                },
-                                "privateProfile": {
-                                    "description": "The private profile data."
                                 }
                             },
                             "required": [

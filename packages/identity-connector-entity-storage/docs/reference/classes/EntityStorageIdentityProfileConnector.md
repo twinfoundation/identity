@@ -1,6 +1,12 @@
-# Class: EntityStorageIdentityProfileConnector
+# Class: EntityStorageIdentityProfileConnector\<T, U\>
 
 Class which implements the identity profile connector contract.
+
+## Type parameters
+
+• **T** = `any`
+
+• **U** = `any`
 
 ## Implements
 
@@ -10,7 +16,7 @@ Class which implements the identity profile connector contract.
 
 ### new EntityStorageIdentityProfileConnector()
 
-> **new EntityStorageIdentityProfileConnector**(`options`?): [`EntityStorageIdentityProfileConnector`](EntityStorageIdentityProfileConnector.md)
+> **new EntityStorageIdentityProfileConnector**\<`T`, `U`\>(`options`?): [`EntityStorageIdentityProfileConnector`](EntityStorageIdentityProfileConnector.md)\<`T`, `U`\>
 
 Create a new instance of Identity.
 
@@ -26,7 +32,7 @@ The storage connector for the profiles, default to "identity-profile".
 
 #### Returns
 
-[`EntityStorageIdentityProfileConnector`](EntityStorageIdentityProfileConnector.md)
+[`EntityStorageIdentityProfileConnector`](EntityStorageIdentityProfileConnector.md)\<`T`, `U`\>
 
 ## Properties
 
@@ -62,11 +68,11 @@ Create the profile properties for an identity.
 
 The identity of the profile to create.
 
-• **publicProfile?**: `unknown`
+• **publicProfile?**: `T`
 
 The public profile data.
 
-• **privateProfile?**: `unknown`
+• **privateProfile?**: `U`
 
 The private profile data.
 
@@ -94,11 +100,11 @@ Get the profile properties for an identity.
 
 The identity of the item to get.
 
-• **publicPropertyNames?**: `string`[]
+• **publicPropertyNames?**: keyof `T`[]
 
 The public properties to get for the profile, defaults to all.
 
-• **privatePropertyNames?**: `string`[]
+• **privatePropertyNames?**: keyof `U`[]
 
 The private properties to get for the profile, defaults to all.
 
@@ -110,11 +116,11 @@ The items properties.
 
 ##### publicProfile?
 
-> `optional` **publicProfile**: `unknown`
+> `optional` **publicProfile**: `Partial`\<`T`\>
 
 ##### privateProfile?
 
-> `optional` **privateProfile**: `unknown`
+> `optional` **privateProfile**: `Partial`\<`U`\>
 
 #### Implementation of
 
@@ -134,11 +140,11 @@ Update the profile properties of an identity.
 
 The identity to update.
 
-• **publicProfile?**: `unknown`
+• **publicProfile?**: `T`
 
 The public profile data.
 
-• **privateProfile?**: `unknown`
+• **privateProfile?**: `U`
 
 The private profile data.
 
@@ -194,11 +200,11 @@ The filters to apply to the identities public profiles.
 
 The filters to apply to the identities private profiles.
 
-• **publicPropertyNames?**: `string`[]
+• **publicPropertyNames?**: keyof `T`[]
 
 The public properties to get for the profile, defaults to all.
 
-• **privatePropertyNames?**: `string`[]
+• **privatePropertyNames?**: keyof `U`[]
 
 The private properties to get for the profile, defaults to all.
 

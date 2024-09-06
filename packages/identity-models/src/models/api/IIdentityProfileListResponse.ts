@@ -22,11 +22,6 @@ export interface IIdentityProfileListResponse {
 			 * The public profile data.
 			 */
 			publicProfile?: unknown;
-
-			/**
-			 * The private profile data.
-			 */
-			privateProfile?: unknown;
 		}[];
 
 		/**

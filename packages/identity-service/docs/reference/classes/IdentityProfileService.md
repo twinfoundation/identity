@@ -1,16 +1,22 @@
-# Class: IdentityProfileService
+# Class: IdentityProfileService\<T, U\>
 
 Class which implements the identity profile contract.
 
+## Type parameters
+
+• **T** = `any`
+
+• **U** = `any`
+
 ## Implements
 
-- `IIdentityProfileComponent`
+- `IIdentityProfileComponent`\<`T`, `U`\>
 
 ## Constructors
 
 ### new IdentityProfileService()
 
-> **new IdentityProfileService**(`options`?): [`IdentityProfileService`](IdentityProfileService.md)
+> **new IdentityProfileService**\<`T`, `U`\>(`options`?): [`IdentityProfileService`](IdentityProfileService.md)\<`T`, `U`\>
 
 Create a new instance of IdentityProfileService.
 
@@ -26,7 +32,7 @@ The storage connector for the profiles, default to "identity-profile".
 
 #### Returns
 
-[`IdentityProfileService`](IdentityProfileService.md)
+[`IdentityProfileService`](IdentityProfileService.md)\<`T`, `U`\>
 
 ## Properties
 
@@ -50,11 +56,11 @@ Create the profile properties for an identity.
 
 #### Parameters
 
-• **publicProfile?**: `unknown`
+• **publicProfile?**: `T`
 
 The public profile data as JSON-LD.
 
-• **privateProfile?**: `unknown`
+• **privateProfile?**: `U`
 
 The private profile data as JSON-LD.
 
@@ -82,11 +88,11 @@ Get the profile properties for an identity.
 
 #### Parameters
 
-• **publicPropertyNames?**: `string`[]
+• **publicPropertyNames?**: keyof `T`[]
 
 The public properties to get for the profile, defaults to all.
 
-• **privatePropertyNames?**: `string`[]
+• **privatePropertyNames?**: keyof `U`[]
 
 The private properties to get for the profile, defaults to all.
 
@@ -106,11 +112,11 @@ The items identity and the properties.
 
 ##### publicProfile?
 
-> `optional` **publicProfile**: `unknown`
+> `optional` **publicProfile**: `Partial`\<`T`\>
 
 ##### privateProfile?
 
-> `optional` **privateProfile**: `unknown`
+> `optional` **privateProfile**: `Partial`\<`U`\>
 
 #### Implementation of
 
@@ -120,7 +126,7 @@ The items identity and the properties.
 
 ### getPublic()
 
-> **getPublic**(`identity`, `propertyNames`?): `Promise`\<`unknown`\>
+> **getPublic**(`identity`, `propertyNames`?): `Promise`\<`undefined` \| `Partial`\<`T`\>\>
 
 Get the public profile properties for an identity.
 
@@ -130,13 +136,13 @@ Get the public profile properties for an identity.
 
 The identity to perform the profile operation on.
 
-• **propertyNames?**: `string`[]
+• **propertyNames?**: keyof `T`[]
 
 The properties to get for the item, defaults to all.
 
 #### Returns
 
-`Promise`\<`unknown`\>
+`Promise`\<`undefined` \| `Partial`\<`T`\>\>
 
 The items properties.
 
@@ -154,11 +160,11 @@ Update the profile properties of an identity.
 
 #### Parameters
 
-• **publicProfile?**: `unknown`
+• **publicProfile?**: `T`
 
 The public profile data as JSON-LD.
 
-• **privateProfile?**: `unknown`
+• **privateProfile?**: `U`
 
 The private profile data as JSON-LD.
 
@@ -204,7 +210,7 @@ Nothing.
 
 ### list()
 
-> **list**(`publicFilters`?, `privateFilters`?, `publicPropertyNames`?, `privatePropertyNames`?, `cursor`?, `pageSize`?): `Promise`\<`object`\>
+> **list**(`publicFilters`?, `publicPropertyNames`?, `cursor`?, `pageSize`?): `Promise`\<`object`\>
 
 Get a list of the requested types.
 
@@ -214,17 +220,9 @@ Get a list of the requested types.
 
 The filters to apply to the identities public profiles.
 
-• **privateFilters?**: `object`[]
-
-The filters to apply to the identities private profiles.
-
-• **publicPropertyNames?**: `string`[]
+• **publicPropertyNames?**: keyof `T`[]
 
 The public properties to get for the profile, defaults to all.
-
-• **privatePropertyNames?**: `string`[]
-
-The private properties to get for the profile, defaults to all.
 
 • **cursor?**: `string`
 

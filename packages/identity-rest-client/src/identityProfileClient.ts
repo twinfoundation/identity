@@ -19,7 +19,11 @@ import { nameof } from "@gtsc/nameof";
 /**
  * Client for performing identity through to REST endpoints.
  */
-export class IdentityProfileClient extends BaseRestClient implements IIdentityProfileComponent {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export class IdentityProfileClient<T = any, U = any>
+	extends BaseRestClient
+	implements IIdentityProfileComponent
+{
 	/**
 	 * Runtime name for the class.
 	 */
@@ -39,7 +43,7 @@ export class IdentityProfileClient extends BaseRestClient implements IIdentityPr
 	 * @param privateProfile The private profile data as JSON-LD.
 	 * @returns Nothing.
 	 */
-	public async create(publicProfile?: unknown, privateProfile?: unknown): Promise<void> {
+	public async create(publicProfile?: T, privateProfile?: U): Promise<void> {
 		await this.fetch<IIdentityProfileCreateRequest, never>("", "POST", {
 			body: {
 				publicProfile,
@@ -55,12 +59,12 @@ export class IdentityProfileClient extends BaseRestClient implements IIdentityPr
 	 * @returns The identity and the items properties.
 	 */
 	public async get(
-		publicPropertyNames?: string[],
-		privatePropertyNames?: string[]
+		publicPropertyNames?: (keyof T)[],
+		privatePropertyNames?: (keyof U)[]
 	): Promise<{
 		identity: string;
-		publicProfile?: unknown;
-		privateProfile?: unknown;
+		publicProfile?: Partial<T>;
+		privateProfile?: Partial<U>;
 	}> {
 		const response = await this.fetch<IIdentityProfileGetRequest, IIdentityProfileGetResponse>(
 			"/",
@@ -73,7 +77,11 @@ export class IdentityProfileClient extends BaseRestClient implements IIdentityPr
 			}
 		);
 
-		return response.body;
+		return {
+			identity: response.body.identity,
+			publicProfile: response.body.publicProfile as T,
+			privateProfile: response.body.privateProfile as U
+		};
 	}
 
 	/**
@@ -82,7 +90,10 @@ export class IdentityProfileClient extends BaseRestClient implements IIdentityPr
 	 * @param propertyNames The public properties to get for the profile, defaults to all.
 	 * @returns The items properties.
 	 */
-	public async getPublic(identity: string, propertyNames?: string[]): Promise<unknown> {
+	public async getPublic(
+		identity: string,
+		propertyNames?: (keyof T)[]
+	): Promise<Partial<T> | undefined> {
 		Guards.string(this.CLASS_NAME, nameof(identity), identity);
 
 		const response = await this.fetch<
@@ -97,7 +108,7 @@ export class IdentityProfileClient extends BaseRestClient implements IIdentityPr
 			}
 		});
 
-		return response.body;
+		return response.body as Partial<T>;
 	}
 
 	/**
@@ -126,9 +137,7 @@ export class IdentityProfileClient extends BaseRestClient implements IIdentityPr
 	/**
 	 * Get a list of the requested identities.
 	 * @param publicFilters The filters to apply to the identities public profiles.
-	 * @param privateFilters The filters to apply to the identities private profiles.
 	 * @param publicPropertyNames The public properties to get for the profile, defaults to all.
-	 * @param privatePropertyNames The private properties to get for the profile, defaults to all.
 	 * @param cursor The cursor for paged requests.
 	 * @param pageSize The maximum number of items in a page.
 	 * @returns The list of items and cursor for paging.
@@ -138,12 +147,7 @@ export class IdentityProfileClient extends BaseRestClient implements IIdentityPr
 			propertyName: string;
 			propertyValue: unknown;
 		}[],
-		privateFilters?: {
-			propertyName: string;
-			propertyValue: unknown;
-		}[],
-		publicPropertyNames?: string[],
-		privatePropertyNames?: string[],
+		publicPropertyNames?: (keyof T)[],
 		cursor?: string,
 		pageSize?: number
 	): Promise<{
@@ -152,8 +156,7 @@ export class IdentityProfileClient extends BaseRestClient implements IIdentityPr
 		 */
 		items: {
 			identity: string;
-			publicProfile?: unknown;
-			privateProfile?: unknown;
+			publicProfile?: Partial<T>;
 		}[];
 		/**
 		 * An optional cursor, when defined can be used to call find to get more entities.
@@ -166,16 +169,18 @@ export class IdentityProfileClient extends BaseRestClient implements IIdentityPr
 			{
 				query: {
 					publicFilters: publicFilters?.map(f => `${f.propertyName}:${f.propertyValue}`).join(","),
-					privateFilters: privateFilters
-						?.map(f => `${f.propertyName}:${f.propertyValue}`)
-						.join(","),
 					publicPropertyNames: publicPropertyNames?.join(","),
-					privatePropertyNames: privatePropertyNames?.join(","),
 					cursor,
 					pageSize
 				}
 			}
 		);
-		return response.body;
+		return {
+			items: response.body.items as {
+				identity: string;
+				publicProfile?: Partial<T>;
+			}[],
+			cursor: response.body.cursor
+		};
 	}
 }

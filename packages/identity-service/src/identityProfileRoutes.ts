@@ -307,12 +307,6 @@ export function generateRestRoutesIdentityProfile(
 											"@type": "Person",
 											jobTitle: "Professor",
 											name: "Jane Doe"
-										},
-										privateProfile: {
-											"@context": "http://schema.org/",
-											"@type": "Person",
-											telephone: "(425) 123-4567",
-											url: "http://www.janedoe.com"
 										}
 									}
 								],
@@ -504,21 +498,10 @@ export async function identitiesList(
 		};
 	});
 
-	const privateFilterPairs = request?.query?.privateFilters?.split(",") ?? [];
-	const privateFilters = privateFilterPairs.map(pair => {
-		const parts = pair.split(":");
-		return {
-			propertyName: parts[0],
-			propertyValue: parts[1]
-		};
-	});
-
 	return {
 		body: await component.list(
 			publicFilters,
-			privateFilters,
 			request?.query?.publicPropertyNames?.split(","),
-			request?.query?.privatePropertyNames?.split(","),
 			request?.query?.cursor,
 			Coerce.number(request.query?.pageSize)
 		)

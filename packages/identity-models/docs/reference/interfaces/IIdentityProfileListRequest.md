@@ -16,23 +16,11 @@ The query parameters.
 
 The public filters to apply to the list, comma separated list with color between key and value for each pair e.g. prop1:value1,prop2:value2.
 
-#### privateFilters?
-
-> `optional` **privateFilters**: `string`
-
-The private filters to apply to the list, comma separated list with color between key and value for each pair e.g. prop1:value1,prop2:value2.
-
 #### publicPropertyNames?
 
 > `optional` **publicPropertyNames**: `string`
 
 The public properties to get for the profile, defaults to all, should be a comma separated list.
-
-#### privatePropertyNames?
-
-> `optional` **privatePropertyNames**: `string`
-
-The private properties to get for the profile, defaults to all, should be a comma separated list.
 
 #### cursor?
 

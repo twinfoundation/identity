@@ -1,4 +1,4 @@
-# Interface: IIdentityProfileComponent
+# Interface: IIdentityProfileComponent\<T, U\>
 
 Interface describing a contract which provides profile operations.
 
@@ -6,99 +6,13 @@ Interface describing a contract which provides profile operations.
 
 - `IComponent`
 
-## Properties
+## Type parameters
 
-### CLASS\_NAME
+• **T** = `any`
 
-> `readonly` **CLASS\_NAME**: `string`
-
-The name of the component.
-
-#### Inherited from
-
-`IComponent.CLASS_NAME`
+• **U** = `any`
 
 ## Methods
-
-### bootstrap()?
-
-> `optional` **bootstrap**(`nodeLoggingConnectorType`?): `Promise`\<`boolean`\>
-
-Bootstrap the component by creating and initializing any resources it needs.
-
-#### Parameters
-
-• **nodeLoggingConnectorType?**: `string`
-
-The node logging connector type, defaults to "node-logging".
-
-#### Returns
-
-`Promise`\<`boolean`\>
-
-True if the bootstrapping process was successful.
-
-#### Inherited from
-
-`IComponent.bootstrap`
-
-***
-
-### start()?
-
-> `optional` **start**(`nodeIdentity`, `nodeLoggingConnectorType`?): `Promise`\<`void`\>
-
-The component needs to be started when the node is initialized.
-
-#### Parameters
-
-• **nodeIdentity**: `string`
-
-The identity of the node starting the component.
-
-• **nodeLoggingConnectorType?**: `string`
-
-The node logging connector type, defaults to "node-logging".
-
-#### Returns
-
-`Promise`\<`void`\>
-
-Nothing.
-
-#### Inherited from
-
-`IComponent.start`
-
-***
-
-### stop()?
-
-> `optional` **stop**(`nodeIdentity`, `nodeLoggingConnectorType`?): `Promise`\<`void`\>
-
-The component needs to be stopped when the node is closed.
-
-#### Parameters
-
-• **nodeIdentity**: `string`
-
-The identity of the node stopping the component.
-
-• **nodeLoggingConnectorType?**: `string`
-
-The node logging connector type, defaults to "node-logging".
-
-#### Returns
-
-`Promise`\<`void`\>
-
-Nothing.
-
-#### Inherited from
-
-`IComponent.stop`
-
-***
 
 ### create()
 
@@ -108,11 +22,11 @@ Create the profile properties for an identity.
 
 #### Parameters
 
-• **publicProfile?**: `unknown`
+• **publicProfile?**: `T`
 
 The public profile data as JSON-LD.
 
-• **privateProfile?**: `unknown`
+• **privateProfile?**: `U`
 
 The private profile data as JSON-LD.
 
@@ -136,11 +50,11 @@ Get the profile properties for an identity.
 
 #### Parameters
 
-• **publicPropertyNames?**: `string`[]
+• **publicPropertyNames?**: keyof `T`[]
 
 The public properties to get for the profile, defaults to all.
 
-• **privatePropertyNames?**: `string`[]
+• **privatePropertyNames?**: keyof `U`[]
 
 The private properties to get for the profile, defaults to all.
 
@@ -160,17 +74,17 @@ The items identity and the properties.
 
 ##### publicProfile?
 
-> `optional` **publicProfile**: `unknown`
+> `optional` **publicProfile**: `Partial`\<`T`\>
 
 ##### privateProfile?
 
-> `optional` **privateProfile**: `unknown`
+> `optional` **privateProfile**: `Partial`\<`U`\>
 
 ***
 
 ### getPublic()
 
-> **getPublic**(`identity`, `propertyNames`?): `Promise`\<`unknown`\>
+> **getPublic**(`identity`, `propertyNames`?): `Promise`\<`undefined` \| `Partial`\<`T`\>\>
 
 Get the public profile properties for an identity.
 
@@ -180,13 +94,13 @@ Get the public profile properties for an identity.
 
 The identity to perform the profile operation on.
 
-• **propertyNames?**: `string`[]
+• **propertyNames?**: keyof `T`[]
 
 The public properties to get for the profile, defaults to all.
 
 #### Returns
 
-`Promise`\<`unknown`\>
+`Promise`\<`undefined` \| `Partial`\<`T`\>\>
 
 The items properties.
 
@@ -200,11 +114,11 @@ Update the profile properties of an identity.
 
 #### Parameters
 
-• **publicProfile?**: `unknown`
+• **publicProfile?**: `T`
 
 The public profile data as JSON-LD.
 
-• **privateProfile?**: `unknown`
+• **privateProfile?**: `U`
 
 The private profile data as JSON-LD.
 
@@ -242,7 +156,7 @@ Nothing.
 
 ### list()
 
-> **list**(`publicFilters`?, `privateFilters`?, `publicPropertyNames`?, `privatePropertyNames`?, `cursor`?, `pageSize`?): `Promise`\<`object`\>
+> **list**(`publicFilters`?, `publicPropertyNames`?, `cursor`?, `pageSize`?): `Promise`\<`object`\>
 
 Get a list of the requested identities.
 
@@ -252,17 +166,9 @@ Get a list of the requested identities.
 
 The filters to apply to the identities public profiles.
 
-• **privateFilters?**: `object`[]
-
-The filters to apply to the identities private profiles.
-
-• **publicPropertyNames?**: `string`[]
+• **publicPropertyNames?**: keyof `T`[]
 
 The public properties to get for the profile, defaults to all.
-
-• **privatePropertyNames?**: `string`[]
-
-The private properties to get for the profile, defaults to all.
 
 • **cursor?**: `string`
 

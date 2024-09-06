@@ -1,10 +1,16 @@
-# Class: IdentityProfileClient
+# Class: IdentityProfileClient\<T, U\>
 
 Client for performing identity through to REST endpoints.
 
 ## Extends
 
 - `BaseRestClient`
+
+## Type parameters
+
+• **T** = `any`
+
+• **U** = `any`
 
 ## Implements
 
@@ -14,7 +20,7 @@ Client for performing identity through to REST endpoints.
 
 ### new IdentityProfileClient()
 
-> **new IdentityProfileClient**(`config`): [`IdentityProfileClient`](IdentityProfileClient.md)
+> **new IdentityProfileClient**\<`T`, `U`\>(`config`): [`IdentityProfileClient`](IdentityProfileClient.md)\<`T`, `U`\>
 
 Create a new instance of IdentityClient.
 
@@ -26,7 +32,7 @@ The configuration for the client.
 
 #### Returns
 
-[`IdentityProfileClient`](IdentityProfileClient.md)
+[`IdentityProfileClient`](IdentityProfileClient.md)\<`T`, `U`\>
 
 #### Overrides
 
@@ -46,62 +52,6 @@ Runtime name for the class.
 
 ## Methods
 
-### getEndpointWithPrefix()
-
-> **getEndpointWithPrefix**(): `string`
-
-Get the endpoint with the prefix for the namespace.
-
-#### Returns
-
-`string`
-
-The endpoint with namespace prefix attached.
-
-#### Inherited from
-
-`BaseRestClient.getEndpointWithPrefix`
-
-***
-
-### fetch()
-
-> **fetch**\<`T`, `U`\>(`route`, `method`, `request`?): `Promise`\<`U`\>
-
-Perform a request in json format.
-
-#### Type parameters
-
-• **T** *extends* `IHttpRequest`\<`any`\>
-
-• **U** *extends* `IHttpResponse`\<`any`\>
-
-#### Parameters
-
-• **route**: `string`
-
-The route of the request.
-
-• **method**: `HttpMethod`
-
-The http method.
-
-• **request?**: `T`
-
-Request to send to the endpoint.
-
-#### Returns
-
-`Promise`\<`U`\>
-
-The response.
-
-#### Inherited from
-
-`BaseRestClient.fetch`
-
-***
-
 ### create()
 
 > **create**(`publicProfile`?, `privateProfile`?): `Promise`\<`void`\>
@@ -110,11 +60,11 @@ Create the profile properties for an identity.
 
 #### Parameters
 
-• **publicProfile?**: `unknown`
+• **publicProfile?**: `T`
 
 The public profile data as JSON-LD.
 
-• **privateProfile?**: `unknown`
+• **privateProfile?**: `U`
 
 The private profile data as JSON-LD.
 
@@ -138,11 +88,11 @@ Get the profile properties for an identity.
 
 #### Parameters
 
-• **publicPropertyNames?**: `string`[]
+• **publicPropertyNames?**: keyof `T`[]
 
 The public properties to get for the profile, defaults to all.
 
-• **privatePropertyNames?**: `string`[]
+• **privatePropertyNames?**: keyof `U`[]
 
 The private properties to get for the profile, defaults to all.
 
@@ -158,11 +108,11 @@ The identity and the items properties.
 
 ##### publicProfile?
 
-> `optional` **publicProfile**: `unknown`
+> `optional` **publicProfile**: `Partial`\<`T`\>
 
 ##### privateProfile?
 
-> `optional` **privateProfile**: `unknown`
+> `optional` **privateProfile**: `Partial`\<`U`\>
 
 #### Implementation of
 
@@ -172,7 +122,7 @@ The identity and the items properties.
 
 ### getPublic()
 
-> **getPublic**(`identity`, `propertyNames`?): `Promise`\<`unknown`\>
+> **getPublic**(`identity`, `propertyNames`?): `Promise`\<`undefined` \| `Partial`\<`T`\>\>
 
 Get the public profile properties for an identity.
 
@@ -182,13 +132,13 @@ Get the public profile properties for an identity.
 
 The identity to perform the profile operation on.
 
-• **propertyNames?**: `string`[]
+• **propertyNames?**: keyof `T`[]
 
 The public properties to get for the profile, defaults to all.
 
 #### Returns
 
-`Promise`\<`unknown`\>
+`Promise`\<`undefined` \| `Partial`\<`T`\>\>
 
 The items properties.
 
@@ -246,7 +196,7 @@ Nothing.
 
 ### list()
 
-> **list**(`publicFilters`?, `privateFilters`?, `publicPropertyNames`?, `privatePropertyNames`?, `cursor`?, `pageSize`?): `Promise`\<`object`\>
+> **list**(`publicFilters`?, `publicPropertyNames`?, `cursor`?, `pageSize`?): `Promise`\<`object`\>
 
 Get a list of the requested identities.
 
@@ -256,17 +206,9 @@ Get a list of the requested identities.
 
 The filters to apply to the identities public profiles.
 
-• **privateFilters?**: `object`[]
-
-The filters to apply to the identities private profiles.
-
-• **publicPropertyNames?**: `string`[]
+• **publicPropertyNames?**: keyof `T`[]
 
 The public properties to get for the profile, defaults to all.
-
-• **privatePropertyNames?**: `string`[]
-
-The private properties to get for the profile, defaults to all.
 
 • **cursor?**: `string`
 
