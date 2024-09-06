@@ -17,5 +17,4 @@ export * from "./models/IIdentityComponent";
 export * from "./models/IIdentityConnector";
 export * from "./models/IIdentityProfileComponent";
 export * from "./models/IIdentityProfileConnector";
-export * from "./models/IIdentityProfileProperty";
 export * from "./utils/documentHelper";

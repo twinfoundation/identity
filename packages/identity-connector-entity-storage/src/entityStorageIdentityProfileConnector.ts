@@ -1,16 +1,22 @@
 // Copyright 2024 IOTA Stiftung.
 // SPDX-License-Identifier: Apache-2.0.
-import { AlreadyExistsError, BaseError, GeneralError, Guards, Is, NotFoundError } from "@gtsc/core";
-import { PropertyHelper } from "@gtsc/data-core";
+import {
+	AlreadyExistsError,
+	BaseError,
+	GeneralError,
+	Guards,
+	Is,
+	NotFoundError,
+	ObjectHelper
+} from "@gtsc/core";
 import { ComparisonOperator } from "@gtsc/entity";
 import {
 	EntityStorageConnectorFactory,
 	type IEntityStorageConnector
 } from "@gtsc/entity-storage-models";
-import type { IIdentityProfileConnector, IIdentityProfileProperty } from "@gtsc/identity-models";
+import type { IIdentityProfileConnector } from "@gtsc/identity-models";
 import { nameof } from "@gtsc/nameof";
 import type { IdentityProfile } from "./entities/identityProfile";
-import type { IdentityProfileProperty } from "./entities/identityProfileProperty";
 
 /**
  * Class which implements the identity profile connector contract.
@@ -46,10 +52,15 @@ export class EntityStorageIdentityProfileConnector implements IIdentityProfileCo
 	/**
 	 * Create the profile properties for an identity.
 	 * @param identity The identity of the profile to create.
-	 * @param properties The properties to create the profile with.
+	 * @param publicProfile The public profile data.
+	 * @param privateProfile The private profile data.
 	 * @returns Nothing.
 	 */
-	public async create(identity: string, properties: IIdentityProfileProperty[]): Promise<void> {
+	public async create(
+		identity: string,
+		publicProfile?: unknown,
+		privateProfile?: unknown
+	): Promise<void> {
 		Guards.stringValue(this.CLASS_NAME, nameof(identity), identity);
 
 		try {
@@ -59,20 +70,10 @@ export class EntityStorageIdentityProfileConnector implements IIdentityProfileCo
 				throw new AlreadyExistsError(this.CLASS_NAME, "alreadyExists", identity);
 			}
 
-			// We map the array to an object for storage, as it makes it easier
-			// to perform queries against specific keys
-			const storeProperties: { [key: string]: IdentityProfileProperty } = {};
-			for (const property of properties) {
-				storeProperties[property.key] = {
-					type: property.type,
-					value: property.value,
-					isPublic: property.isPublic ?? false
-				};
-			}
-
 			await this._profileEntityStorage.set({
 				identity,
-				properties: storeProperties
+				publicProfile,
+				privateProfile
 			});
 		} catch (error) {
 			if (BaseError.someErrorClass(error, this.CLASS_NAME)) {
@@ -85,16 +86,17 @@ export class EntityStorageIdentityProfileConnector implements IIdentityProfileCo
 	/**
 	 * Get the profile properties for an identity.
 	 * @param identity The identity of the item to get.
-	 * @param includePrivate Include private properties, defaults to true.
-	 * @param propertyNames The properties to get for the item, defaults to all.
+	 * @param publicPropertyNames The public properties to get for the profile, defaults to all.
+	 * @param privatePropertyNames The private properties to get for the profile, defaults to all.
 	 * @returns The items properties.
 	 */
 	public async get(
 		identity: string,
-		includePrivate?: boolean,
-		propertyNames?: string[]
+		publicPropertyNames?: string[],
+		privatePropertyNames?: string[]
 	): Promise<{
-		properties?: IIdentityProfileProperty[];
+		publicProfile?: unknown;
+		privateProfile?: unknown;
 	}> {
 		try {
 			const profile = await this._profileEntityStorage.get(identity);
@@ -102,31 +104,7 @@ export class EntityStorageIdentityProfileConnector implements IIdentityProfileCo
 				throw new NotFoundError(this.CLASS_NAME, "getFailed", identity);
 			}
 
-			const addPrivate = includePrivate ?? true;
-			const properties: IIdentityProfileProperty[] = [];
-			const filterProperties = Is.arrayValue(propertyNames);
-
-			const storeProperties: { [key: string]: IdentityProfileProperty } = profile.properties ?? {};
-			for (const propertyKey in storeProperties) {
-				if (
-					(addPrivate || storeProperties[propertyKey].isPublic) &&
-					(!filterProperties || propertyNames?.includes(propertyKey))
-				) {
-					properties.push({
-						key: propertyKey,
-						type: storeProperties[propertyKey].type,
-						value: storeProperties[propertyKey].value,
-						isPublic: storeProperties[propertyKey].isPublic
-					});
-				}
-			}
-
-			return {
-				properties: PropertyHelper.filterInclude<IIdentityProfileProperty>(
-					properties,
-					propertyNames
-				)
-			};
+			return this.pickProperties(profile, publicPropertyNames, privatePropertyNames);
 		} catch (error) {
 			if (BaseError.someErrorClass(error, this.CLASS_NAME)) {
 				throw error;
@@ -138,10 +116,15 @@ export class EntityStorageIdentityProfileConnector implements IIdentityProfileCo
 	/**
 	 * Update the profile properties of an identity.
 	 * @param identity The identity to update.
-	 * @param properties Properties for the profile, set a properties value to undefined to remove it.
+	 * @param publicProfile The public profile data.
+	 * @param privateProfile The private profile data.
 	 * @returns Nothing.
 	 */
-	public async update(identity: string, properties: IIdentityProfileProperty[]): Promise<void> {
+	public async update(
+		identity: string,
+		publicProfile?: unknown,
+		privateProfile?: unknown
+	): Promise<void> {
 		Guards.stringValue(this.CLASS_NAME, nameof(identity), identity);
 
 		try {
@@ -150,20 +133,8 @@ export class EntityStorageIdentityProfileConnector implements IIdentityProfileCo
 				throw new NotFoundError(this.CLASS_NAME, "notFound", identity);
 			}
 
-			const storeProperties: { [key: string]: IdentityProfileProperty } = profile.properties ?? {};
-			for (const property of properties) {
-				if (Is.empty(property.value)) {
-					delete storeProperties[property.key];
-				} else {
-					storeProperties[property.key] = {
-						type: property.type,
-						value: property.value,
-						isPublic: property.isPublic
-					};
-				}
-			}
-
-			profile.properties = storeProperties;
+			profile.publicProfile = publicProfile ?? profile.publicProfile;
+			profile.privateProfile = privateProfile ?? profile.privateProfile;
 
 			await this._profileEntityStorage.set(profile);
 		} catch (error) {
@@ -199,27 +170,36 @@ export class EntityStorageIdentityProfileConnector implements IIdentityProfileCo
 
 	/**
 	 * Get a list of the requested types.
-	 * @param includePrivate Include private properties, defaults to false.
-	 * @param filters The filters to apply to the identities.
-	 * @param propertyNames The properties to get for the identities, default to all if undefined.
+	 * @param publicFilters The filters to apply to the identities public profiles.
+	 * @param privateFilters The filters to apply to the identities private profiles.
+	 * @param publicPropertyNames The public properties to get for the profile, defaults to all.
+	 * @param privatePropertyNames The private properties to get for the profile, defaults to all.
 	 * @param cursor The cursor for paged requests.
 	 * @param pageSize The maximum number of items in a page.
 	 * @returns The list of items and cursor for paging.
 	 */
 	public async list(
-		includePrivate?: boolean,
-		filters?: {
+		publicFilters?: {
 			propertyName: string;
 			propertyValue: unknown;
 		}[],
-		propertyNames?: string[],
+		privateFilters?: {
+			propertyName: string;
+			propertyValue: unknown;
+		}[],
+		publicPropertyNames?: string[],
+		privatePropertyNames?: string[],
 		cursor?: string,
 		pageSize?: number
 	): Promise<{
 		/**
 		 * The identities.
 		 */
-		items: { identity: string; properties?: IIdentityProfileProperty[] }[];
+		items: {
+			identity: string;
+			publicProfile?: unknown;
+			privateProfile?: unknown;
+		}[];
 		/**
 		 * An optional cursor, when defined can be used to call find to get more entities.
 		 */
@@ -228,10 +208,19 @@ export class EntityStorageIdentityProfileConnector implements IIdentityProfileCo
 		try {
 			const conditions = [];
 
-			if (Is.arrayValue(filters)) {
-				for (const filter of filters) {
+			if (Is.arrayValue(publicFilters)) {
+				for (const filter of publicFilters) {
 					conditions.push({
-						property: `properties.${filter.propertyName}.value`,
+						property: `publicProfile.${filter.propertyName}`,
+						value: filter.propertyValue,
+						comparison: ComparisonOperator.Equals
+					});
+				}
+			}
+			if (Is.arrayValue(privateFilters)) {
+				for (const filter of privateFilters) {
+					conditions.push({
+						property: `privateProfile.${filter.propertyName}`,
 						value: filter.propertyValue,
 						comparison: ComparisonOperator.Equals
 					});
@@ -250,28 +239,15 @@ export class EntityStorageIdentityProfileConnector implements IIdentityProfileCo
 				pageSize
 			);
 
-			const items: { identity: string; properties?: IIdentityProfileProperty[] }[] = [];
-			const addPrivate = includePrivate ?? true;
-
+			const items: {
+				identity: string;
+				publicProfile?: unknown;
+				privateProfile?: unknown;
+			}[] = [];
 			for (const resultEntity of result.entities) {
-				const properties: IIdentityProfileProperty[] = [];
-				for (const key in resultEntity.properties) {
-					if (addPrivate || resultEntity.properties[key].isPublic) {
-						properties.push({
-							key,
-							type: resultEntity.properties[key].type,
-							value: resultEntity.properties[key].value,
-							isPublic: resultEntity.properties[key].isPublic
-						});
-					}
-				}
-
 				items.push({
 					identity: resultEntity.identity ?? "",
-					properties: PropertyHelper.filterInclude<IIdentityProfileProperty>(
-						properties,
-						propertyNames
-					)
+					...this.pickProperties(resultEntity, publicPropertyNames, privatePropertyNames)
 				});
 			}
 
@@ -282,5 +258,37 @@ export class EntityStorageIdentityProfileConnector implements IIdentityProfileCo
 		} catch (error) {
 			throw new GeneralError(this.CLASS_NAME, "listFailed", undefined, error);
 		}
+	}
+
+	/**
+	 * Get the profile properties for an identity.
+	 * @param profile The profile to pick the properties from.
+	 * @param publicPropertyNames The public properties to get for the profile, defaults to all.
+	 * @param privatePropertyNames The private properties to get for the profile, defaults to all.
+	 * @returns The identity profile, will only return private data if you have correct permissions.
+	 * @internal
+	 */
+	private pickProperties(
+		profile: Partial<IdentityProfile>,
+		publicPropertyNames?: string[],
+		privatePropertyNames?: string[]
+	): {
+		publicProfile?: unknown;
+		privateProfile?: unknown;
+	} {
+		return {
+			publicProfile: Is.array(publicPropertyNames)
+				? ObjectHelper.pick(
+						profile.publicProfile as { [prop: string]: unknown },
+						publicPropertyNames
+					)
+				: profile.publicProfile,
+			privateProfile: Is.array(privatePropertyNames)
+				? ObjectHelper.pick(
+						profile.privateProfile as { [prop: string]: unknown },
+						privatePropertyNames
+					)
+				: profile.privateProfile
+		};
 	}
 }

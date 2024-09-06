@@ -102,7 +102,7 @@ Nothing.
 
 ### create()
 
-> **create**(`identity`, `properties`): `Promise`\<`void`\>
+> **create**(`identity`, `publicProfile`?, `privateProfile`?): `Promise`\<`void`\>
 
 Create the profile properties for an identity.
 
@@ -112,9 +112,13 @@ Create the profile properties for an identity.
 
 The identity of the profile to create.
 
-• **properties**: [`IIdentityProfileProperty`](IIdentityProfileProperty.md)[]
+• **publicProfile?**: `unknown`
 
-The properties to create the profile with.
+The public profile data as JSON-LD.
+
+• **privateProfile?**: `unknown`
+
+The private profile data as JSON-LD.
 
 #### Returns
 
@@ -126,7 +130,7 @@ Nothing.
 
 ### get()
 
-> **get**(`identity`, `includePrivate`?, `propertyNames`?): `Promise`\<`object`\>
+> **get**(`identity`, `publicPropertyNames`?, `privatePropertyNames`?): `Promise`\<`object`\>
 
 Get the profile properties for an identity.
 
@@ -136,29 +140,33 @@ Get the profile properties for an identity.
 
 The identity of the item to get.
 
-• **includePrivate?**: `boolean`
+• **publicPropertyNames?**: `string`[]
 
-Include private properties, defaults to true.
+The public properties to get for the profile, defaults to all.
 
-• **propertyNames?**: `string`[]
+• **privatePropertyNames?**: `string`[]
 
-The properties to get for the item, defaults to all.
+The private properties to get for the profile, defaults to all.
 
 #### Returns
 
 `Promise`\<`object`\>
 
-The items properties.
+The identity profile, will only return private data if you have correct permissions.
 
-##### properties?
+##### publicProfile?
 
-> `optional` **properties**: [`IIdentityProfileProperty`](IIdentityProfileProperty.md)[]
+> `optional` **publicProfile**: `unknown`
+
+##### privateProfile?
+
+> `optional` **privateProfile**: `unknown`
 
 ***
 
 ### update()
 
-> **update**(`identity`, `properties`): `Promise`\<`void`\>
+> **update**(`identity`, `publicProfile`?, `privateProfile`?): `Promise`\<`void`\>
 
 Update the profile properties of an identity.
 
@@ -168,9 +176,13 @@ Update the profile properties of an identity.
 
 The identity to update.
 
-• **properties**: [`IIdentityProfileProperty`](IIdentityProfileProperty.md)[]
+• **publicProfile?**: `unknown`
 
-Properties for the profile, set a properties value to undefined to remove it.
+The public profile data as JSON-LD.
+
+• **privateProfile?**: `unknown`
+
+The private profile data as JSON-LD.
 
 #### Returns
 
@@ -202,23 +214,27 @@ Nothing.
 
 ### list()
 
-> **list**(`includePrivate`?, `filters`?, `propertyNames`?, `cursor`?, `pageSize`?): `Promise`\<`object`\>
+> **list**(`publicFilters`?, `privateFilters`?, `publicPropertyNames`?, `privatePropertyNames`?, `cursor`?, `pageSize`?): `Promise`\<`object`\>
 
 Get a list of the requested identities.
 
 #### Parameters
 
-• **includePrivate?**: `boolean`
+• **publicFilters?**: `object`[]
 
-Include private properties, defaults to false.
+The filters to apply to the identities public profiles.
 
-• **filters?**: `object`[]
+• **privateFilters?**: `object`[]
 
-The filters to apply to the identities.
+The filters to apply to the identities private profiles.
 
-• **propertyNames?**: `string`[]
+• **publicPropertyNames?**: `string`[]
 
-The properties to get for the identities, default to all if undefined.
+The public properties to get for the profile, defaults to all.
+
+• **privatePropertyNames?**: `string`[]
+
+The private properties to get for the profile, defaults to all.
 
 • **cursor?**: `string`
 
@@ -238,7 +254,7 @@ The list of items and cursor for paging.
 
 > **items**: `object`[]
 
-The identities.
+The identity profiles.
 
 ##### cursor?
 

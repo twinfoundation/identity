@@ -1,14 +1,9 @@
 // Copyright 2024 IOTA Stiftung.
 // SPDX-License-Identifier: Apache-2.0.
 import { I18n } from "@gtsc/core";
-import { PropertyHelper } from "@gtsc/data-core";
 import { MemoryEntityStorageConnector } from "@gtsc/entity-storage-connector-memory";
 import { EntityStorageConnectorFactory } from "@gtsc/entity-storage-models";
-import {
-	IdentityConnectorFactory,
-	IdentityRole,
-	type IIdentityProfileProperty
-} from "@gtsc/identity-models";
+import { IdentityConnectorFactory, IdentityRole } from "@gtsc/identity-models";
 import { nameof } from "@gtsc/nameof";
 import {
 	EntityStorageVaultConnector,
@@ -103,39 +98,104 @@ describe("EntityStorageIdentityProfileConnector", () => {
 
 		const service = new EntityStorageIdentityProfileConnector();
 
-		const properties: IIdentityProfileProperty[] = [];
-		PropertyHelper.setValue(properties, "name", "text", "Test Identity", {
-			isPublic: true
-		});
-		await service.create(identityResult.id, properties);
+		await service.create(
+			identityResult.id,
+			{
+				"@context": "http://schema.org/",
+				"@type": "Person",
+				name: "Jane Doe",
+				jobTitle: "Professor",
+				telephone: "(425) 123-4567",
+				url: "http://www.janedoe.com"
+			},
+			{
+				"@context": {
+					name: "http://schema.org/name",
+					description: "http://schema.org/description",
+					image: {
+						"@id": "http://schema.org/image",
+						"@type": "@id"
+					},
+					geo: "http://schema.org/geo",
+					latitude: {
+						"@id": "http://schema.org/latitude",
+						"@type": "xsd:float"
+					},
+					longitude: {
+						"@id": "http://schema.org/longitude",
+						"@type": "xsd:float"
+					},
+					xsd: "http://www.w3.org/2001/XMLSchema#"
+				},
+				description: "The Empire State Building is a 102-story landmark in New York City.",
+				geo: {
+					latitude: "40.75",
+					longitude: "73.98"
+				},
+				image: "http://www.civil.usherbrooke.ca/cours/gci215a/empire-state-building.jpg",
+				name: "The Empire State Building"
+			}
+		);
 
 		const identity = await service.get(identityResult.id);
 
-		expect(identity.properties?.[0].key).toEqual("name");
-		expect(identity.properties?.[0].type).toEqual("text");
-		expect(identity.properties?.[0].value).toEqual("Test Identity");
-		expect(identity.properties?.[0].isPublic).toEqual(true);
+		expect(identity.publicProfile).toEqual({
+			"@context": "http://schema.org/",
+			"@type": "Person",
+			name: "Jane Doe",
+			jobTitle: "Professor",
+			telephone: "(425) 123-4567",
+			url: "http://www.janedoe.com"
+		});
+		expect(identity.privateProfile).toEqual({
+			"@context": {
+				name: "http://schema.org/name",
+				description: "http://schema.org/description",
+				image: {
+					"@id": "http://schema.org/image",
+					"@type": "@id"
+				},
+				geo: "http://schema.org/geo",
+				latitude: {
+					"@id": "http://schema.org/latitude",
+					"@type": "xsd:float"
+				},
+				longitude: {
+					"@id": "http://schema.org/longitude",
+					"@type": "xsd:float"
+				},
+				xsd: "http://www.w3.org/2001/XMLSchema#"
+			},
+			description: "The Empire State Building is a 102-story landmark in New York City.",
+			geo: {
+				latitude: "40.75",
+				longitude: "73.98"
+			},
+			image: "http://www.civil.usherbrooke.ca/cours/gci215a/empire-state-building.jpg",
+			name: "The Empire State Building"
+		});
 	});
 
-	test("Can get an identity only public properties", async () => {
+	test("Can get an identity with subset of properties", async () => {
 		const identityService = new EntityStorageIdentityConnector();
 		const identityResult = await identityService.createDocument(TEST_CONTROLLER);
 
 		const service = new EntityStorageIdentityProfileConnector();
 
-		const properties: IIdentityProfileProperty[] = [];
-		PropertyHelper.setValue(properties, "name", "text", "Test Identity", {
-			isPublic: true
+		await service.create(identityResult.id, {
+			"@context": "http://schema.org/",
+			"@type": "Person",
+			name: "Jane Doe",
+			jobTitle: "Professor",
+			telephone: "(425) 123-4567",
+			url: "http://www.janedoe.com"
 		});
-		PropertyHelper.setValue(properties, "type", "text", "Test", { isPublic: false });
-		await service.create(identityResult.id, properties);
 
-		const identity = await service.get(identityResult.id, false);
+		const identity = await service.get(identityResult.id, ["name"]);
 
-		expect(identity.properties?.[0].key).toEqual("name");
-		expect(identity.properties?.[0].type).toEqual("text");
-		expect(identity.properties?.[0].value).toEqual("Test Identity");
-		expect(identity.properties?.[0].isPublic).toEqual(true);
+		expect(identity.publicProfile).toEqual({
+			name: "Jane Doe"
+		});
 	});
 
 	test("Can fail to update an identity when connector fails", async () => {
@@ -178,27 +238,44 @@ describe("EntityStorageIdentityProfileConnector", () => {
 		const identityService = new EntityStorageIdentityConnector();
 		const identityResult = await identityService.createDocument(TEST_CONTROLLER);
 
-		const properties1: IIdentityProfileProperty[] = [];
-		PropertyHelper.setValue(properties1, "name", "text", "Test Identity 1", { isPublic: true });
-
-		await service.create(identityResult.id, properties1);
+		await service.create(identityResult.id, {
+			"@context": "http://schema.org/",
+			"@type": "Person",
+			name: "Jane Doe",
+			jobTitle: "Professor",
+			telephone: "(425) 123-4567",
+			url: "http://www.janedoe.com"
+		});
 
 		const profile = identityProfileEntityStorage.getStore();
-		expect(profile?.[0].identity).toEqual(identityResult.id);
-		expect(profile?.[0].properties?.name?.type).toEqual("text");
-		expect(profile?.[0].properties?.name?.value).toEqual("Test Identity 1");
-		expect(profile?.[0].properties?.name?.isPublic).toEqual(true);
+		expect(profile?.[0].publicProfile).toEqual({
+			"@context": "http://schema.org/",
+			"@type": "Person",
+			name: "Jane Doe",
+			jobTitle: "Professor",
+			telephone: "(425) 123-4567",
+			url: "http://www.janedoe.com"
+		});
 
-		const properties2: IIdentityProfileProperty[] = [];
-		PropertyHelper.setValue(properties2, "name", "text", "Test Identity 2", { isPublic: false });
-
-		await service.update(identityResult.id, properties2);
+		await service.update(identityResult.id, {
+			"@context": "http://schema.org/",
+			"@type": "Person",
+			name: "Jane Doe2",
+			jobTitle: "Professor2",
+			telephone: "(425) 123-45672",
+			url: "http://www.janedoe.com2"
+		});
 
 		const profile2 = identityProfileEntityStorage.getStore();
 		expect(profile2?.[0].identity).toEqual(identityResult.id);
-		expect(profile2?.[0].properties?.name?.type).toEqual("text");
-		expect(profile2?.[0].properties?.name?.value).toEqual("Test Identity 2");
-		expect(profile2?.[0].properties?.name?.isPublic).toEqual(false);
+		expect(profile2?.[0].publicProfile).toEqual({
+			"@context": "http://schema.org/",
+			"@type": "Person",
+			name: "Jane Doe2",
+			jobTitle: "Professor2",
+			telephone: "(425) 123-45672",
+			url: "http://www.janedoe.com2"
+		});
 	});
 
 	test("Can fail get a list of identities when connector fails", async () => {
@@ -223,22 +300,26 @@ describe("EntityStorageIdentityProfileConnector", () => {
 		const service = new EntityStorageIdentityProfileConnector();
 
 		for (let i = 0; i < 3; i++) {
-			const properties: IIdentityProfileProperty[] = [];
-			PropertyHelper.setValue(properties, "name", "text", `Test Node Identity ${i}`);
-			PropertyHelper.setValue(properties, "role", "text", IdentityRole.Node);
 			const identity = await identityService.createDocument(TEST_CONTROLLER);
-			await service.create(identity.id, properties);
+			await service.create(identity.id, {
+				"@context": "http://schema.org/",
+				"@type": "Person",
+				name: `Test Node Identity ${i}`,
+				role: IdentityRole.Node
+			});
 		}
 
 		for (let i = 0; i < 7; i++) {
-			const properties: IIdentityProfileProperty[] = [];
-			PropertyHelper.setValue(properties, "name", "text", `Test User Identity ${i}`);
-			PropertyHelper.setValue(properties, "role", "text", IdentityRole.User);
 			const identity = await identityService.createDocument(TEST_CONTROLLER);
-			await service.create(identity.id, properties);
+			await service.create(identity.id, {
+				"@context": "http://schema.org/",
+				"@type": "Person",
+				name: `Test User Identity ${i}`,
+				role: IdentityRole.User
+			});
 		}
 
-		const identitiesNode = await service.list(true, [
+		const identitiesNode = await service.list([
 			{
 				propertyName: "role",
 				propertyValue: IdentityRole.Node
@@ -246,40 +327,12 @@ describe("EntityStorageIdentityProfileConnector", () => {
 		]);
 		expect(identitiesNode.items.length).toEqual(3);
 
-		const identitiesUsers = await service.list(true, [
+		const identitiesUsers = await service.list([
 			{
 				propertyName: "role",
 				propertyValue: IdentityRole.User
 			}
 		]);
 		expect(identitiesUsers.items.length).toEqual(7);
-	});
-
-	test("Can get a list of identities including only public properties", async () => {
-		const identityService = new EntityStorageIdentityConnector();
-		const service = new EntityStorageIdentityProfileConnector();
-
-		for (let i = 0; i < 3; i++) {
-			const properties: IIdentityProfileProperty[] = [];
-			PropertyHelper.setValue(properties, "name", "text", `Test Node Identity ${i}`, {
-				isPublic: true
-			});
-			PropertyHelper.setValue(properties, "role", "text", IdentityRole.Node, { isPublic: true });
-			PropertyHelper.setValue(properties, "foo", "text", "bar", { isPublic: false });
-			const identity = await identityService.createDocument(TEST_CONTROLLER);
-			await service.create(identity.id, properties);
-		}
-
-		const identitiesNode = await service.list(false, [
-			{
-				propertyName: "role",
-				propertyValue: IdentityRole.Node
-			}
-		]);
-
-		expect(identitiesNode.items.length).toEqual(3);
-		expect(identitiesNode.items[0].properties?.length).toEqual(2);
-		expect(identitiesNode.items[0].properties?.[0]?.value).toEqual("Test Node Identity 0");
-		expect(identitiesNode.items[0].properties?.[1]?.value).toEqual(IdentityRole.Node);
 	});
 });

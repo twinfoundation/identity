@@ -8,10 +8,15 @@ export interface IIdentityProfileGetRequest {
 	/**
 	 * The query parameters.
 	 */
-	query: {
+	query?: {
 		/**
-		 * The properties to get for the profile, defaults to all, should be a comma separated list.
+		 * The public properties to get for the profile, defaults to all, should be a comma separated list.
 		 */
-		propertyNames?: string;
+		publicPropertyNames?: string;
+
+		/**
+		 * The private properties to get for the profile, defaults to all, should be a comma separated list.
+		 */
+		privatePropertyNames?: string;
 	};
 }

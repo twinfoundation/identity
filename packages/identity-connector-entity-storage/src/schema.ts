@@ -4,7 +4,6 @@ import { EntitySchemaFactory, EntitySchemaHelper } from "@gtsc/entity";
 import { nameof } from "@gtsc/nameof";
 import { IdentityDocument } from "./entities/identityDocument";
 import { IdentityProfile } from "./entities/identityProfile";
-import { IdentityProfileProperty } from "./entities/identityProfileProperty";
 
 /**
  * Initialize the schema for the identity entity storage connector.
@@ -24,9 +23,6 @@ export function initSchema(options?: {
 	if (options?.includeProfile ?? true) {
 		EntitySchemaFactory.register(nameof<IdentityProfile>(), () =>
 			EntitySchemaHelper.getSchema(IdentityProfile)
-		);
-		EntitySchemaFactory.register(nameof<IdentityProfileProperty>(), () =>
-			EntitySchemaHelper.getSchema(IdentityProfileProperty)
 		);
 	}
 }

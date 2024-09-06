@@ -3,7 +3,6 @@
 import { BaseRestClient } from "@gtsc/api-core";
 import type { IBaseRestClientConfig } from "@gtsc/api-models";
 import { Guards } from "@gtsc/core";
-import type { IProperty } from "@gtsc/data-core";
 import type {
 	IIdentityProfileComponent,
 	IIdentityProfileCreateRequest,
@@ -13,7 +12,6 @@ import type {
 	IIdentityProfileGetResponse,
 	IIdentityProfileListRequest,
 	IIdentityProfileListResponse,
-	IIdentityProfileProperty,
 	IIdentityProfileUpdateRequest
 } from "@gtsc/identity-models";
 import { nameof } from "@gtsc/nameof";
@@ -37,32 +35,40 @@ export class IdentityProfileClient extends BaseRestClient implements IIdentityPr
 
 	/**
 	 * Create the profile properties for an identity.
-	 * @param properties The properties to create the profile with.
+	 * @param publicProfile The public profile data as JSON-LD.
+	 * @param privateProfile The private profile data as JSON-LD.
 	 * @returns Nothing.
 	 */
-	public async create(properties: IIdentityProfileProperty[]): Promise<void> {
+	public async create(publicProfile?: unknown, privateProfile?: unknown): Promise<void> {
 		await this.fetch<IIdentityProfileCreateRequest, never>("", "POST", {
 			body: {
-				properties
+				publicProfile,
+				privateProfile
 			}
 		});
 	}
 
 	/**
 	 * Get the profile properties for an identity.
-	 * @param propertyNames The properties to get for the item, defaults to all.
+	 * @param publicPropertyNames The public properties to get for the profile, defaults to all.
+	 * @param privatePropertyNames The private properties to get for the profile, defaults to all.
 	 * @returns The identity and the items properties.
 	 */
-	public async get(propertyNames?: string[]): Promise<{
+	public async get(
+		publicPropertyNames?: string[],
+		privatePropertyNames?: string[]
+	): Promise<{
 		identity: string;
-		properties?: IIdentityProfileProperty[];
+		publicProfile?: unknown;
+		privateProfile?: unknown;
 	}> {
 		const response = await this.fetch<IIdentityProfileGetRequest, IIdentityProfileGetResponse>(
 			"/",
 			"GET",
 			{
 				query: {
-					propertyNames: propertyNames?.join(",")
+					publicPropertyNames: publicPropertyNames?.join(","),
+					privatePropertyNames: privatePropertyNames?.join(",")
 				}
 			}
 		);
@@ -72,16 +78,11 @@ export class IdentityProfileClient extends BaseRestClient implements IIdentityPr
 
 	/**
 	 * Get the public profile properties for an identity.
-	 * @param propertyNames The properties to get for the item, defaults to all.
-	 * @param identity The identity to get the profile for.
-	 * @returns The identity and the items properties.
+	 * @param identity The identity to perform the profile operation on.
+	 * @param propertyNames The public properties to get for the profile, defaults to all.
+	 * @returns The items properties.
 	 */
-	public async getPublic(
-		propertyNames: string[] | undefined,
-		identity: string
-	): Promise<{
-		properties?: IProperty[];
-	}> {
+	public async getPublic(identity: string, propertyNames?: string[]): Promise<unknown> {
 		Guards.string(this.CLASS_NAME, nameof(identity), identity);
 
 		const response = await this.fetch<
@@ -101,13 +102,15 @@ export class IdentityProfileClient extends BaseRestClient implements IIdentityPr
 
 	/**
 	 * Update the profile properties of an identity.
-	 * @param properties Properties for the profile, set a properties value to undefined to remove it.
+	 * @param publicProfile The public profile data as JSON-LD.
+	 * @param privateProfile The private profile data as JSON-LD.
 	 * @returns Nothing.
 	 */
-	public async update(properties: IIdentityProfileProperty[]): Promise<void> {
+	public async update(publicProfile?: unknown, privateProfile?: unknown): Promise<void> {
 		await this.fetch<IIdentityProfileUpdateRequest, never>("/", "PUT", {
 			body: {
-				properties
+				publicProfile,
+				privateProfile
 			}
 		});
 	}
@@ -122,27 +125,35 @@ export class IdentityProfileClient extends BaseRestClient implements IIdentityPr
 
 	/**
 	 * Get a list of the requested identities.
-	 * @param filters The filters to apply to the identities.
-	 * @param propertyNames The properties to get for the identities, default to all if undefined.
+	 * @param publicFilters The filters to apply to the identities public profiles.
+	 * @param privateFilters The filters to apply to the identities private profiles.
+	 * @param publicPropertyNames The public properties to get for the profile, defaults to all.
+	 * @param privatePropertyNames The private properties to get for the profile, defaults to all.
 	 * @param cursor The cursor for paged requests.
 	 * @param pageSize The maximum number of items in a page.
 	 * @returns The list of items and cursor for paging.
 	 */
 	public async list(
-		filters?: {
+		publicFilters?: {
 			propertyName: string;
 			propertyValue: unknown;
 		}[],
-		propertyNames?: string[],
+		privateFilters?: {
+			propertyName: string;
+			propertyValue: unknown;
+		}[],
+		publicPropertyNames?: string[],
+		privatePropertyNames?: string[],
 		cursor?: string,
 		pageSize?: number
 	): Promise<{
 		/**
-		 * The items.
+		 * The identities.
 		 */
 		items: {
 			identity: string;
-			properties?: IIdentityProfileProperty[];
+			publicProfile?: unknown;
+			privateProfile?: unknown;
 		}[];
 		/**
 		 * An optional cursor, when defined can be used to call find to get more entities.
@@ -154,8 +165,12 @@ export class IdentityProfileClient extends BaseRestClient implements IIdentityPr
 			"GET",
 			{
 				query: {
-					filters: filters?.map(f => `${f.propertyName}:${f.propertyValue}`).join(","),
-					propertyNames: propertyNames?.join(","),
+					publicFilters: publicFilters?.map(f => `${f.propertyName}:${f.propertyValue}`).join(","),
+					privateFilters: privateFilters
+						?.map(f => `${f.propertyName}:${f.propertyValue}`)
+						.join(","),
+					publicPropertyNames: publicPropertyNames?.join(","),
+					privatePropertyNames: privatePropertyNames?.join(","),
 					cursor,
 					pageSize
 				}

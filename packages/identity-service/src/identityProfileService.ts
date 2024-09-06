@@ -1,12 +1,10 @@
 // Copyright 2024 IOTA Stiftung.
 // SPDX-License-Identifier: Apache-2.0.
 import { BaseError, GeneralError, Guards } from "@gtsc/core";
-import type { IProperty } from "@gtsc/data-core";
 import {
 	IdentityProfileConnectorFactory,
 	type IIdentityProfileComponent,
-	type IIdentityProfileConnector,
-	type IIdentityProfileProperty
+	type IIdentityProfileConnector
 } from "@gtsc/identity-models";
 import { nameof } from "@gtsc/nameof";
 
@@ -38,15 +36,20 @@ export class IdentityProfileService implements IIdentityProfileComponent {
 
 	/**
 	 * Create the profile properties for an identity.
-	 * @param properties The properties to create the profile with.
+	 * @param publicProfile The public profile data as JSON-LD.
+	 * @param privateProfile The private profile data as JSON-LD.
 	 * @param identity The identity to perform the profile operation on.
 	 * @returns Nothing.
 	 */
-	public async create(properties: IIdentityProfileProperty[], identity?: string): Promise<void> {
+	public async create(
+		publicProfile?: unknown,
+		privateProfile?: unknown,
+		identity?: string
+	): Promise<void> {
 		Guards.stringValue(this.CLASS_NAME, nameof(identity), identity);
 
 		try {
-			await this._identityProfileConnector.create(identity, properties);
+			await this._identityProfileConnector.create(identity, publicProfile, privateProfile);
 		} catch (error) {
 			if (BaseError.someErrorClass(error, this.CLASS_NAME)) {
 				throw error;
@@ -57,24 +60,32 @@ export class IdentityProfileService implements IIdentityProfileComponent {
 
 	/**
 	 * Get the profile properties for an identity.
-	 * @param propertyNames The properties to get for the item, defaults to all.
+	 * @param publicPropertyNames The public properties to get for the profile, defaults to all.
+	 * @param privatePropertyNames The private properties to get for the profile, defaults to all.
 	 * @param identity The identity to perform the profile operation on.
 	 * @returns The items identity and the properties.
 	 */
 	public async get(
-		propertyNames?: string[],
+		publicPropertyNames?: string[],
+		privatePropertyNames?: string[],
 		identity?: string
 	): Promise<{
 		identity: string;
-		properties?: IIdentityProfileProperty[];
+		publicProfile?: unknown;
+		privateProfile?: unknown;
 	}> {
 		Guards.stringValue(this.CLASS_NAME, nameof(identity), identity);
 
 		try {
-			const result = await this._identityProfileConnector.get(identity, true, propertyNames);
+			const result = await this._identityProfileConnector.get(
+				identity,
+				publicPropertyNames,
+				privatePropertyNames
+			);
 			return {
 				identity,
-				properties: result.properties
+				publicProfile: result.publicProfile,
+				privateProfile: result.privateProfile
 			};
 		} catch (error) {
 			if (BaseError.someErrorClass(error, this.CLASS_NAME)) {
@@ -86,27 +97,16 @@ export class IdentityProfileService implements IIdentityProfileComponent {
 
 	/**
 	 * Get the public profile properties for an identity.
-	 * @param propertyNames The properties to get for the item, defaults to all.
 	 * @param identity The identity to perform the profile operation on.
+	 * @param propertyNames The properties to get for the item, defaults to all.
 	 * @returns The items properties.
 	 */
-	public async getPublic(
-		propertyNames: string[] | undefined,
-		identity: string
-	): Promise<{
-		properties?: IProperty[];
-	}> {
+	public async getPublic(identity: string, propertyNames?: string[]): Promise<unknown> {
 		Guards.stringValue(this.CLASS_NAME, nameof(identity), identity);
 
 		try {
-			const result = await this._identityProfileConnector.get(identity, false, propertyNames);
-			return {
-				properties: (result.properties ?? []).map(property => ({
-					key: property.key,
-					type: property.type,
-					value: property.value
-				}))
-			};
+			const result = await this._identityProfileConnector.get(identity, propertyNames);
+			return result.publicProfile;
 		} catch (error) {
 			if (BaseError.someErrorClass(error, this.CLASS_NAME)) {
 				throw error;
@@ -117,15 +117,20 @@ export class IdentityProfileService implements IIdentityProfileComponent {
 
 	/**
 	 * Update the profile properties of an identity.
-	 * @param properties Properties for the profile, set a properties value to undefined to remove it.
+	 * @param publicProfile The public profile data as JSON-LD.
+	 * @param privateProfile The private profile data as JSON-LD.
 	 * @param identity The identity to perform the profile operation on.
 	 * @returns Nothing.
 	 */
-	public async update(properties: IIdentityProfileProperty[], identity?: string): Promise<void> {
+	public async update(
+		publicProfile?: unknown,
+		privateProfile?: unknown,
+		identity?: string
+	): Promise<void> {
 		Guards.stringValue(this.CLASS_NAME, nameof(identity), identity);
 
 		try {
-			await this._identityProfileConnector.update(identity, properties);
+			await this._identityProfileConnector.update(identity, publicProfile, privateProfile);
 		} catch (error) {
 			if (BaseError.someErrorClass(error, this.CLASS_NAME)) {
 				throw error;
@@ -154,25 +159,32 @@ export class IdentityProfileService implements IIdentityProfileComponent {
 
 	/**
 	 * Get a list of the requested types.
-	 * @param filters The filters to apply to the identities.
-	 * @param propertyNames The properties to get for the identities, default to all if undefined.
+	 * @param publicFilters The filters to apply to the identities public profiles.
+	 * @param privateFilters The filters to apply to the identities private profiles.
+	 * @param publicPropertyNames The public properties to get for the profile, defaults to all.
+	 * @param privatePropertyNames The private properties to get for the profile, defaults to all.
 	 * @param cursor The cursor for paged requests.
 	 * @param pageSize The maximum number of items in a page.
 	 * @returns The list of items and cursor for paging.
 	 */
 	public async list(
-		filters?: {
+		publicFilters?: {
 			propertyName: string;
 			propertyValue: unknown;
 		}[],
-		propertyNames?: string[],
+		privateFilters?: {
+			propertyName: string;
+			propertyValue: unknown;
+		}[],
+		publicPropertyNames?: string[],
+		privatePropertyNames?: string[],
 		cursor?: string,
 		pageSize?: number
 	): Promise<{
 		/**
 		 * The identities.
 		 */
-		items: { identity: string; properties?: IIdentityProfileProperty[] }[];
+		items: { identity: string; publicProfile?: unknown; privateProfile?: unknown }[];
 		/**
 		 * An optional cursor, when defined can be used to call find to get more entities.
 		 */
@@ -181,7 +193,14 @@ export class IdentityProfileService implements IIdentityProfileComponent {
 		try {
 			// We don't want to return private properties for this type of query
 			// as it would expose the values to the REST api
-			return this._identityProfileConnector.list(false, filters, propertyNames, cursor, pageSize);
+			return this._identityProfileConnector.list(
+				publicFilters,
+				privateFilters,
+				publicPropertyNames,
+				privatePropertyNames,
+				cursor,
+				pageSize
+			);
 		} catch (error) {
 			throw new GeneralError(this.CLASS_NAME, "listFailed", undefined, error);
 		}

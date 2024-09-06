@@ -22,7 +22,7 @@ import type {
 	IIdentityProfileUpdateRequest
 } from "@gtsc/identity-models";
 import { nameof } from "@gtsc/nameof";
-import { HttpStatusCode } from "@gtsc/web";
+import { HttpStatusCode, MimeTypes } from "@gtsc/web";
 
 /**
  * The source used when communicating about these routes.
@@ -65,26 +65,18 @@ export function generateRestRoutesIdentityProfile(
 						id: "identityProfileCreateRequestExample",
 						request: {
 							body: {
-								properties: [
-									{
-										key: "role",
-										type: "https://schema.org/Text",
-										value: "User",
-										isPublic: false
-									},
-									{
-										key: "email",
-										type: "https://schema.org/Text",
-										value: "john@example.com",
-										isPublic: false
-									},
-									{
-										key: "name",
-										type: "https://schema.org/Text",
-										value: "John Smith",
-										isPublic: true
-									}
-								]
+								publicProfile: {
+									"@context": "http://schema.org/",
+									"@type": "Person",
+									jobTitle: "Professor",
+									name: "Jane Doe"
+								},
+								privateProfile: {
+									"@context": "http://schema.org/",
+									"@type": "Person",
+									telephone: "(425) 123-4567",
+									url: "http://www.janedoe.com"
+								}
 							}
 						}
 					}
@@ -118,7 +110,7 @@ export function generateRestRoutesIdentityProfile(
 					id: "identityGetProfileRequestExample",
 					request: {
 						query: {
-							propertyNames: "role,email,name"
+							publicPropertyNames: "name,jobTitle"
 						}
 					}
 				}
@@ -134,26 +126,12 @@ export function generateRestRoutesIdentityProfile(
 							body: {
 								identity:
 									"did:iota:tst:0xc57d94b088f4c6d2cb32ded014813d0c786aa00134c8ee22f84b1e2545602a70",
-								properties: [
-									{
-										key: "role",
-										type: "https://schema.org/Text",
-										value: "User",
-										isPublic: false
-									},
-									{
-										key: "email",
-										type: "https://schema.org/Text",
-										value: "john@example.com",
-										isPublic: false
-									},
-									{
-										key: "name",
-										type: "https://schema.org/Text",
-										value: "John Smith",
-										isPublic: true
-									}
-								]
+								publicProfile: {
+									"@context": "http://schema.org/",
+									"@type": "Person",
+									jobTitle: "Professor",
+									name: "Jane Doe"
+								}
 							}
 						}
 					}
@@ -196,28 +174,19 @@ export function generateRestRoutesIdentityProfile(
 		responseType: [
 			{
 				type: nameof<IIdentityProfileGetPublicResponse>(),
+				mimeType: MimeTypes.JsonLd,
 				examples: [
 					{
 						id: "identityGetPublicResponseExample",
 						response: {
+							headers: {
+								"Content-Type": MimeTypes.JsonLd
+							},
 							body: {
-								properties: [
-									{
-										key: "role",
-										type: "https://schema.org/Text",
-										value: "User"
-									},
-									{
-										key: "email",
-										type: "https://schema.org/Text",
-										value: "john@example.com"
-									},
-									{
-										key: "name",
-										type: "https://schema.org/Text",
-										value: "John Smith"
-									}
-								]
+								"@context": "http://schema.org/",
+								"@type": "Person",
+								jobTitle: "Professor",
+								name: "Jane Doe"
 							}
 						}
 					}
@@ -246,26 +215,18 @@ export function generateRestRoutesIdentityProfile(
 						id: "identityProfileUpdateRequestExample",
 						request: {
 							body: {
-								properties: [
-									{
-										key: "role",
-										type: "https://schema.org/Text",
-										value: "User",
-										isPublic: false
-									},
-									{
-										key: "email",
-										type: "https://schema.org/Text",
-										value: undefined,
-										isPublic: false
-									},
-									{
-										key: "name",
-										type: "https://schema.org/Text",
-										value: "John Smith",
-										isPublic: true
-									}
-								]
+								publicProfile: {
+									"@context": "http://schema.org/",
+									"@type": "Person",
+									jobTitle: "Professor",
+									name: "Jane Doe"
+								},
+								privateProfile: {
+									"@context": "http://schema.org/",
+									"@type": "Person",
+									telephone: "(425) 123-4567",
+									url: "http://www.janedoe.com"
+								}
 							}
 						}
 					}
@@ -323,7 +284,7 @@ export function generateRestRoutesIdentityProfile(
 					id: "identityProfileListRequestFilteredExample",
 					request: {
 						query: {
-							filters: "role:User"
+							publicFilters: "jobTitle:Professor"
 						}
 					}
 				}
@@ -341,14 +302,18 @@ export function generateRestRoutesIdentityProfile(
 									{
 										identity:
 											"did:iota:tst:0xc57d94b088f4c6d2cb32ded014813d0c786aa00134c8ee22f84b1e2545602a70",
-										properties: [
-											{
-												key: "email",
-												type: "https://schema.org/Text",
-												value: "john@example.com",
-												isPublic: false
-											}
-										]
+										publicProfile: {
+											"@context": "http://schema.org/",
+											"@type": "Person",
+											jobTitle: "Professor",
+											name: "Jane Doe"
+										},
+										privateProfile: {
+											"@context": "http://schema.org/",
+											"@type": "Person",
+											telephone: "(425) 123-4567",
+											url: "http://www.janedoe.com"
+										}
 									}
 								],
 								cursor: "1"
@@ -391,7 +356,11 @@ export async function identityProfileCreate(
 
 	const component = ComponentFactory.get<IIdentityProfileComponent>(componentName);
 
-	await component.create(request.body.properties, httpRequestContext.userIdentity);
+	await component.create(
+		request.body.publicProfile,
+		request.body.privateProfile,
+		httpRequestContext.userIdentity
+	);
 
 	return {
 		statusCode: HttpStatusCode.noContent
@@ -415,15 +384,13 @@ export async function identityGet(
 	const component = ComponentFactory.get<IIdentityProfileComponent>(componentName);
 
 	const result = await component.get(
-		request?.query?.propertyNames?.split(","),
+		request?.query?.publicPropertyNames?.split(","),
+		request?.query?.privatePropertyNames?.split(","),
 		httpRequestContext.userIdentity
 	);
 
 	return {
-		body: {
-			identity: result.identity,
-			properties: result.properties
-		}
+		body: result
 	};
 }
 
@@ -449,14 +416,15 @@ export async function identityGetPublic(
 	const component = ComponentFactory.get<IIdentityProfileComponent>(componentName);
 
 	const result = await component.getPublic(
-		request?.query?.propertyNames?.split(","),
-		request?.pathParams.identity
+		request?.pathParams.identity,
+		request?.query?.propertyNames?.split(",")
 	);
 
 	return {
-		body: {
-			properties: result.properties
-		}
+		headers: {
+			"Content-Type": MimeTypes.JsonLd
+		},
+		body: result
 	};
 }
 
@@ -481,7 +449,11 @@ export async function identityProfileUpdate(
 	);
 	const component = ComponentFactory.get<IIdentityProfileComponent>(componentName);
 
-	await component.update(request.body.properties, httpRequestContext.userIdentity);
+	await component.update(
+		request.body.publicProfile,
+		request.body.privateProfile,
+		httpRequestContext.userIdentity
+	);
 
 	return {
 		statusCode: HttpStatusCode.noContent
@@ -523,8 +495,17 @@ export async function identitiesList(
 ): Promise<IIdentityProfileListResponse> {
 	const component = ComponentFactory.get<IIdentityProfileComponent>(componentName);
 
-	const filterPairs = request?.query?.filters?.split(",") ?? [];
-	const filters = filterPairs.map(pair => {
+	const publicFilterPairs = request?.query?.publicFilters?.split(",") ?? [];
+	const publicFilters = publicFilterPairs.map(pair => {
+		const parts = pair.split(":");
+		return {
+			propertyName: parts[0],
+			propertyValue: parts[1]
+		};
+	});
+
+	const privateFilterPairs = request?.query?.privateFilters?.split(",") ?? [];
+	const privateFilters = privateFilterPairs.map(pair => {
 		const parts = pair.split(":");
 		return {
 			propertyName: parts[0],
@@ -534,8 +515,10 @@ export async function identitiesList(
 
 	return {
 		body: await component.list(
-			filters,
-			request?.query?.propertyNames?.split(","),
+			publicFilters,
+			privateFilters,
+			request?.query?.publicPropertyNames?.split(","),
+			request?.query?.privatePropertyNames?.split(","),
 			request?.query?.cursor,
 			Coerce.number(request.query?.pageSize)
 		)

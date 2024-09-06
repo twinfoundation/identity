@@ -1,6 +1,5 @@
 // Copyright 2024 IOTA Stiftung.
 // SPDX-License-Identifier: Apache-2.0.
-import type { IIdentityProfileProperty } from "../IIdentityProfileProperty";
 
 /**
  * Response to get a list of identities.
@@ -20,9 +19,14 @@ export interface IIdentityProfileListResponse {
 			identity: string;
 
 			/**
-			 * The properties for the identity.
+			 * The public profile data.
 			 */
-			properties?: IIdentityProfileProperty[];
+			publicProfile?: unknown;
+
+			/**
+			 * The private profile data.
+			 */
+			privateProfile?: unknown;
 		}[];
 
 		/**

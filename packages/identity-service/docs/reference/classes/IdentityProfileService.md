@@ -44,15 +44,19 @@ Runtime name for the class.
 
 ### create()
 
-> **create**(`properties`, `identity`?): `Promise`\<`void`\>
+> **create**(`publicProfile`?, `privateProfile`?, `identity`?): `Promise`\<`void`\>
 
 Create the profile properties for an identity.
 
 #### Parameters
 
-• **properties**: `IIdentityProfileProperty`[]
+• **publicProfile?**: `unknown`
 
-The properties to create the profile with.
+The public profile data as JSON-LD.
+
+• **privateProfile?**: `unknown`
+
+The private profile data as JSON-LD.
 
 • **identity?**: `string`
 
@@ -72,15 +76,19 @@ Nothing.
 
 ### get()
 
-> **get**(`propertyNames`?, `identity`?): `Promise`\<`object`\>
+> **get**(`publicPropertyNames`?, `privatePropertyNames`?, `identity`?): `Promise`\<`object`\>
 
 Get the profile properties for an identity.
 
 #### Parameters
 
-• **propertyNames?**: `string`[]
+• **publicPropertyNames?**: `string`[]
 
-The properties to get for the item, defaults to all.
+The public properties to get for the profile, defaults to all.
+
+• **privatePropertyNames?**: `string`[]
+
+The private properties to get for the profile, defaults to all.
 
 • **identity?**: `string`
 
@@ -96,9 +104,13 @@ The items identity and the properties.
 
 > **identity**: `string`
 
-##### properties?
+##### publicProfile?
 
-> `optional` **properties**: `IIdentityProfileProperty`[]
+> `optional` **publicProfile**: `unknown`
+
+##### privateProfile?
+
+> `optional` **privateProfile**: `unknown`
 
 #### Implementation of
 
@@ -108,29 +120,25 @@ The items identity and the properties.
 
 ### getPublic()
 
-> **getPublic**(`propertyNames`, `identity`): `Promise`\<`object`\>
+> **getPublic**(`identity`, `propertyNames`?): `Promise`\<`unknown`\>
 
 Get the public profile properties for an identity.
 
 #### Parameters
 
-• **propertyNames**: `undefined` \| `string`[]
-
-The properties to get for the item, defaults to all.
-
 • **identity**: `string`
 
 The identity to perform the profile operation on.
 
+• **propertyNames?**: `string`[]
+
+The properties to get for the item, defaults to all.
+
 #### Returns
 
-`Promise`\<`object`\>
+`Promise`\<`unknown`\>
 
 The items properties.
-
-##### properties?
-
-> `optional` **properties**: `IProperty`[]
 
 #### Implementation of
 
@@ -140,15 +148,19 @@ The items properties.
 
 ### update()
 
-> **update**(`properties`, `identity`?): `Promise`\<`void`\>
+> **update**(`publicProfile`?, `privateProfile`?, `identity`?): `Promise`\<`void`\>
 
 Update the profile properties of an identity.
 
 #### Parameters
 
-• **properties**: `IIdentityProfileProperty`[]
+• **publicProfile?**: `unknown`
 
-Properties for the profile, set a properties value to undefined to remove it.
+The public profile data as JSON-LD.
+
+• **privateProfile?**: `unknown`
+
+The private profile data as JSON-LD.
 
 • **identity?**: `string`
 
@@ -192,19 +204,27 @@ Nothing.
 
 ### list()
 
-> **list**(`filters`?, `propertyNames`?, `cursor`?, `pageSize`?): `Promise`\<`object`\>
+> **list**(`publicFilters`?, `privateFilters`?, `publicPropertyNames`?, `privatePropertyNames`?, `cursor`?, `pageSize`?): `Promise`\<`object`\>
 
 Get a list of the requested types.
 
 #### Parameters
 
-• **filters?**: `object`[]
+• **publicFilters?**: `object`[]
 
-The filters to apply to the identities.
+The filters to apply to the identities public profiles.
 
-• **propertyNames?**: `string`[]
+• **privateFilters?**: `object`[]
 
-The properties to get for the identities, default to all if undefined.
+The filters to apply to the identities private profiles.
+
+• **publicPropertyNames?**: `string`[]
+
+The public properties to get for the profile, defaults to all.
+
+• **privatePropertyNames?**: `string`[]
+
+The private properties to get for the profile, defaults to all.
 
 • **cursor?**: `string`
 
