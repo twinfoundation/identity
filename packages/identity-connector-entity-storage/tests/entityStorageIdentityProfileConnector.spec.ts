@@ -180,15 +180,16 @@ describe("EntityStorageIdentityProfileConnector", () => {
 		const identityService = new EntityStorageIdentityConnector();
 		const identityResult = await identityService.createDocument(TEST_CONTROLLER);
 
-		const service = new EntityStorageIdentityProfileConnector();
+		const service = new EntityStorageIdentityProfileConnector<{
+			"@context": string;
+			"@type": "Person";
+			name: string;
+		}>();
 
 		await service.create(identityResult.id, {
 			"@context": "http://schema.org/",
 			"@type": "Person",
-			name: "Jane Doe",
-			jobTitle: "Professor",
-			telephone: "(425) 123-4567",
-			url: "http://www.janedoe.com"
+			name: "Jane Doe"
 		});
 
 		const identity = await service.get(identityResult.id, ["name"]);

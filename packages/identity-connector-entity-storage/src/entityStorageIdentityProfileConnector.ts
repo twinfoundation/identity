@@ -9,6 +9,7 @@ import {
 	NotFoundError,
 	ObjectHelper
 } from "@gtsc/core";
+import type { IJsonLdDocument } from "@gtsc/data-json-ld";
 import { ComparisonOperator } from "@gtsc/entity";
 import {
 	EntityStorageConnectorFactory,
@@ -21,9 +22,10 @@ import type { IdentityProfile } from "./entities/identityProfile";
 /**
  * Class which implements the identity profile connector contract.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export class EntityStorageIdentityProfileConnector<T = any, U = any>
-	implements IIdentityProfileConnector
+export class EntityStorageIdentityProfileConnector<
+	T extends IJsonLdDocument = IJsonLdDocument,
+	U extends IJsonLdDocument = IJsonLdDocument
+> implements IIdentityProfileConnector<T, U>
 {
 	/**
 	 * The namespace supported by the identity profile connector.
@@ -94,8 +96,8 @@ export class EntityStorageIdentityProfileConnector<T = any, U = any>
 		publicPropertyNames?: (keyof T)[],
 		privatePropertyNames?: (keyof U)[]
 	): Promise<{
-		publicProfile?: Partial<T>;
-		privateProfile?: Partial<U>;
+		publicProfile: Partial<T>;
+		privateProfile: Partial<U>;
 	}> {
 		try {
 			const profile = await this._profileEntityStorage.get(identity);
@@ -268,8 +270,8 @@ export class EntityStorageIdentityProfileConnector<T = any, U = any>
 		publicPropertyNames?: (keyof T)[],
 		privatePropertyNames?: (keyof U)[]
 	): {
-		publicProfile?: Partial<T>;
-		privateProfile?: Partial<U>;
+		publicProfile: Partial<T>;
+		privateProfile: Partial<U>;
 	} {
 		return {
 			publicProfile: Is.array(publicPropertyNames)

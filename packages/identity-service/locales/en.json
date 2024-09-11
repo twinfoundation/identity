@@ -14,7 +14,7 @@
 			"getFailed": "Getting the identity profile failed",
 			"getPublicFailed": "Getting the public identity profile failed",
 			"updateFailed": "Updating the identity profile failed \"{identity}\"",
-			"notFound": "The identity profile failed \"{notFoundId}\"",
+			"notFound": "The identity profile could not be found \"{notFoundId}\"",
 			"removeFailed": "Removing the identity profile failed \"{identity}\"",
 			"listFailed": "Failed listing identities"
 		}

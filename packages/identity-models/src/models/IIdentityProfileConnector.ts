@@ -1,12 +1,15 @@
 // Copyright 2024 IOTA Stiftung.
 // SPDX-License-Identifier: Apache-2.0.
 import type { IComponent } from "@gtsc/core";
+import type { IJsonLdDocument } from "@gtsc/data-json-ld";
 
 /**
  * Interface describing a contract which provides profile operations.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export interface IIdentityProfileConnector<T = any, U = any> extends IComponent {
+export interface IIdentityProfileConnector<
+	T extends IJsonLdDocument = IJsonLdDocument,
+	U extends IJsonLdDocument = IJsonLdDocument
+> extends IComponent {
 	/**
 	 * Create the profile properties for an identity.
 	 * @param identity The identity of the profile to create.
@@ -28,8 +31,8 @@ export interface IIdentityProfileConnector<T = any, U = any> extends IComponent 
 		publicPropertyNames?: (keyof T)[],
 		privatePropertyNames?: (keyof U)[]
 	): Promise<{
-		publicProfile?: Partial<T>;
-		privateProfile?: Partial<U>;
+		publicProfile: Partial<T>;
+		privateProfile: Partial<U>;
 	}>;
 
 	/**

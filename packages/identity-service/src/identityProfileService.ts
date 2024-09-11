@@ -1,6 +1,7 @@
 // Copyright 2024 IOTA Stiftung.
 // SPDX-License-Identifier: Apache-2.0.
-import { BaseError, GeneralError, Guards } from "@gtsc/core";
+import { BaseError, GeneralError, Guards, Is, NotFoundError } from "@gtsc/core";
+import type { IJsonLdDocument } from "@gtsc/data-json-ld";
 import {
 	IdentityProfileConnectorFactory,
 	type IIdentityProfileComponent,
@@ -11,8 +12,11 @@ import { nameof } from "@gtsc/nameof";
 /**
  * Class which implements the identity profile contract.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export class IdentityProfileService<T = any, U = any> implements IIdentityProfileComponent<T, U> {
+export class IdentityProfileService<
+	T extends IJsonLdDocument = IJsonLdDocument,
+	U extends IJsonLdDocument = IJsonLdDocument
+> implements IIdentityProfileComponent<T, U>
+{
 	/**
 	 * Runtime name for the class.
 	 */
@@ -30,9 +34,9 @@ export class IdentityProfileService<T = any, U = any> implements IIdentityProfil
 	 * @param options.profileEntityConnectorType The storage connector for the profiles, default to "identity-profile".
 	 */
 	constructor(options?: { profileEntityConnectorType?: string }) {
-		this._identityProfileConnector = IdentityProfileConnectorFactory.get<IIdentityProfileConnector>(
-			options?.profileEntityConnectorType ?? "identity-profile"
-		);
+		this._identityProfileConnector = IdentityProfileConnectorFactory.get<
+			IIdentityProfileConnector<T, U>
+		>(options?.profileEntityConnectorType ?? "identity-profile");
 	}
 
 	/**
@@ -79,6 +83,9 @@ export class IdentityProfileService<T = any, U = any> implements IIdentityProfil
 				publicPropertyNames,
 				privatePropertyNames
 			);
+			if (Is.undefined(result)) {
+				throw new NotFoundError(this.CLASS_NAME, "notFound", identity);
+			}
 			return {
 				identity,
 				publicProfile: result.publicProfile,
@@ -98,14 +105,14 @@ export class IdentityProfileService<T = any, U = any> implements IIdentityProfil
 	 * @param propertyNames The properties to get for the item, defaults to all.
 	 * @returns The items properties.
 	 */
-	public async getPublic(
-		identity: string,
-		propertyNames?: (keyof T)[]
-	): Promise<Partial<T> | undefined> {
+	public async getPublic(identity: string, propertyNames?: (keyof T)[]): Promise<Partial<T>> {
 		Guards.stringValue(this.CLASS_NAME, nameof(identity), identity);
 
 		try {
 			const result = await this._identityProfileConnector.get(identity, propertyNames);
+			if (Is.undefined(result)) {
+				throw new NotFoundError(this.CLASS_NAME, "notFound", identity);
+			}
 			return result.publicProfile;
 		} catch (error) {
 			if (BaseError.someErrorClass(error, this.CLASS_NAME)) {
@@ -126,6 +133,10 @@ export class IdentityProfileService<T = any, U = any> implements IIdentityProfil
 		Guards.stringValue(this.CLASS_NAME, nameof(identity), identity);
 
 		try {
+			const result = await this._identityProfileConnector.get(identity);
+			if (Is.undefined(result)) {
+				throw new NotFoundError(this.CLASS_NAME, "notFound", identity);
+			}
 			await this._identityProfileConnector.update(identity, publicProfile, privateProfile);
 		} catch (error) {
 			if (BaseError.someErrorClass(error, this.CLASS_NAME)) {
@@ -144,6 +155,10 @@ export class IdentityProfileService<T = any, U = any> implements IIdentityProfil
 		Guards.stringValue(this.CLASS_NAME, nameof(identity), identity);
 
 		try {
+			const result = await this._identityProfileConnector.get(identity);
+			if (Is.undefined(result)) {
+				throw new NotFoundError(this.CLASS_NAME, "notFound", identity);
+			}
 			await this._identityProfileConnector.remove(identity);
 		} catch (error) {
 			if (BaseError.someErrorClass(error, this.CLASS_NAME)) {

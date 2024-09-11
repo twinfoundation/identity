@@ -10,6 +10,7 @@ import type {
 	ITag
 } from "@gtsc/api-models";
 import { Coerce, ComponentFactory, Guards } from "@gtsc/core";
+import type { IJsonLdDocument } from "@gtsc/data-json-ld";
 import type {
 	IIdentityProfileComponent,
 	IIdentityProfileCreateRequest,
@@ -378,8 +379,8 @@ export async function identityGet(
 	const component = ComponentFactory.get<IIdentityProfileComponent>(componentName);
 
 	const result = await component.get(
-		request?.query?.publicPropertyNames?.split(","),
-		request?.query?.privatePropertyNames?.split(","),
+		request?.query?.publicPropertyNames?.split(",") as (keyof IJsonLdDocument)[],
+		request?.query?.privatePropertyNames?.split(",") as (keyof IJsonLdDocument)[],
 		httpRequestContext.userIdentity
 	);
 
@@ -411,7 +412,7 @@ export async function identityGetPublic(
 
 	const result = await component.getPublic(
 		request?.pathParams.identity,
-		request?.query?.propertyNames?.split(",")
+		request?.query?.propertyNames?.split(",") as (keyof IJsonLdDocument)[]
 	);
 
 	return {
@@ -501,7 +502,7 @@ export async function identitiesList(
 	return {
 		body: await component.list(
 			publicFilters,
-			request?.query?.publicPropertyNames?.split(","),
+			request?.query?.publicPropertyNames?.split(",") as (keyof IJsonLdDocument)[],
 			request?.query?.cursor,
 			Coerce.number(request.query?.pageSize)
 		)

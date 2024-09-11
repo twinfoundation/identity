@@ -3,6 +3,7 @@
 import { BaseRestClient } from "@gtsc/api-core";
 import type { IBaseRestClientConfig } from "@gtsc/api-models";
 import { Guards } from "@gtsc/core";
+import type { IJsonLdDocument } from "@gtsc/data-json-ld";
 import type {
 	IIdentityProfileComponent,
 	IIdentityProfileCreateRequest,
@@ -19,10 +20,12 @@ import { nameof } from "@gtsc/nameof";
 /**
  * Client for performing identity through to REST endpoints.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export class IdentityProfileClient<T = any, U = any>
+export class IdentityProfileClient<
+		T extends IJsonLdDocument = IJsonLdDocument,
+		U extends IJsonLdDocument = IJsonLdDocument
+	>
 	extends BaseRestClient
-	implements IIdentityProfileComponent
+	implements IIdentityProfileComponent<T, U>
 {
 	/**
 	 * Runtime name for the class.
@@ -90,10 +93,7 @@ export class IdentityProfileClient<T = any, U = any>
 	 * @param propertyNames The public properties to get for the profile, defaults to all.
 	 * @returns The items properties.
 	 */
-	public async getPublic(
-		identity: string,
-		propertyNames?: (keyof T)[]
-	): Promise<Partial<T> | undefined> {
+	public async getPublic(identity: string, propertyNames?: (keyof T)[]): Promise<Partial<T>> {
 		Guards.string(this.CLASS_NAME, nameof(identity), identity);
 
 		const response = await this.fetch<
@@ -117,7 +117,7 @@ export class IdentityProfileClient<T = any, U = any>
 	 * @param privateProfile The private profile data as JSON-LD.
 	 * @returns Nothing.
 	 */
-	public async update(publicProfile?: unknown, privateProfile?: unknown): Promise<void> {
+	public async update(publicProfile?: T, privateProfile?: U): Promise<void> {
 		await this.fetch<IIdentityProfileUpdateRequest, never>("/", "PUT", {
 			body: {
 				publicProfile,

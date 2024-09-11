@@ -1,5 +1,6 @@
 // Copyright 2024 IOTA Stiftung.
 // SPDX-License-Identifier: Apache-2.0.
+import type { IJsonLdDocument } from "@gtsc/data-json-ld";
 
 /**
  * Response to get an identity details.
@@ -17,11 +18,11 @@ export interface IIdentityProfileGetResponse {
 		/**
 		 * The public profile data.
 		 */
-		publicProfile?: unknown;
+		publicProfile?: Partial<IJsonLdDocument>;
 
 		/**
 		 * The private profile data.
 		 */
-		privateProfile?: unknown;
+		privateProfile?: Partial<IJsonLdDocument>;
 	};
 }
