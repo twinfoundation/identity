@@ -23,7 +23,7 @@ import type {
 	IIdentityProfileUpdateRequest
 } from "@gtsc/identity-models";
 import { nameof } from "@gtsc/nameof";
-import { HttpStatusCode, MimeTypes } from "@gtsc/web";
+import { HeaderTypes, HttpStatusCode, MimeTypes } from "@gtsc/web";
 
 /**
  * The source used when communicating about these routes.
@@ -181,7 +181,7 @@ export function generateRestRoutesIdentityProfile(
 						id: "identityGetPublicResponseExample",
 						response: {
 							headers: {
-								"Content-Type": MimeTypes.JsonLd
+								[HeaderTypes.ContentType]: MimeTypes.JsonLd
 							},
 							body: {
 								"@context": "http://schema.org/",
@@ -417,7 +417,7 @@ export async function identityGetPublic(
 
 	return {
 		headers: {
-			"Content-Type": MimeTypes.JsonLd
+			[HeaderTypes.ContentType]: MimeTypes.JsonLd
 		},
 		body: result
 	};
