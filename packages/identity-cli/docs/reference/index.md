@@ -1,4 +1,4 @@
-# @gtsc/identity-cli
+# @twin.org/identity-cli
 
 ## Classes
 

@@ -1,4 +1,4 @@
-# @gtsc/identity-rest-client
+# @twin.org/identity-rest-client
 
 ## Classes
 

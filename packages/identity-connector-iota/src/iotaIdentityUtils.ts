@@ -1,7 +1,7 @@
 // Copyright 2024 IOTA Stiftung.
 // SPDX-License-Identifier: Apache-2.0.
-import { Urn } from "@gtsc/core";
 import { Utils } from "@iota/sdk-wasm/node/lib/index.js";
+import { Urn } from "@twin.org/core";
 
 /**
  * Utility functions for the iota identity.

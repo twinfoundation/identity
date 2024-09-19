@@ -1,4 +1,4 @@
-# @gtsc/identity-models
+# @twin.org/identity-models
 
 ## Classes
 

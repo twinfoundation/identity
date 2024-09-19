@@ -36,7 +36,7 @@ The vault for the private keys, defaults to "vault".
 
 ### NAMESPACE
 
-> `static` `readonly` **NAMESPACE**: `string` = `"entity-storage"`
+> `readonly` `static` **NAMESPACE**: `string` = `"entity-storage"`
 
 The namespace supported by the identity connector.
 
@@ -96,13 +96,13 @@ The id of the document to resolve.
 
 The resolved document.
 
-#### Implementation of
-
-`IIdentityConnector.resolveDocument`
-
 #### Throws
 
 NotFoundError if the id can not be resolved.
+
+#### Implementation of
+
+`IIdentityConnector.resolveDocument`
 
 ***
 
@@ -136,10 +136,6 @@ The id of the verification method, if undefined uses the kid of the generated JW
 
 The verification method.
 
-#### Implementation of
-
-`IIdentityConnector.addVerificationMethod`
-
 #### Throws
 
 NotFoundError if the id can not be resolved.
@@ -147,6 +143,10 @@ NotFoundError if the id can not be resolved.
 #### Throws
 
 NotSupportedError if the platform does not support multiple keys.
+
+#### Implementation of
+
+`IIdentityConnector.addVerificationMethod`
 
 ***
 
@@ -172,10 +172,6 @@ The id of the verification method.
 
 Nothing.
 
-#### Implementation of
-
-`IIdentityConnector.removeVerificationMethod`
-
 #### Throws
 
 NotFoundError if the id can not be resolved.
@@ -183,6 +179,10 @@ NotFoundError if the id can not be resolved.
 #### Throws
 
 NotSupportedError if the platform does not support multiple revocable keys.
+
+#### Implementation of
+
+`IIdentityConnector.removeVerificationMethod`
 
 ***
 
@@ -220,13 +220,13 @@ The endpoint for the service.
 
 The service.
 
-#### Implementation of
-
-`IIdentityConnector.addService`
-
 #### Throws
 
 NotFoundError if the id can not be resolved.
+
+#### Implementation of
+
+`IIdentityConnector.addService`
 
 ***
 
@@ -252,13 +252,13 @@ The id of the service.
 
 Nothing.
 
-#### Implementation of
-
-`IIdentityConnector.removeService`
-
 #### Throws
 
 NotFoundError if the id can not be resolved.
+
+#### Implementation of
+
+`IIdentityConnector.removeService`
 
 ***
 
@@ -268,7 +268,7 @@ NotFoundError if the id can not be resolved.
 
 Create a verifiable credential for a verification method.
 
-#### Type parameters
+#### Type Parameters
 
 • **T**
 
@@ -316,13 +316,13 @@ The created verifiable credential and its token.
 
 > **jwt**: `string`
 
-#### Implementation of
-
-`IIdentityConnector.createVerifiableCredential`
-
 #### Throws
 
 NotFoundError if the id can not be resolved.
+
+#### Implementation of
+
+`IIdentityConnector.createVerifiableCredential`
 
 ***
 
@@ -332,7 +332,7 @@ NotFoundError if the id can not be resolved.
 
 Check a verifiable credential is valid.
 
-#### Type parameters
+#### Type Parameters
 
 • **T**
 
@@ -472,13 +472,13 @@ The created verifiable presentation and its token.
 
 > **jwt**: `string`
 
-#### Implementation of
-
-`IIdentityConnector.createVerifiablePresentation`
-
 #### Throws
 
 NotFoundError if the id can not be resolved.
+
+#### Implementation of
+
+`IIdentityConnector.createVerifiablePresentation`
 
 ***
 

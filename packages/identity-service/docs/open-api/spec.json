@@ -1,8 +1,8 @@
 {
     "openapi": "3.1.0",
     "info": {
-        "title": "Global Trade and Supply Chain - Test Endpoints",
-        "description": "REST API for Global Trade and Supply Chain - Test Endpoints.",
+        "title": "TWIN - Test Endpoints",
+        "description": "REST API for TWIN - Test Endpoints.",
         "version": "1.0.0",
         "license": {
             "name": "Apache 2.0 License",
@@ -631,7 +631,7 @@
                         "content": {
                             "application/ld+json": {
                                 "schema": {
-                                    "$ref": "https://schema.gtsc.io/json-ld/JsonLdDocument"
+                                    "$ref": "https://schema.twindev.org/json-ld/JsonLdDocument"
                                 },
                                 "examples": {
                                     "identityGetPublicResponseExample": {
@@ -1153,10 +1153,10 @@
                 "type": "object",
                 "properties": {
                     "publicProfile": {
-                        "$ref": "https://schema.gtsc.io/json-ld/JsonLdDocument"
+                        "$ref": "https://schema.twindev.org/json-ld/JsonLdDocument"
                     },
                     "privateProfile": {
-                        "$ref": "https://schema.gtsc.io/json-ld/JsonLdDocument"
+                        "$ref": "https://schema.twindev.org/json-ld/JsonLdDocument"
                     }
                 },
                 "additionalProperties": false,
@@ -1170,10 +1170,10 @@
                         "description": "The identity of the profile, this is the authenticated user identity."
                     },
                     "publicProfile": {
-                        "$ref": "https://schema.gtsc.io/json-ld/JsonLdDocument"
+                        "$ref": "https://schema.twindev.org/json-ld/JsonLdDocument"
                     },
                     "privateProfile": {
-                        "$ref": "https://schema.gtsc.io/json-ld/JsonLdDocument"
+                        "$ref": "https://schema.twindev.org/json-ld/JsonLdDocument"
                     }
                 },
                 "required": [
@@ -1195,7 +1195,7 @@
                                     "description": "The identity."
                                 },
                                 "publicProfile": {
-                                    "$ref": "https://schema.gtsc.io/json-ld/JsonLdDocument"
+                                    "$ref": "https://schema.twindev.org/json-ld/JsonLdDocument"
                                 }
                             },
                             "required": [
@@ -1220,10 +1220,10 @@
                 "type": "object",
                 "properties": {
                     "publicProfile": {
-                        "$ref": "https://schema.gtsc.io/json-ld/JsonLdDocument"
+                        "$ref": "https://schema.twindev.org/json-ld/JsonLdDocument"
                     },
                     "privateProfile": {
-                        "$ref": "https://schema.gtsc.io/json-ld/JsonLdDocument"
+                        "$ref": "https://schema.twindev.org/json-ld/JsonLdDocument"
                     }
                 },
                 "additionalProperties": false,

@@ -6,7 +6,7 @@ Interface describing a contract which provides profile operations.
 
 - `IComponent`
 
-## Type parameters
+## Type Parameters
 
 • **T** *extends* `IJsonLdDocument` = `IJsonLdDocument`
 

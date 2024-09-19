@@ -1,1 +1,1 @@
-# @gtsc/identity-connector-iota - Examples
+# @twin.org/identity-connector-iota - Examples

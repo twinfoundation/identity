@@ -2,7 +2,7 @@
 
 Class which implements the identity profile contract.
 
-## Type parameters
+## Type Parameters
 
 • **T** *extends* `IJsonLdDocument` = `IJsonLdDocument`
 

@@ -1,25 +1,25 @@
-# @gtsc/identity-cli - Examples
+# @twin.org/identity-cli - Examples
 
 ## Command Line Tool
 
 First install the tool with the following script.
 
 ```shell
-npm install @gtsc/identity-cli
+npm install @twin.org/identity-cli
 ```
 
 Running the tool with no commands will provide help for all the commands. By issuing the following command you should see the result.
 
 ```shell
-gtsc-identity
+twin-identity
 ```
 
 Output
 
 ```shell
-🌍 GTSC Identity v1.0.0
+🌍 TWIN Identity v1.0.0
 
-Usage: gtsc-identity [command]
+Usage: twin-identity [command]
 
 Options:
   -V, --version                             output the version number
@@ -49,15 +49,15 @@ Commands:
 You can get further detail on the sub commands by using the help option for the individual commands.
 
 ```shell
-gtsc-identity identity-create --help
+twin-identity identity-create --help
 ```
 
 Output
 
 ```shell
-🌍 GTSC Identity v1.0.0
+🌍 TWIN Identity v1.0.0
 
-Usage: gtsc-identity identity-create [options]
+Usage: twin-identity identity-create [options]
 
 Creates a Decentralized Identifier (DID).
 
@@ -84,9 +84,9 @@ Use this command to create a new DID, the controller address must have sufficien
 
 ```shell
 # Generate a seed and mnemonic and store it in the env file
-gtsc-identity mnemonic --env wallet.env
+twin-identity mnemonic --env wallet.env
 # Generate an address and store it in the env file
-gtsc-identity address --load-env wallet.env --hrp tst --seed !SEED --count 4 --env wallet.env --merge-env
+twin-identity address --load-env wallet.env --hrp tst --seed !SEED --count 4 --env wallet.env --merge-env
 ```
 
 To run this on the IOTA testnet you will need an env file with the following settings. Store the following config as config.env
@@ -101,9 +101,9 @@ To then request some funds and generate the identity you can issue the following
 
 ```shell
 # Fund the controller address from the faucet loading the config and wallet env files
-gtsc-identity faucet --load-env config.env wallet.env --address !ADDRESS_0_BECH32
+twin-identity faucet --load-env config.env wallet.env --address !ADDRESS_0_BECH32
 # Create an identity
-gtsc-identity identity-create --load-env config.env wallet.env --seed !SEED --controller !ADDRESS_0_BECH32 --env identity.env
+twin-identity identity-create --load-env config.env wallet.env --seed !SEED --controller !ADDRESS_0_BECH32 --env identity.env
 ```
 
 ### identity-resolve
@@ -111,7 +111,7 @@ gtsc-identity identity-create --load-env config.env wallet.env --seed !SEED --co
 The identity resolve will lookup and identity by DID to check it exists and return the DID document.
 
 ```shell
-gtsc-identity identity-resolve --load-env config.env identity.env --did !DID --json did-document.json
+twin-identity identity-resolve --load-env config.env identity.env --did !DID --json did-document.json
 ```
 
 ### verification-method-add
@@ -119,7 +119,7 @@ gtsc-identity identity-resolve --load-env config.env identity.env --did !DID --j
 This command will add a verification method to a DID document.
 
 ```shell
-gtsc-identity verification-method-add --load-env config.env wallet.env identity.env --seed !SEED --did !DID --type verificationMethod --env verification-method.env
+twin-identity verification-method-add --load-env config.env wallet.env identity.env --seed !SEED --did !DID --type verificationMethod --env verification-method.env
 ```
 
 ### verification-method-remove
@@ -127,7 +127,7 @@ gtsc-identity verification-method-add --load-env config.env wallet.env identity.
 This command will remove a verification method from a DID document.
 
 ```shell
-gtsc-identity verification-method-remove --load-env config.env wallet.env identity.env verification-method.env --seed !SEED  --id !DID_VERIFICATION_METHOD_ID
+twin-identity verification-method-remove --load-env config.env wallet.env identity.env verification-method.env --seed !SEED  --id !DID_VERIFICATION_METHOD_ID
 ```
 
 ### service-add
@@ -135,7 +135,7 @@ gtsc-identity verification-method-remove --load-env config.env wallet.env identi
 This command will add a service to a DID document.
 
 ```shell
-gtsc-identity service-add --load-env config.env wallet.env identity.env --seed !SEED --did !DID --id linked-domain --type LinkedDomains --endpoint https://www.gtsc.io --env service.env
+twin-identity service-add --load-env config.env wallet.env identity.env --seed !SEED --did !DID --id linked-domain --type LinkedDomains --endpoint https://www.twindev.org --env service.env
 ```
 
 ### service-remove
@@ -143,7 +143,7 @@ gtsc-identity service-add --load-env config.env wallet.env identity.env --seed !
 This command will remove a service from the DID document.
 
 ```shell
-gtsc-identity service-remove --load-env config.env wallet.env identity.env service.env --seed !SEED --did !DID --id !DID_SERVICE_ID
+twin-identity service-remove --load-env config.env wallet.env identity.env service.env --seed !SEED --did !DID --id !DID_SERVICE_ID
 ```
 
 ## verifiable-credential-create
@@ -158,7 +158,7 @@ This command will generate a verifiable credential using the specified verificat
 ```
 
 ```shell
-gtsc-identity verifiable-credential-create --load-env config.env verification-method.env --id !DID_VERIFICATION_METHOD_ID --private-key !DID_VERIFICATION_METHOD_PRIVATE_KEY --credential-id https://example.edu/credentials/3732 --types UniversityDegreeCredential --subject-json subject.json --env vc.env --revocation-index 0
+twin-identity verifiable-credential-create --load-env config.env verification-method.env --id !DID_VERIFICATION_METHOD_ID --private-key !DID_VERIFICATION_METHOD_PRIVATE_KEY --credential-id https://example.edu/credentials/3732 --types UniversityDegreeCredential --subject-json subject.json --env vc.env --revocation-index 0
 ```
 
 This will output the verifiable credential as a JSON Web Token e.g.
@@ -172,7 +172,7 @@ eyJraWQiOiJkaWQ6aW90YTp0c3Q6MHgxZTQ3YWQ0MjY4YWI5ZWNhNTFkYTkwNmRkNzE4MDIxZmJkNGYy
 You can verify a verifiable credential stored as a JWT using this command.
 
 ```shell
-gtsc-identity verifiable-credential-verify --load-env config.env vc.env --jwt !DID_VERIFIABLE_CREDENTIAL_JWT
+twin-identity verifiable-credential-verify --load-env config.env vc.env --jwt !DID_VERIFIABLE_CREDENTIAL_JWT
 ```
 
 ## verifiable-credential-revoke
@@ -180,7 +180,7 @@ gtsc-identity verifiable-credential-verify --load-env config.env vc.env --jwt !D
 You can revoke a verifiable credential by revoking the index on the generating document.
 
 ```shell
-gtsc-identity verifiable-credential-revoke --load-env config.env wallet.env identity.env --seed !SEED --did !DID --revocation-index 5
+twin-identity verifiable-credential-revoke --load-env config.env wallet.env identity.env --seed !SEED --did !DID --revocation-index 5
 ```
 
 ## verifiable-credential-unrevoke
@@ -188,7 +188,7 @@ gtsc-identity verifiable-credential-revoke --load-env config.env wallet.env iden
 You can unrevoke a verifiable credential by revoking the index on the generating document.
 
 ```shell
-gtsc-identity verifiable-credential-unrevoke --load-env config.env wallet.env identity.env --seed !SEED --did !DID --revocation-index 5
+twin-identity verifiable-credential-unrevoke --load-env config.env wallet.env identity.env --seed !SEED --did !DID --revocation-index 5
 ```
 
 ## proof-create
@@ -196,7 +196,7 @@ gtsc-identity verifiable-credential-unrevoke --load-env config.env wallet.env id
 This command will generate a proof using the specified verification method.
 
 ```shell
-gtsc-identity proof-create --load-env config.env verification-method.env --id !DID_VERIFICATION_METHOD_ID --private-key !DID_VERIFICATION_METHOD_PRIVATE_KEY --data aGVsbG8gd29ybGQ=
+twin-identity proof-create --load-env config.env verification-method.env --id !DID_VERIFICATION_METHOD_ID --private-key !DID_VERIFICATION_METHOD_PRIVATE_KEY --data aGVsbG8gd29ybGQ=
 ```
 
 This will output the proof as a set of data containing the type and a value in base64.
@@ -206,5 +206,5 @@ This will output the proof as a set of data containing the type and a value in b
 This command will verify a proof using the specified verification method.
 
 ```shell
-gtsc-identity proof-verify --load-env config.env verification-method.env --id !DID_VERIFICATION_METHOD_ID --data aGVsbG8gd29ybGQ= --type Ed25519 --value lrPdZ+Gfgc8w/ha2YU7hil8s+gykFHAdmIEdJdraWeRkkb8nHHF1PLKs4gGPXCT1mqBIwiwOgz5V0JKIg00UDg==
+twin-identity proof-verify --load-env config.env verification-method.env --id !DID_VERIFICATION_METHOD_ID --data aGVsbG8gd29ybGQ= --type Ed25519 --value lrPdZ+Gfgc8w/ha2YU7hil8s+gykFHAdmIEdJdraWeRkkb8nHHF1PLKs4gGPXCT1mqBIwiwOgz5V0JKIg00UDg==
 ```

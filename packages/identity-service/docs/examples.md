@@ -1,1 +1,1 @@
-# @gtsc/identity-service - Examples
+# @twin.org/identity-service - Examples

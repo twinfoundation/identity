@@ -1,19 +1,5 @@
 // Copyright 2024 IOTA Stiftung.
 // SPDX-License-Identifier: Apache-2.0.
-import { Converter, GeneralError, Guards, Is, NotFoundError, RandomHelper } from "@gtsc/core";
-import { Sha256 } from "@gtsc/crypto";
-import { Iota } from "@gtsc/dlt-iota";
-import { DocumentHelper, type IIdentityConnector } from "@gtsc/identity-models";
-import { nameof } from "@gtsc/nameof";
-import {
-	DidVerificationMethodType,
-	type IDidDocument,
-	type IDidDocumentVerificationMethod,
-	type IDidService,
-	type IDidVerifiableCredential,
-	type IDidVerifiablePresentation
-} from "@gtsc/standards-w3c-did";
-import { VaultConnectorFactory, VaultKeyType, type IVaultConnector } from "@gtsc/vault-models";
 import {
 	Credential,
 	Duration,
@@ -50,6 +36,20 @@ import {
 	type Subject
 } from "@iota/identity-wasm/node/index.js";
 import { Client, Utils } from "@iota/sdk-wasm/node/lib/index.js";
+import { Converter, GeneralError, Guards, Is, NotFoundError, RandomHelper } from "@twin.org/core";
+import { Sha256 } from "@twin.org/crypto";
+import { Iota } from "@twin.org/dlt-iota";
+import { DocumentHelper, type IIdentityConnector } from "@twin.org/identity-models";
+import { nameof } from "@twin.org/nameof";
+import {
+	DidVerificationMethodType,
+	type IDidDocument,
+	type IDidDocumentVerificationMethod,
+	type IDidService,
+	type IDidVerifiableCredential,
+	type IDidVerifiablePresentation
+} from "@twin.org/standards-w3c-did";
+import { VaultConnectorFactory, VaultKeyType, type IVaultConnector } from "@twin.org/vault-models";
 import type { IIotaIdentityConnectorConfig } from "./models/IIotaIdentityConnectorConfig";
 
 /**

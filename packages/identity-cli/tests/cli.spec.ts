@@ -1,7 +1,7 @@
 // Copyright 2024 IOTA Stiftung.
 // SPDX-License-Identifier: Apache-2.0.
 import path from "node:path";
-import { CLIDisplay } from "@gtsc/cli-core";
+import { CLIDisplay } from "@twin.org/cli-core";
 import { CLI } from "../src/cli";
 
 let writeBuffer: string[] = [];

@@ -8,15 +8,15 @@ import {
 	Is,
 	NotFoundError,
 	ObjectHelper
-} from "@gtsc/core";
-import type { IJsonLdDocument } from "@gtsc/data-json-ld";
-import { ComparisonOperator } from "@gtsc/entity";
+} from "@twin.org/core";
+import type { IJsonLdDocument } from "@twin.org/data-json-ld";
+import { ComparisonOperator } from "@twin.org/entity";
 import {
 	EntityStorageConnectorFactory,
 	type IEntityStorageConnector
-} from "@gtsc/entity-storage-models";
-import type { IIdentityProfileConnector } from "@gtsc/identity-models";
-import { nameof } from "@gtsc/nameof";
+} from "@twin.org/entity-storage-models";
+import type { IIdentityProfileConnector } from "@twin.org/identity-models";
+import { nameof } from "@twin.org/nameof";
 import type { IdentityProfile } from "./entities/identityProfile";
 
 /**

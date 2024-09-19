@@ -1,4 +1,4 @@
-# @gtsc/identity-service
+# @twin.org/identity-service
 
 ## Classes
 

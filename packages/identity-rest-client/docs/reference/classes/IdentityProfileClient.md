@@ -6,7 +6,7 @@ Client for performing identity through to REST endpoints.
 
 - `BaseRestClient`
 
-## Type parameters
+## Type Parameters
 
 • **T** *extends* `IJsonLdDocument` = `IJsonLdDocument`
 

@@ -1,1 +1,1 @@
-# @gtsc/identity-connector-entity-storage - Examples
+# @twin.org/identity-connector-entity-storage - Examples

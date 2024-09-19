@@ -1,5 +1,5 @@
-# @gtsc/identity-service-models - Changelog
+# @twin.org/identity-service-models - Changelog
 
-## v0.0.1
+## v0.0.1-next.3
 
 - Initial Release

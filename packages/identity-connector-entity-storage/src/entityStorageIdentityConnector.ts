@@ -13,14 +13,14 @@ import {
 	NotFoundError,
 	ObjectHelper,
 	RandomHelper
-} from "@gtsc/core";
-import { Sha256 } from "@gtsc/crypto";
+} from "@twin.org/core";
+import { Sha256 } from "@twin.org/crypto";
 import {
 	EntityStorageConnectorFactory,
 	type IEntityStorageConnector
-} from "@gtsc/entity-storage-models";
-import { DocumentHelper, type IIdentityConnector } from "@gtsc/identity-models";
-import { nameof } from "@gtsc/nameof";
+} from "@twin.org/entity-storage-models";
+import { DocumentHelper, type IIdentityConnector } from "@twin.org/identity-models";
+import { nameof } from "@twin.org/nameof";
 import {
 	DidVerificationMethodType,
 	type IDidDocument,
@@ -28,9 +28,9 @@ import {
 	type IDidService,
 	type IDidVerifiableCredential,
 	type IDidVerifiablePresentation
-} from "@gtsc/standards-w3c-did";
-import { VaultConnectorFactory, VaultKeyType, type IVaultConnector } from "@gtsc/vault-models";
-import { Jwt, type IJwk, type IJwtHeader, type IJwtPayload } from "@gtsc/web";
+} from "@twin.org/standards-w3c-did";
+import { VaultConnectorFactory, VaultKeyType, type IVaultConnector } from "@twin.org/vault-models";
+import { Jwt, type IJwk, type IJwtHeader, type IJwtPayload } from "@twin.org/web";
 import type { IdentityDocument } from "./entities/identityDocument";
 
 /**
