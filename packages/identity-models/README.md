@@ -1,11 +1,11 @@
-# GTSC Identity Service Models
+# TWIN Identity Service Models
 
 Models which define the structure of the service implementations.
 
 ## Installation
 
 ```shell
-npm install @gtsc/identity-service-models
+npm install @twin.org/identity-service-models
 ```
 
 ## Examples
@@ -14,7 +14,7 @@ Usage of the APIs is shown in the examples [docs/examples.md](docs/examples.md)
 
 ## Reference
 
-Detailed reference documentation for the API can be found in [docs/reference/globals.md](docs/reference/globals.md)
+Detailed reference documentation for the API can be found in [docs/reference/index.md](docs/reference/index.md)
 
 ## Changelog
 

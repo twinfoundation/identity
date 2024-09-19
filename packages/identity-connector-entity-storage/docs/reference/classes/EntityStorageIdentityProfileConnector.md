@@ -2,7 +2,7 @@
 
 Class which implements the identity profile connector contract.
 
-## Type parameters
+## Type Parameters
 
 • **T** *extends* `IJsonLdDocument` = `IJsonLdDocument`
 
@@ -38,7 +38,7 @@ The storage connector for the profiles, default to "identity-profile".
 
 ### NAMESPACE
 
-> `static` `readonly` **NAMESPACE**: `string` = `"entity-storage"`
+> `readonly` `static` **NAMESPACE**: `string` = `"entity-storage"`
 
 The namespace supported by the identity profile connector.
 

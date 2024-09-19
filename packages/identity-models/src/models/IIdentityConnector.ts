@@ -1,6 +1,6 @@
 // Copyright 2024 IOTA Stiftung.
 // SPDX-License-Identifier: Apache-2.0.
-import type { IComponent } from "@gtsc/core";
+import type { IComponent } from "@twin.org/core";
 import type {
 	DidVerificationMethodType,
 	IDidDocument,
@@ -8,7 +8,7 @@ import type {
 	IDidService,
 	IDidVerifiableCredential,
 	IDidVerifiablePresentation
-} from "@gtsc/standards-w3c-did";
+} from "@twin.org/standards-w3c-did";
 
 /**
  * Interface describing an identity connector.

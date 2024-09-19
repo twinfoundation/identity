@@ -1,4 +1,4 @@
-# @gtsc/identity-connector-entity-storage
+# @twin.org/identity-connector-entity-storage
 
 ## Classes
 

@@ -1,5 +1,5 @@
-# @gtsc/identity-rest-client - Changelog
+# @twin.org/identity-rest-client - Changelog
 
-## v0.0.3
+## v0.0.1-next.3
 
 - Initial Release

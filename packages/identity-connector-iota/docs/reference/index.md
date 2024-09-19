@@ -1,4 +1,4 @@
-# @gtsc/identity-connector-iota
+# @twin.org/identity-connector-iota
 
 ## Classes
 

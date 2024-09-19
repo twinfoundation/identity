@@ -198,7 +198,7 @@ NotFoundError if the id can not be resolved.
 
 Create a verifiable credential for a verification method.
 
-#### Type parameters
+#### Type Parameters
 
 • **T**
 
@@ -258,7 +258,7 @@ NotFoundError if the id can not be resolved.
 
 Check a verifiable credential is valid.
 
-#### Type parameters
+#### Type Parameters
 
 • **T**
 

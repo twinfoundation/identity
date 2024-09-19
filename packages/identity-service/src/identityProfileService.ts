@@ -1,13 +1,13 @@
 // Copyright 2024 IOTA Stiftung.
 // SPDX-License-Identifier: Apache-2.0.
-import { BaseError, GeneralError, Guards, Is, NotFoundError } from "@gtsc/core";
-import type { IJsonLdDocument } from "@gtsc/data-json-ld";
+import { BaseError, GeneralError, Guards, Is, NotFoundError } from "@twin.org/core";
+import type { IJsonLdDocument } from "@twin.org/data-json-ld";
 import {
 	IdentityProfileConnectorFactory,
 	type IIdentityProfileComponent,
 	type IIdentityProfileConnector
-} from "@gtsc/identity-models";
-import { nameof } from "@gtsc/nameof";
+} from "@twin.org/identity-models";
+import { nameof } from "@twin.org/nameof";
 
 /**
  * Class which implements the identity profile contract.

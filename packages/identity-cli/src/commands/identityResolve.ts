@@ -1,10 +1,16 @@
 // Copyright 2024 IOTA Stiftung.
 // SPDX-License-Identifier: Apache-2.0.
-import { CLIDisplay, CLIOptions, CLIParam, CLIUtils, type CliOutputOptions } from "@gtsc/cli-core";
-import { I18n, Is, StringHelper } from "@gtsc/core";
-import { IotaIdentityConnector, IotaIdentityUtils } from "@gtsc/identity-connector-iota";
-import { IotaWalletConnector } from "@gtsc/wallet-connector-iota";
-import { WalletConnectorFactory } from "@gtsc/wallet-models";
+import {
+	CLIDisplay,
+	CLIOptions,
+	CLIParam,
+	CLIUtils,
+	type CliOutputOptions
+} from "@twin.org/cli-core";
+import { I18n, Is, StringHelper } from "@twin.org/core";
+import { IotaIdentityConnector, IotaIdentityUtils } from "@twin.org/identity-connector-iota";
+import { IotaWalletConnector } from "@twin.org/wallet-connector-iota";
+import { WalletConnectorFactory } from "@twin.org/wallet-models";
 import { Command } from "commander";
 import { setupVault } from "./setupCommands";
 

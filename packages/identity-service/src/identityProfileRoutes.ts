@@ -8,9 +8,9 @@ import type {
 	INotFoundResponse,
 	IRestRoute,
 	ITag
-} from "@gtsc/api-models";
-import { Coerce, ComponentFactory, Guards } from "@gtsc/core";
-import type { IJsonLdDocument } from "@gtsc/data-json-ld";
+} from "@twin.org/api-models";
+import { Coerce, ComponentFactory, Guards } from "@twin.org/core";
+import type { IJsonLdDocument } from "@twin.org/data-json-ld";
 import type {
 	IIdentityProfileComponent,
 	IIdentityProfileCreateRequest,
@@ -21,9 +21,9 @@ import type {
 	IIdentityProfileListRequest,
 	IIdentityProfileListResponse,
 	IIdentityProfileUpdateRequest
-} from "@gtsc/identity-models";
-import { nameof } from "@gtsc/nameof";
-import { HeaderTypes, HttpStatusCode, MimeTypes } from "@gtsc/web";
+} from "@twin.org/identity-models";
+import { nameof } from "@twin.org/nameof";
+import { HeaderTypes, HttpStatusCode, MimeTypes } from "@twin.org/web";
 
 /**
  * The source used when communicating about these routes.

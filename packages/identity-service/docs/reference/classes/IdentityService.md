@@ -32,7 +32,7 @@ The configuration for the service.
 
 ### NAMESPACE
 
-> `static` `readonly` **NAMESPACE**: `string` = `"did"`
+> `readonly` `static` **NAMESPACE**: `string` = `"did"`
 
 The namespace supported by the identity service.
 
