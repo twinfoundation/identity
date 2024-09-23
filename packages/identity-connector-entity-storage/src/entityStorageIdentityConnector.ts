@@ -27,6 +27,8 @@ import {
 import { DocumentHelper, type IIdentityConnector } from "@twin.org/identity-models";
 import { nameof } from "@twin.org/nameof";
 import {
+	DidContexts,
+	DidTypes,
 	DidVerificationMethodType,
 	type IDidDocument,
 	type IDidDocumentVerificationMethod,
@@ -454,7 +456,7 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 
 			const revocationService = issuerDidDocument.service?.find(s => s.id.endsWith("#revocation"));
 
-			const finalTypes = ["VerifiableCredential"];
+			const finalTypes: string[] = [DidTypes.VerifiableCredential];
 			const credContext = JsonLdProcessor.extractProperty<IJsonLdContextDefinitionRoot>(
 				credential,
 				["@context"]
@@ -466,9 +468,7 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 			}
 
 			const verifiableCredential: IDidVerifiableCredential = {
-				"@context":
-					JsonLdProcessor.combineContexts("https://www.w3.org/2018/credentials/v2", credContext) ??
-					null,
+				"@context": JsonLdProcessor.combineContexts(DidContexts.ContextV1, credContext) ?? null,
 				id,
 				type: finalTypes,
 				credentialSubject: credential,
@@ -830,7 +830,7 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 				throw new GeneralError(this.CLASS_NAME, "publicKeyJwkMissing");
 			}
 
-			const finalTypes = ["VerifiablePresentation"];
+			const finalTypes: string[] = [DidTypes.VerifiablePresentation];
 			if (Is.array(types)) {
 				finalTypes.push(...types);
 			} else if (Is.stringValue(types)) {
@@ -838,9 +838,7 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 			}
 
 			const verifiablePresentation: IDidVerifiablePresentation = {
-				"@context":
-					JsonLdProcessor.combineContexts("https://www.w3.org/2018/credentials/v2", contexts) ??
-					null,
+				"@context": JsonLdProcessor.combineContexts(DidContexts.ContextV1, contexts) ?? null,
 				id: presentationId,
 				type: finalTypes,
 				verifiableCredential: verifiableCredentials,

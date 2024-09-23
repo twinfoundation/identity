@@ -4,10 +4,12 @@ import { Converter, Is } from "@twin.org/core";
 import type { IJsonLdNodeObject } from "@twin.org/data-json-ld";
 import type { MemoryEntityStorageConnector } from "@twin.org/entity-storage-connector-memory";
 import { EntityStorageConnectorFactory } from "@twin.org/entity-storage-models";
-import type {
-	DidVerificationMethodType,
-	IDidDocumentVerificationMethod,
-	IDidService
+import {
+	DidContexts,
+	DidTypes,
+	type DidVerificationMethodType,
+	type IDidDocumentVerificationMethod,
+	type IDidService
 } from "@twin.org/standards-w3c-did";
 import type { VaultSecret } from "@twin.org/vault-connector-entity-storage";
 import {
@@ -493,11 +495,11 @@ describe("IotaIdentityConnector", () => {
 		);
 
 		expect(result.verifiableCredential["@context"]).toEqual([
-			"https://www.w3.org/2018/credentials/v1",
+			DidContexts.ContextV1,
 			"http://schema.org/"
 		]);
 		expect(result.verifiableCredential.id).toEqual("https://example.com/credentials/3732");
-		expect(result.verifiableCredential.type).toContain("VerifiableCredential");
+		expect(result.verifiableCredential.type).toContain(DidTypes.VerifiableCredential);
 		expect(result.verifiableCredential.type).toContain("Person");
 
 		const subject = Is.array(result.verifiableCredential?.credentialSubject)
@@ -547,11 +549,11 @@ describe("IotaIdentityConnector", () => {
 
 		expect(result.revoked).toBeFalsy();
 		expect(result.verifiableCredential?.["@context"]).toEqual([
-			"https://www.w3.org/2018/credentials/v1",
+			DidContexts.ContextV1,
 			"http://schema.org/"
 		]);
 		expect(result.verifiableCredential?.id).toEqual("https://example.com/credentials/3732");
-		expect(result.verifiableCredential?.type).toContain("VerifiableCredential");
+		expect(result.verifiableCredential?.type).toContain(DidTypes.VerifiableCredential);
 		expect(result.verifiableCredential?.type).toContain("Person");
 
 		const subject = Is.array(result.verifiableCredential?.credentialSubject)
@@ -798,10 +800,10 @@ describe("IotaIdentityConnector", () => {
 		);
 
 		expect(result.verifiablePresentation["@context"]).toEqual([
-			"https://www.w3.org/2018/credentials/v1",
+			DidContexts.ContextV1,
 			"http://schema.org/"
 		]);
-		expect(result.verifiablePresentation.type).toEqual(["VerifiablePresentation", "Person"]);
+		expect(result.verifiablePresentation.type).toEqual([DidTypes.VerifiablePresentation, "Person"]);
 		expect(result.verifiablePresentation.verifiableCredential).toBeDefined();
 		expect(result.verifiablePresentation.verifiableCredential[0]).toEqual(testVcJwt);
 		expect(result.verifiablePresentation.holder?.startsWith("did:iota")).toBeTruthy();
@@ -839,10 +841,13 @@ describe("IotaIdentityConnector", () => {
 
 		expect(result.revoked).toBeFalsy();
 		expect(result.verifiablePresentation?.["@context"]).toEqual([
-			"https://www.w3.org/2018/credentials/v1",
+			DidContexts.ContextV1,
 			"http://schema.org/"
 		]);
-		expect(result.verifiablePresentation?.type).toEqual(["VerifiablePresentation", "Person"]);
+		expect(result.verifiablePresentation?.type).toEqual([
+			DidTypes.VerifiablePresentation,
+			"Person"
+		]);
 		expect(result.verifiablePresentation?.verifiableCredential).toBeDefined();
 		expect(result.verifiablePresentation?.holder?.startsWith("did:iota")).toBeTruthy();
 		expect(result.issuers).toBeDefined();

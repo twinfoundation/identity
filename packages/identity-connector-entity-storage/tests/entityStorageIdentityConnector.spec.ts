@@ -6,7 +6,12 @@ import type { IJsonLdNodeObject } from "@twin.org/data-json-ld";
 import { MemoryEntityStorageConnector } from "@twin.org/entity-storage-connector-memory";
 import { EntityStorageConnectorFactory } from "@twin.org/entity-storage-models";
 import { nameof } from "@twin.org/nameof";
-import type { DidVerificationMethodType, IDidService } from "@twin.org/standards-w3c-did";
+import {
+	DidContexts,
+	DidTypes,
+	type DidVerificationMethodType,
+	type IDidService
+} from "@twin.org/standards-w3c-did";
 import {
 	EntityStorageVaultConnector,
 	type VaultKey,
@@ -413,11 +418,11 @@ describe("EntityStorageIdentityConnector", () => {
 		);
 
 		expect(result.verifiableCredential["@context"]).toEqual([
-			"https://www.w3.org/2018/credentials/v2",
+			DidContexts.ContextV1,
 			"http://schema.org/"
 		]);
 		expect(result.verifiableCredential.id).toEqual("https://example.com/credentials/3732");
-		expect(result.verifiableCredential.type).toContain("VerifiableCredential");
+		expect(result.verifiableCredential.type).toContain(DidTypes.VerifiableCredential);
 		expect(result.verifiableCredential.type).toContain("Person");
 
 		const subject = Is.array(result.verifiableCredential.credentialSubject)
@@ -462,11 +467,11 @@ describe("EntityStorageIdentityConnector", () => {
 
 		expect(result.revoked).toBeFalsy();
 		expect(result.verifiableCredential?.["@context"]).toEqual([
-			"https://www.w3.org/2018/credentials/v2",
+			DidContexts.ContextV1,
 			"http://schema.org/"
 		]);
 		expect(result.verifiableCredential?.id).toEqual("https://example.com/credentials/3732");
-		expect(result.verifiableCredential?.type).toContain("VerifiableCredential");
+		expect(result.verifiableCredential?.type).toContain(DidTypes.VerifiableCredential);
 		expect(result.verifiableCredential?.type).toContain("Person");
 		const subject = Is.array(result.verifiableCredential?.credentialSubject)
 			? result.verifiableCredential?.credentialSubject[0]
@@ -705,10 +710,10 @@ describe("EntityStorageIdentityConnector", () => {
 		);
 
 		expect(result.verifiablePresentation["@context"]).toEqual([
-			"https://www.w3.org/2018/credentials/v2",
+			DidContexts.ContextV1,
 			"http://schema.org/"
 		]);
-		expect(result.verifiablePresentation.type).toEqual(["VerifiablePresentation", "Person"]);
+		expect(result.verifiablePresentation.type).toEqual([DidTypes.VerifiablePresentation, "Person"]);
 		expect(result.verifiablePresentation.verifiableCredential).toBeDefined();
 		expect(result.verifiablePresentation.verifiableCredential[0]).toEqual(testVcJwt);
 		expect(result.verifiablePresentation.holder?.startsWith("did:entity-storage")).toBeTruthy();
@@ -738,10 +743,13 @@ describe("EntityStorageIdentityConnector", () => {
 
 		expect(result.revoked).toBeFalsy();
 		expect(result.verifiablePresentation?.["@context"]).toEqual([
-			"https://www.w3.org/2018/credentials/v2",
+			DidContexts.ContextV1,
 			"http://schema.org/"
 		]);
-		expect(result.verifiablePresentation?.type).toEqual(["VerifiablePresentation", "Person"]);
+		expect(result.verifiablePresentation?.type).toEqual([
+			DidTypes.VerifiablePresentation,
+			"Person"
+		]);
 		expect(result.verifiablePresentation?.verifiableCredential).toBeDefined();
 		expect(result.verifiablePresentation?.holder?.startsWith("did:entity-storage")).toBeTruthy();
 		expect(result.issuers).toBeDefined();
