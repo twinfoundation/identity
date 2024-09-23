@@ -1,11 +1,11 @@
 {
 	"name": "@twin.org/identity-cli",
-	"version": "0.0.1-next.3",
+	"version": "0.0.1-next.4",
 	"description": "A command line interface for interacting with the identity connectors",
 	"repository": {
 		"type": "git",
 		"url": "git+https://github.com/twinfoundation/identity.git",
-		"directory": "packages/identity-cli"
+		"directory": "apps/identity-cli"
 	},
 	"author": "martyn.janes@iota.org",
 	"license": "Apache-2.0",
@@ -34,8 +34,8 @@
 		"@twin.org/crypto-cli": "next",
 		"@twin.org/entity": "next",
 		"@twin.org/entity-storage-connector-memory": "next",
-		"@twin.org/identity-models": "0.0.1-next.3",
-		"@twin.org/identity-connector-iota": "0.0.1-next.3",
+		"@twin.org/identity-models": "0.0.1-next.4",
+		"@twin.org/identity-connector-iota": "0.0.1-next.4",
 		"@twin.org/nameof": "next",
 		"@twin.org/standards-w3c-did": "next",
 		"@twin.org/vault-connector-entity-storage": "next",

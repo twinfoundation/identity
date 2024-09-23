@@ -12,7 +12,7 @@ This mono-repository contains the packages to use with Identity in TWIN applicat
 
 ## Apps
 
-- [identity-cli](packages/identity-cli/README.md) - A command line interface for interacting with the identity APIs.
+- [identity-cli](apps/identity-cli/README.md) - A command line interface for interacting with the identity APIs.
 
 ## Contributing
 

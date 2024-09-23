@@ -1,17 +1,18 @@
 # @twin.org/identity-cli - Examples
 
-## Command Line Tool
+## Running
 
-First install the tool with the following script.
+To install and run the CLI locally use the following commands:
 
 ```shell
-npm install @twin.org/identity-cli
+npm install @twin.org/identity-cli -g
+twin-identity
 ```
 
-Running the tool with no commands will provide help for all the commands. By issuing the following command you should see the result.
+or run directly using NPX:
 
 ```shell
-twin-identity
+npx "@twin.org/identity-cli"
 ```
 
 Output
