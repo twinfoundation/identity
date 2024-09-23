@@ -9,6 +9,9 @@ This mono-repository contains the packages to use with Identity in TWIN applicat
 - [identity-connector-iota](packages/identity-connector-iota/README.md) - Identity connector implementation using IOTA.
 - [identity-service](packages/identity-service/README.md) - Identity contract implementation and REST endpoint definitions.
 - [identity-rest-client](packages/identity-rest-client/README.md) - Identity contract implementation which can connect to REST endpoints.
+
+## Apps
+
 - [identity-cli](packages/identity-cli/README.md) - A command line interface for interacting with the identity APIs.
 
 ## Contributing

@@ -44,7 +44,7 @@
 		"packages/identity-service",
 		"packages/identity-rest-client",
 		"packages/identity-connector-iota",
-		"packages/identity-cli"
+		"app/identity-cli"
 	],
 	"type": "module"
 }
