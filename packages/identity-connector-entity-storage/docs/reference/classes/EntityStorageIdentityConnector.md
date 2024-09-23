@@ -294,7 +294,7 @@ The type for the data stored in the verifiable credential.
 
 The subject data to store for the credential.
 
-• **contexts?**: `string` \| `string`[]
+• **contexts?**: `IJsonLdContextDefinitionRoot`
 
 Additional contexts to include in the credential.
 
@@ -450,7 +450,7 @@ The types for the data stored in the verifiable credential.
 
 The credentials to use for creating the presentation in jwt format.
 
-• **contexts?**: `string` \| `string`[]
+• **contexts?**: `IJsonLdContextDefinitionRoot`
 
 Additional contexts to include in the presentation.
 

@@ -1,6 +1,7 @@
 // Copyright 2024 IOTA Stiftung.
 // SPDX-License-Identifier: Apache-2.0.
 import type { IComponent } from "@twin.org/core";
+import type { IJsonLdContextDefinitionRoot } from "@twin.org/data-json-ld";
 import type {
 	DidVerificationMethodType,
 	IDidDocument,
@@ -101,7 +102,7 @@ export interface IIdentityConnector extends IComponent {
 		credentialId: string | undefined,
 		types: string | string[] | undefined,
 		subject: T | T[],
-		contexts?: string | string[],
+		contexts?: IJsonLdContextDefinitionRoot,
 		revocationIndex?: number
 	): Promise<{
 		verifiableCredential: IDidVerifiableCredential<T>;
@@ -160,7 +161,7 @@ export interface IIdentityConnector extends IComponent {
 		presentationMethodId: string,
 		types: string | string[] | undefined,
 		verifiableCredentials: string[],
-		contexts?: string | string[],
+		contexts?: IJsonLdContextDefinitionRoot,
 		expiresInMinutes?: number
 	): Promise<{
 		verifiablePresentation: IDidVerifiablePresentation;

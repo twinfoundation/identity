@@ -38,6 +38,7 @@ import {
 import { Client, Utils } from "@iota/sdk-wasm/node/lib/index.js";
 import { Converter, GeneralError, Guards, Is, NotFoundError, RandomHelper } from "@twin.org/core";
 import { Sha256 } from "@twin.org/crypto";
+import type { IJsonLdContextDefinitionRoot } from "@twin.org/data-json-ld";
 import { Iota } from "@twin.org/dlt-iota";
 import { DocumentHelper, type IIdentityConnector } from "@twin.org/identity-models";
 import { nameof } from "@twin.org/nameof";
@@ -435,7 +436,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 		credentialId: string | undefined,
 		types: string | string[] | undefined,
 		subject: T | T[],
-		contexts?: string | string[],
+		contexts?: IJsonLdContextDefinitionRoot,
 		revocationIndex?: number
 	): Promise<{
 		verifiableCredential: IDidVerifiableCredential<T>;
@@ -496,15 +497,11 @@ export class IotaIdentityConnector implements IIdentityConnector {
 				finalTypes.push(types);
 			}
 
-			const finalContexts = [];
-			if (Is.array(contexts)) {
-				finalContexts.push(...contexts);
-			} else if (Is.stringValue(contexts)) {
-				finalContexts.push(contexts);
-			}
-
 			const unsignedVc = new Credential({
-				context: finalContexts,
+				context: contexts as
+					| string
+					| { [id: string]: unknown }
+					| (string | { [id: string]: unknown })[],
 				id: credentialId,
 				type: finalTypes,
 				issuer: idParts.id,
@@ -716,7 +713,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 		presentationMethodId: string,
 		types: string | string[] | undefined,
 		verifiableCredentials: string[],
-		contexts?: string | string[],
+		contexts?: IJsonLdContextDefinitionRoot,
 		expiresInMinutes?: number
 	): Promise<{
 		verifiablePresentation: IDidVerifiablePresentation;
@@ -769,15 +766,11 @@ export class IotaIdentityConnector implements IIdentityConnector {
 				finalTypes.push(types);
 			}
 
-			const finalContexts = [];
-			if (Is.array(contexts)) {
-				finalContexts.push(...contexts);
-			} else if (Is.stringValue(contexts)) {
-				finalContexts.push(contexts);
-			}
-
 			const unsignedVp = new Presentation({
-				context: finalContexts,
+				context: contexts as
+					| string
+					| { [id: string]: unknown }
+					| (string | { [id: string]: unknown })[],
 				verifiableCredential: verifiableCredentials.map(j => new Jwt(j)),
 				type: finalTypes,
 				holder: idParts.id

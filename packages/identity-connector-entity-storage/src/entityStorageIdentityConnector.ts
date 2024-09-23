@@ -15,6 +15,7 @@ import {
 	RandomHelper
 } from "@twin.org/core";
 import { Sha256 } from "@twin.org/crypto";
+import { JsonLdProcessor, type IJsonLdContextDefinitionRoot } from "@twin.org/data-json-ld";
 import {
 	EntityStorageConnectorFactory,
 	type IEntityStorageConnector
@@ -408,7 +409,7 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 		credentialId: string | undefined,
 		types: string | string[] | undefined,
 		subject: T | T[],
-		contexts?: string | string[],
+		contexts?: IJsonLdContextDefinitionRoot,
 		revocationIndex?: number
 	): Promise<{
 		verifiableCredential: IDidVerifiableCredential<T>;
@@ -477,15 +478,10 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 				finalTypes.push(types);
 			}
 
-			const finalContexts = ["https://www.w3.org/2018/credentials/v1"];
-			if (Is.array(contexts)) {
-				finalContexts.push(...contexts);
-			} else if (Is.stringValue(contexts)) {
-				finalContexts.push(contexts);
-			}
-
 			const verifiableCredential: IDidVerifiableCredential<T> = {
-				"@context": finalContexts,
+				"@context":
+					JsonLdProcessor.combineContexts("https://www.w3.org/2018/credentials/v1", contexts) ??
+					null,
 				id: credentialId,
 				type: finalTypes,
 				credentialSubject: subject,
@@ -799,7 +795,7 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 		presentationMethodId: string,
 		types: string | string[] | undefined,
 		verifiableCredentials: string[],
-		contexts?: string | string[],
+		contexts?: IJsonLdContextDefinitionRoot,
 		expiresInMinutes?: number
 	): Promise<{
 		verifiablePresentation: IDidVerifiablePresentation;
@@ -859,15 +855,10 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 				finalTypes.push(types);
 			}
 
-			const finalContexts = ["https://www.w3.org/2018/credentials/v1"];
-			if (Is.array(contexts)) {
-				finalContexts.push(...contexts);
-			} else if (Is.stringValue(contexts)) {
-				finalContexts.push(contexts);
-			}
-
 			const verifiablePresentation: IDidVerifiablePresentation = {
-				"@context": finalContexts,
+				"@context":
+					JsonLdProcessor.combineContexts("https://www.w3.org/2018/credentials/v1", contexts) ??
+					null,
 				type: finalTypes,
 				verifiableCredential: verifiableCredentials,
 				holder: idParts.id

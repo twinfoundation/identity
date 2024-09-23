@@ -24,7 +24,7 @@ The main entry point for the CLI.
 
 ### run()
 
-> **run**(`argv`, `localesDirectory`?): `Promise`\<`number`\>
+> **run**(`argv`, `localesDirectory`?, `options`?): `Promise`\<`number`\>
 
 Run the app.
 
@@ -37,6 +37,14 @@ The process arguments.
 • **localesDirectory?**: `string`
 
 The directory for the locales, default to relative to the script.
+
+• **options?**
+
+Additional options for the CLI.
+
+• **options.overrideOutputWidth?**: `number`
+
+The override output width.
 
 #### Returns
 
