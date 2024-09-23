@@ -32,13 +32,18 @@ import {
 	Timestamp,
 	VerificationMethod,
 	verifyEd25519,
+	type ICredential,
 	type IJwkParams,
 	type Subject
 } from "@iota/identity-wasm/node/index.js";
 import { Client, Utils } from "@iota/sdk-wasm/node/lib/index.js";
 import { Converter, GeneralError, Guards, Is, NotFoundError, RandomHelper } from "@twin.org/core";
 import { Sha256 } from "@twin.org/crypto";
-import type { IJsonLdContextDefinitionRoot } from "@twin.org/data-json-ld";
+import {
+	JsonLdProcessor,
+	type IJsonLdContextDefinitionRoot,
+	type IJsonLdNodeObject
+} from "@twin.org/data-json-ld";
 import { Iota } from "@twin.org/dlt-iota";
 import { DocumentHelper, type IIdentityConnector } from "@twin.org/identity-models";
 import { nameof } from "@twin.org/nameof";
@@ -422,46 +427,25 @@ export class IotaIdentityConnector implements IIdentityConnector {
 	 * Create a verifiable credential for a verification method.
 	 * @param controller The controller of the identity who can make changes.
 	 * @param verificationMethodId The verification method id to use.
-	 * @param credentialId The id of the credential.
-	 * @param types The type for the data stored in the verifiable credential.
-	 * @param subject The subject data to store for the credential.
-	 * @param contexts Additional contexts to include in the credential.
+	 * @param id The id of the credential.
+	 * @param credential The credential to store in the verifiable credential.
 	 * @param revocationIndex The bitmap revocation index of the credential, if undefined will not have revocation status.
 	 * @returns The created verifiable credential and its token.
 	 * @throws NotFoundError if the id can not be resolved.
 	 */
-	public async createVerifiableCredential<T>(
+	public async createVerifiableCredential(
 		controller: string,
 		verificationMethodId: string,
-		credentialId: string | undefined,
-		types: string | string[] | undefined,
-		subject: T | T[],
-		contexts?: IJsonLdContextDefinitionRoot,
+		id: string | undefined,
+		credential: IJsonLdNodeObject,
 		revocationIndex?: number
 	): Promise<{
-		verifiableCredential: IDidVerifiableCredential<T>;
+		verifiableCredential: IDidVerifiableCredential;
 		jwt: string;
 	}> {
 		Guards.stringValue(this.CLASS_NAME, nameof(controller), controller);
 		Guards.stringValue(this.CLASS_NAME, nameof(verificationMethodId), verificationMethodId);
-		if (!Is.undefined(credentialId)) {
-			Guards.stringValue(this.CLASS_NAME, nameof(credentialId), credentialId);
-		}
-		if (Is.array(types)) {
-			Guards.arrayValue(this.CLASS_NAME, nameof(types), types);
-		} else if (Is.stringValue(types)) {
-			Guards.stringValue(this.CLASS_NAME, nameof(types), types);
-		}
-		if (Is.array(subject)) {
-			Guards.arrayValue<T>(this.CLASS_NAME, nameof(subject), subject);
-		} else {
-			Guards.object<T>(this.CLASS_NAME, nameof(subject), subject);
-		}
-		if (Is.array(contexts)) {
-			Guards.arrayValue(this.CLASS_NAME, nameof(contexts), contexts);
-		} else if (Is.stringValue(contexts)) {
-			Guards.stringValue(this.CLASS_NAME, nameof(contexts), contexts);
-		}
+		Guards.object<IJsonLdNodeObject>(this.CLASS_NAME, nameof(credential), credential);
 		if (!Is.undefined(revocationIndex)) {
 			Guards.number(this.CLASS_NAME, nameof(revocationIndex), revocationIndex);
 		}
@@ -491,21 +475,24 @@ export class IotaIdentityConnector implements IIdentityConnector {
 			}
 
 			const finalTypes = [];
-			if (Is.array(types)) {
-				finalTypes.push(...types);
-			} else if (Is.stringValue(types)) {
-				finalTypes.push(types);
+			const credContext = JsonLdProcessor.extractProperty<IJsonLdContextDefinitionRoot>(
+				credential,
+				["@context"]
+			);
+			const credType = JsonLdProcessor.extractProperty<string>(credential, ["@type", "type"]);
+			if (Is.stringValue(credType)) {
+				finalTypes.push(credType);
 			}
 
 			const unsignedVc = new Credential({
-				context: contexts as
+				context: credContext as
 					| string
 					| { [id: string]: unknown }
 					| (string | { [id: string]: unknown })[],
-				id: credentialId,
+				id,
 				type: finalTypes,
 				issuer: idParts.id,
-				credentialSubject: subject as Subject,
+				credentialSubject: credential as Subject,
 				credentialStatus: Is.undefined(revocationIndex)
 					? undefined
 					: {
@@ -556,7 +543,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 			);
 
 			return {
-				verifiableCredential: decoded.credential().toJSON() as IDidVerifiableCredential<T>,
+				verifiableCredential: decoded.credential().toJSON() as IDidVerifiableCredential,
 				jwt: credentialJwt.toString()
 			};
 		} catch (error) {
@@ -574,9 +561,9 @@ export class IotaIdentityConnector implements IIdentityConnector {
 	 * @param credentialJwt The credential to verify.
 	 * @returns The credential stored in the jwt and the revocation status.
 	 */
-	public async checkVerifiableCredential<T>(credentialJwt: string): Promise<{
+	public async checkVerifiableCredential(credentialJwt: string): Promise<{
 		revoked: boolean;
-		verifiableCredential?: IDidVerifiableCredential<T>;
+		verifiableCredential?: IDidVerifiableCredential;
 	}> {
 		Guards.stringValue(this.CLASS_NAME, nameof(credentialJwt), credentialJwt);
 
@@ -606,7 +593,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 
 			return {
 				revoked: false,
-				verifiableCredential: credential.toJSON() as IDidVerifiableCredential<T>
+				verifiableCredential: credential.toJSON() as IDidVerifiableCredential
 			};
 		} catch (error) {
 			if (error instanceof Error && error.message.toLowerCase().includes("revoked")) {
@@ -701,9 +688,10 @@ export class IotaIdentityConnector implements IIdentityConnector {
 	 * Create a verifiable presentation from the supplied verifiable credentials.
 	 * @param controller The controller of the identity who can make changes.
 	 * @param presentationMethodId The method to associate with the presentation.
+	 * @param presentationId The id of the presentation.
+	 * @param contexts The contexts for the data stored in the verifiable credential.
 	 * @param types The types for the data stored in the verifiable credential.
 	 * @param verifiableCredentials The credentials to use for creating the presentation in jwt format.
-	 * @param contexts Additional contexts to include in the presentation.
 	 * @param expiresInMinutes The time in minutes for the presentation to expire.
 	 * @returns The created verifiable presentation and its token.
 	 * @throws NotFoundError if the id can not be resolved.
@@ -711,9 +699,10 @@ export class IotaIdentityConnector implements IIdentityConnector {
 	public async createVerifiablePresentation(
 		controller: string,
 		presentationMethodId: string,
+		presentationId: string | undefined,
+		contexts: IJsonLdContextDefinitionRoot | undefined,
 		types: string | string[] | undefined,
-		verifiableCredentials: string[],
-		contexts?: IJsonLdContextDefinitionRoot,
+		verifiableCredentials: (string | IDidVerifiableCredential)[],
 		expiresInMinutes?: number
 	): Promise<{
 		verifiablePresentation: IDidVerifiablePresentation;
@@ -727,11 +716,6 @@ export class IotaIdentityConnector implements IIdentityConnector {
 			Guards.stringValue(this.CLASS_NAME, nameof(types), types);
 		}
 		Guards.arrayValue(this.CLASS_NAME, nameof(verifiableCredentials), verifiableCredentials);
-		if (Is.array(contexts)) {
-			Guards.arrayValue(this.CLASS_NAME, nameof(contexts), contexts);
-		} else if (Is.string(contexts)) {
-			Guards.stringValue(this.CLASS_NAME, nameof(contexts), contexts);
-		}
 		if (!Is.undefined(expiresInMinutes)) {
 			Guards.integer(this.CLASS_NAME, nameof(expiresInMinutes), expiresInMinutes);
 		}
@@ -766,12 +750,21 @@ export class IotaIdentityConnector implements IIdentityConnector {
 				finalTypes.push(types);
 			}
 
+			const credentials = [];
+			for (const cred of verifiableCredentials) {
+				if (Is.stringValue(cred)) {
+					credentials.push(cred);
+				} else {
+					credentials.push(new Credential(cred as unknown as ICredential));
+				}
+			}
+
 			const unsignedVp = new Presentation({
 				context: contexts as
 					| string
 					| { [id: string]: unknown }
 					| (string | { [id: string]: unknown })[],
-				verifiableCredential: verifiableCredentials.map(j => new Jwt(j)),
+				verifiableCredential: credentials,
 				type: finalTypes,
 				holder: idParts.id
 			});

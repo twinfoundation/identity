@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0.
 import { Converter, Is, ObjectHelper } from "@twin.org/core";
 import { Ed25519 } from "@twin.org/crypto";
+import type { IJsonLdNodeObject } from "@twin.org/data-json-ld";
 import { MemoryEntityStorageConnector } from "@twin.org/entity-storage-connector-memory";
 import { EntityStorageConnectorFactory } from "@twin.org/entity-storage-models";
 import { nameof } from "@twin.org/nameof";
@@ -25,24 +26,6 @@ let testServiceId: string;
 let testProof: Uint8Array;
 let testVcJwt: string;
 let testVpJwt: string;
-
-/**
- * Test degree type.
- */
-interface IDegree {
-	/**
-	 * The id.
-	 */
-	id: string;
-	/**
-	 * The name
-	 */
-	name: string;
-	/**
-	 * The degree name.
-	 */
-	degreeName: string;
-}
 
 let didDocumentEntityStorage: MemoryEntityStorageConnector<IdentityDocument>;
 let vaultKeyEntityStorageConnector: MemoryEntityStorageConnector<VaultKey>;
@@ -363,13 +346,11 @@ describe("EntityStorageIdentityConnector", () => {
 		const identityConnector = new EntityStorageIdentityConnector();
 
 		await expect(
-			identityConnector.createVerifiableCredential<IDegree>(
+			identityConnector.createVerifiableCredential(
 				TEST_IDENTITY_ID,
 				undefined as unknown as string,
 				undefined as unknown as string,
-				undefined as unknown as string,
-				undefined as unknown as IDegree,
-				undefined as unknown as string,
+				undefined as unknown as IJsonLdNodeObject,
 				undefined as unknown as number
 			)
 		).rejects.toMatchObject({
@@ -382,23 +363,21 @@ describe("EntityStorageIdentityConnector", () => {
 		});
 	});
 
-	test("can fail to create a verifiable credential with no subject", async () => {
+	test("can fail to create a verifiable credential with no credential", async () => {
 		const identityConnector = new EntityStorageIdentityConnector();
 		await expect(
-			identityConnector.createVerifiableCredential<IDegree>(
+			identityConnector.createVerifiableCredential(
 				TEST_IDENTITY_ID,
 				"foo",
-				"foo",
 				"UniversityDegreeCredential",
-				undefined as unknown as IDegree,
-				undefined as unknown as string,
+				undefined as unknown as IJsonLdNodeObject,
 				undefined as unknown as number
 			)
 		).rejects.toMatchObject({
 			name: "GuardError",
 			message: "guard.objectUndefined",
 			properties: {
-				property: "subject",
+				property: "credential",
 				value: "undefined"
 			}
 		});
@@ -423,31 +402,29 @@ describe("EntityStorageIdentityConnector", () => {
 		const result = await identityConnector.createVerifiableCredential(
 			TEST_IDENTITY_ID,
 			testDocumentVerificationMethodId,
-			"https://example.edu/credentials/3732",
-			"UniversityDegreeCredential",
+			"https://example.com/credentials/3732",
 			{
+				"@context": "http://schema.org/",
+				"@type": "Person",
 				id: holderDocument.id,
-				name: "Alice",
-				degreeName: "Bachelor of Science and Arts"
+				name: "Jane Doe"
 			},
-			["https://example.com/my-schema"],
 			5
 		);
 
 		expect(result.verifiableCredential["@context"]).toEqual([
-			"https://www.w3.org/2018/credentials/v1",
-			"https://example.com/my-schema"
+			"https://www.w3.org/2018/credentials/v2",
+			"http://schema.org/"
 		]);
-		expect(result.verifiableCredential.id).toEqual("https://example.edu/credentials/3732");
+		expect(result.verifiableCredential.id).toEqual("https://example.com/credentials/3732");
 		expect(result.verifiableCredential.type).toContain("VerifiableCredential");
-		expect(result.verifiableCredential.type).toContain("UniversityDegreeCredential");
+		expect(result.verifiableCredential.type).toContain("Person");
 
 		const subject = Is.array(result.verifiableCredential.credentialSubject)
 			? result.verifiableCredential.credentialSubject[0]
 			: result.verifiableCredential.credentialSubject;
-		expect(subject.id.startsWith("did:entity-storage")).toBeTruthy();
-		expect(subject.degreeName).toEqual("Bachelor of Science and Arts");
-		expect(subject.name).toEqual("Alice");
+		expect((subject.id as string).startsWith("did:entity-storage")).toBeTruthy();
+		expect(subject.name).toEqual("Jane Doe");
 		expect(result.verifiableCredential.issuer?.startsWith("did:entity-storage")).toBeTruthy();
 		expect(result.verifiableCredential.issuanceDate).toBeDefined();
 		expect(
@@ -466,7 +443,7 @@ describe("EntityStorageIdentityConnector", () => {
 	test("can fail to validate a verifiable credential with no jwt", async () => {
 		const identityConnector = new EntityStorageIdentityConnector();
 
-		await expect(identityConnector.checkVerifiableCredential<IDegree>("")).rejects.toMatchObject({
+		await expect(identityConnector.checkVerifiableCredential("")).rejects.toMatchObject({
 			name: "GuardError",
 			message: "guard.stringEmpty",
 			properties: {
@@ -481,22 +458,21 @@ describe("EntityStorageIdentityConnector", () => {
 		await vaultKeyEntityStorageConnector.set(testDocumentKey);
 		const identityConnector = new EntityStorageIdentityConnector();
 
-		const result = await identityConnector.checkVerifiableCredential<IDegree>(testVcJwt);
+		const result = await identityConnector.checkVerifiableCredential(testVcJwt);
 
 		expect(result.revoked).toBeFalsy();
 		expect(result.verifiableCredential?.["@context"]).toEqual([
-			"https://www.w3.org/2018/credentials/v1",
-			"https://example.com/my-schema"
+			"https://www.w3.org/2018/credentials/v2",
+			"http://schema.org/"
 		]);
-		expect(result.verifiableCredential?.id).toEqual("https://example.edu/credentials/3732");
+		expect(result.verifiableCredential?.id).toEqual("https://example.com/credentials/3732");
 		expect(result.verifiableCredential?.type).toContain("VerifiableCredential");
-		expect(result.verifiableCredential?.type).toContain("UniversityDegreeCredential");
+		expect(result.verifiableCredential?.type).toContain("Person");
 		const subject = Is.array(result.verifiableCredential?.credentialSubject)
 			? result.verifiableCredential?.credentialSubject[0]
 			: result.verifiableCredential?.credentialSubject;
-		expect(subject?.id.startsWith("did:entity-storage")).toBeTruthy();
-		expect(subject?.degreeName).toEqual("Bachelor of Science and Arts");
-		expect(subject?.name).toEqual("Alice");
+		expect((subject?.id as string).startsWith("did:entity-storage")).toBeTruthy();
+		expect(subject?.name).toEqual("Jane Doe");
 		expect(result.verifiableCredential?.issuer?.startsWith("did:entity-storage")).toBeTruthy();
 		expect(result.verifiableCredential?.issuanceDate).toBeDefined();
 		expect(
@@ -568,7 +544,7 @@ describe("EntityStorageIdentityConnector", () => {
 			"data:application/octet-stream;base64,H4sIAAAAAAAAA-3BIQEAAAACIKf4f6UzLEADAAAAAAAAAAAAAAAAAAAAvA1-s-l1AEAAAA"
 		);
 
-		const result = await identityConnector.checkVerifiableCredential<IDegree>(testVcJwt);
+		const result = await identityConnector.checkVerifiableCredential(testVcJwt);
 		expect(result.revoked).toBeTruthy();
 		testIdentityDocument = ObjectHelper.clone(
 			didDocumentEntityStorage.getStore()?.[0] as IdentityDocument
@@ -636,7 +612,7 @@ describe("EntityStorageIdentityConnector", () => {
 			"data:application/octet-stream;base64,H4sIAAAAAAAAA-3BMQEAAADCoPVPbQwfoAAAAAAAAAAAAAAAAAAAAIC3AYbSVKsAQAAA"
 		);
 
-		const result = await identityConnector.checkVerifiableCredential<IDegree>(testVcJwt);
+		const result = await identityConnector.checkVerifiableCredential(testVcJwt);
 		expect(result.revoked).toBeFalsy();
 		testIdentityDocument = ObjectHelper.clone(
 			didDocumentEntityStorage.getStore()?.[0] as IdentityDocument
@@ -649,6 +625,7 @@ describe("EntityStorageIdentityConnector", () => {
 		await expect(
 			identityConnector.createVerifiablePresentation(
 				TEST_IDENTITY_ID,
+				undefined as unknown as string,
 				undefined as unknown as string,
 				undefined as unknown as string[],
 				undefined as unknown as string[],
@@ -670,7 +647,8 @@ describe("EntityStorageIdentityConnector", () => {
 		await expect(
 			identityConnector.createVerifiablePresentation(
 				TEST_IDENTITY_ID,
-				"foo",
+				"presentationMethodId",
+				undefined as unknown as string,
 				["vp"],
 				undefined as unknown as string[],
 				undefined as unknown as string[],
@@ -693,9 +671,10 @@ describe("EntityStorageIdentityConnector", () => {
 			identityConnector.createVerifiablePresentation(
 				TEST_IDENTITY_ID,
 				"foo",
-				["vp"],
-				["jwt"],
-				undefined as unknown as string[],
+				"presentationId",
+				{ "@context": "" },
+				["types"],
+				["verifiableCredentials"],
 				"foo" as unknown as number
 			)
 		).rejects.toMatchObject({
@@ -718,20 +697,18 @@ describe("EntityStorageIdentityConnector", () => {
 		const result = await identityConnector.createVerifiablePresentation(
 			TEST_IDENTITY_ID,
 			testDocumentVerificationMethodId,
-			["ExamplePresentation"],
+			"presentationId",
+			"http://schema.org/",
+			["Person"],
 			[testVcJwt],
-			["https://example.com/my-schema"],
 			14400
 		);
 
 		expect(result.verifiablePresentation["@context"]).toEqual([
-			"https://www.w3.org/2018/credentials/v1",
-			"https://example.com/my-schema"
+			"https://www.w3.org/2018/credentials/v2",
+			"http://schema.org/"
 		]);
-		expect(result.verifiablePresentation.type).toEqual([
-			"VerifiablePresentation",
-			"ExamplePresentation"
-		]);
+		expect(result.verifiablePresentation.type).toEqual(["VerifiablePresentation", "Person"]);
 		expect(result.verifiablePresentation.verifiableCredential).toBeDefined();
 		expect(result.verifiablePresentation.verifiableCredential[0]).toEqual(testVcJwt);
 		expect(result.verifiablePresentation.holder?.startsWith("did:entity-storage")).toBeTruthy();
@@ -761,13 +738,10 @@ describe("EntityStorageIdentityConnector", () => {
 
 		expect(result.revoked).toBeFalsy();
 		expect(result.verifiablePresentation?.["@context"]).toEqual([
-			"https://www.w3.org/2018/credentials/v1",
-			"https://example.com/my-schema"
+			"https://www.w3.org/2018/credentials/v2",
+			"http://schema.org/"
 		]);
-		expect(result.verifiablePresentation?.type).toEqual([
-			"VerifiablePresentation",
-			"ExamplePresentation"
-		]);
+		expect(result.verifiablePresentation?.type).toEqual(["VerifiablePresentation", "Person"]);
 		expect(result.verifiablePresentation?.verifiableCredential).toBeDefined();
 		expect(result.verifiablePresentation?.holder?.startsWith("did:entity-storage")).toBeTruthy();
 		expect(result.issuers).toBeDefined();

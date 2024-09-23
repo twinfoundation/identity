@@ -1,7 +1,7 @@
 // Copyright 2024 IOTA Stiftung.
 // SPDX-License-Identifier: Apache-2.0.
 import type { IComponent } from "@twin.org/core";
-import type { IJsonLdContextDefinitionRoot } from "@twin.org/data-json-ld";
+import type { IJsonLdContextDefinitionRoot, IJsonLdNodeObject } from "@twin.org/data-json-ld";
 import type {
 	DidVerificationMethodType,
 	IDidDocument,
@@ -88,24 +88,20 @@ export interface IIdentityConnector extends IComponent {
 	 * Create a verifiable credential for a verification method.
 	 * @param controller The controller of the identity who can make changes.
 	 * @param verificationMethodId The verification method id to use.
-	 * @param credentialId The id of the credential.
-	 * @param types The type for the data stored in the verifiable credential.
-	 * @param subject The subject data to store for the credential.
-	 * @param contexts Additional contexts to include in the credential.
+	 * @param id The id of the credential.
+	 * @param credential The credential to store in the verifiable credential.
 	 * @param revocationIndex The bitmap revocation index of the credential, if undefined will not have revocation status.
 	 * @returns The created verifiable credential and its token.
 	 * @throws NotFoundError if the id can not be resolved.
 	 */
-	createVerifiableCredential<T>(
+	createVerifiableCredential(
 		controller: string,
 		verificationMethodId: string,
-		credentialId: string | undefined,
-		types: string | string[] | undefined,
-		subject: T | T[],
-		contexts?: IJsonLdContextDefinitionRoot,
+		id: string | undefined,
+		credential: IJsonLdNodeObject,
 		revocationIndex?: number
 	): Promise<{
-		verifiableCredential: IDidVerifiableCredential<T>;
+		verifiableCredential: IDidVerifiableCredential;
 		jwt: string;
 	}>;
 
@@ -114,9 +110,9 @@ export interface IIdentityConnector extends IComponent {
 	 * @param credentialJwt The credential to verify.
 	 * @returns The credential stored in the jwt and the revocation status.
 	 */
-	checkVerifiableCredential<T>(credentialJwt: string): Promise<{
+	checkVerifiableCredential(credentialJwt: string): Promise<{
 		revoked: boolean;
-		verifiableCredential?: IDidVerifiableCredential<T>;
+		verifiableCredential?: IDidVerifiableCredential;
 	}>;
 
 	/**
@@ -149,9 +145,10 @@ export interface IIdentityConnector extends IComponent {
 	 * Create a verifiable presentation from the supplied verifiable credentials.
 	 * @param controller The controller of the identity who can make changes.
 	 * @param presentationMethodId The method to associate with the presentation.
+	 * @param presentationId The id of the presentation.
+	 * @param contexts The contexts for the data stored in the verifiable credential.
 	 * @param types The types for the data stored in the verifiable credential.
 	 * @param verifiableCredentials The credentials to use for creating the presentation in jwt format.
-	 * @param contexts Additional contexts to include in the presentation.
 	 * @param expiresInMinutes The time in minutes for the presentation to expire.
 	 * @returns The created verifiable presentation and its token.
 	 * @throws NotFoundError if the id can not be resolved.
@@ -159,9 +156,10 @@ export interface IIdentityConnector extends IComponent {
 	createVerifiablePresentation(
 		controller: string,
 		presentationMethodId: string,
+		presentationId: string | undefined,
+		contexts: IJsonLdContextDefinitionRoot | undefined,
 		types: string | string[] | undefined,
-		verifiableCredentials: string[],
-		contexts?: IJsonLdContextDefinitionRoot,
+		verifiableCredentials: (string | IDidVerifiableCredential)[],
 		expiresInMinutes?: number
 	): Promise<{
 		verifiablePresentation: IDidVerifiablePresentation;

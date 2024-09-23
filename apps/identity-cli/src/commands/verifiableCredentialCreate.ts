@@ -8,10 +8,10 @@ import {
 	CLIUtils,
 	type CliOutputOptions
 } from "@twin.org/cli-core";
-import { Coerce, GeneralError, Guards, I18n, Is } from "@twin.org/core";
+import { Coerce, GeneralError, I18n, Is } from "@twin.org/core";
+import type { IJsonLdNodeObject } from "@twin.org/data-json-ld";
 import { IotaIdentityConnector } from "@twin.org/identity-connector-iota";
 import { VaultConnectorFactory, VaultKeyType } from "@twin.org/vault-models";
-
 import { IotaWalletConnector } from "@twin.org/wallet-connector-iota";
 import { WalletConnectorFactory } from "@twin.org/wallet-models";
 import { Command } from "commander";
@@ -38,14 +38,6 @@ export function buildCommandVerifiableCredentialCreate(): Command {
 		.option(
 			I18n.formatMessage("commands.verifiable-credential-create.options.credential-id.param"),
 			I18n.formatMessage("commands.verifiable-credential-create.options.credential-id.description")
-		)
-		.option(
-			I18n.formatMessage("commands.verifiable-credential-create.options.types.param"),
-			I18n.formatMessage("commands.verifiable-credential-create.options.types.description")
-		)
-		.option(
-			I18n.formatMessage("commands.verifiable-credential-create.options.contexts.param"),
-			I18n.formatMessage("commands.verifiable-credential-create.options.contexts.description")
 		)
 		.requiredOption(
 			I18n.formatMessage("commands.verifiable-credential-create.options.subject-json.param"),
@@ -83,9 +75,7 @@ export function buildCommandVerifiableCredentialCreate(): Command {
  * @param opts.id The id of the verification method to use for the credential.
  * @param opts.privateKey The private key for the verification method.
  * @param opts.credentialId The id of the credential.
- * @param opts.types The types for the credential.
  * @param opts.subjectJson The JSON data for the subject.
- * @param opts.contexts The contexts for the credential.
  * @param opts.revocationIndex The revocation index for the credential.
  * @param opts.node The node URL.
  */
@@ -94,25 +84,14 @@ export async function actionCommandVerifiableCredentialCreate(
 		id: string;
 		privateKey: string;
 		credentialId?: string;
-		types?: string[];
 		subjectJson: string;
-		contexts?: string[];
 		revocationIndex?: string;
 		node: string;
 	} & CliOutputOptions
 ): Promise<void> {
-	if (!Is.undefined(opts.types)) {
-		Guards.arrayValue("commands", "types", opts.types);
-	}
-	if (!Is.undefined(opts.contexts)) {
-		Guards.arrayValue("commands", "contexts", opts.contexts);
-	}
-
 	const id: string = CLIParam.stringValue("id", opts.id);
 	const privateKey: Uint8Array = CLIParam.hexBase64("private-key", opts.privateKey);
 	const credentialId: string = CLIParam.stringValue("credential-id", opts.credentialId);
-	const types: string[] | undefined = opts.types;
-	const contexts: string[] | undefined = opts.contexts;
 	const subjectJson: string = path.resolve(CLIParam.stringValue("subject-json", opts.subjectJson));
 	const revocationIndex: number | undefined = Coerce.number(opts.revocationIndex);
 	const nodeEndpoint: string = CLIParam.url("node", opts.node);
@@ -125,18 +104,6 @@ export async function actionCommandVerifiableCredentialCreate(
 		I18n.formatMessage("commands.verifiable-credential-create.labels.credentialId"),
 		credentialId
 	);
-	if (Is.arrayValue(types)) {
-		CLIDisplay.value(
-			I18n.formatMessage("commands.verifiable-credential-create.labels.types"),
-			types.join(",")
-		);
-	}
-	if (Is.arrayValue(contexts)) {
-		CLIDisplay.value(
-			I18n.formatMessage("commands.verifiable-credential-create.labels.contexts"),
-			contexts.join(",")
-		);
-	}
 	CLIDisplay.value(
 		I18n.formatMessage("commands.verifiable-credential-create.labels.subjectJson"),
 		subjectJson
@@ -184,7 +151,7 @@ export async function actionCommandVerifiableCredentialCreate(
 	);
 	CLIDisplay.break();
 
-	const jsonData = await CLIUtils.readJsonFile(subjectJson);
+	const jsonData = await CLIUtils.readJsonFile<IJsonLdNodeObject>(subjectJson);
 	if (Is.undefined(jsonData)) {
 		throw new GeneralError(
 			"commands",
@@ -205,9 +172,7 @@ export async function actionCommandVerifiableCredentialCreate(
 		localIdentity,
 		id,
 		credentialId,
-		types,
 		jsonData,
-		contexts,
 		revocationIndex
 	);
 

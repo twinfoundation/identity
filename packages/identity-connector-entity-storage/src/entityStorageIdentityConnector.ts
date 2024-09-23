@@ -15,7 +15,11 @@ import {
 	RandomHelper
 } from "@twin.org/core";
 import { Sha256 } from "@twin.org/crypto";
-import { JsonLdProcessor, type IJsonLdContextDefinitionRoot } from "@twin.org/data-json-ld";
+import {
+	type IJsonLdNodeObject,
+	JsonLdProcessor,
+	type IJsonLdContextDefinitionRoot
+} from "@twin.org/data-json-ld";
 import {
 	EntityStorageConnectorFactory,
 	type IEntityStorageConnector
@@ -395,46 +399,25 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 	 * Create a verifiable credential for a verification method.
 	 * @param controller The controller of the identity who can make changes.
 	 * @param verificationMethodId The verification method id to use.
-	 * @param credentialId The id of the credential.
-	 * @param types The type for the data stored in the verifiable credential.
-	 * @param subject The subject data to store for the credential.
-	 * @param contexts Additional contexts to include in the credential.
+	 * @param id The id of the credential.
+	 * @param credential The credential to store in the verifiable credential.
 	 * @param revocationIndex The bitmap revocation index of the credential, if undefined will not have revocation status.
 	 * @returns The created verifiable credential and its token.
 	 * @throws NotFoundError if the id can not be resolved.
 	 */
-	public async createVerifiableCredential<T>(
+	public async createVerifiableCredential(
 		controller: string,
 		verificationMethodId: string,
-		credentialId: string | undefined,
-		types: string | string[] | undefined,
-		subject: T | T[],
-		contexts?: IJsonLdContextDefinitionRoot,
+		id: string | undefined,
+		credential: IJsonLdNodeObject,
 		revocationIndex?: number
 	): Promise<{
-		verifiableCredential: IDidVerifiableCredential<T>;
+		verifiableCredential: IDidVerifiableCredential;
 		jwt: string;
 	}> {
 		Guards.stringValue(this.CLASS_NAME, nameof(controller), controller);
 		Guards.stringValue(this.CLASS_NAME, nameof(verificationMethodId), verificationMethodId);
-		if (!Is.undefined(credentialId)) {
-			Guards.stringValue(this.CLASS_NAME, nameof(credentialId), credentialId);
-		}
-		if (Is.array(types)) {
-			Guards.array(this.CLASS_NAME, nameof(types), types);
-		} else if (!Is.undefined(types)) {
-			Guards.stringValue(this.CLASS_NAME, nameof(types), types);
-		}
-		if (Is.array(subject)) {
-			Guards.arrayValue<T>(this.CLASS_NAME, nameof(subject), subject);
-		} else {
-			Guards.object<T>(this.CLASS_NAME, nameof(subject), subject);
-		}
-		if (Is.array(contexts)) {
-			Guards.array(this.CLASS_NAME, nameof(contexts), contexts);
-		} else if (!Is.undefined(contexts)) {
-			Guards.stringValue(this.CLASS_NAME, nameof(contexts), contexts);
-		}
+		Guards.object<IJsonLdNodeObject>(this.CLASS_NAME, nameof(credential), credential);
 		if (!Is.undefined(revocationIndex)) {
 			Guards.number(this.CLASS_NAME, nameof(revocationIndex), revocationIndex);
 		}
@@ -472,19 +455,23 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 			const revocationService = issuerDidDocument.service?.find(s => s.id.endsWith("#revocation"));
 
 			const finalTypes = ["VerifiableCredential"];
-			if (Is.array(types)) {
-				finalTypes.push(...types);
-			} else if (Is.stringValue(types)) {
-				finalTypes.push(types);
+			const credContext = JsonLdProcessor.extractProperty<IJsonLdContextDefinitionRoot>(
+				credential,
+				["@context"]
+			);
+			const credId = JsonLdProcessor.extractProperty<string>(credential, ["@id", "id"], false);
+			const credType = JsonLdProcessor.extractProperty<string>(credential, ["@type", "type"]);
+			if (Is.stringValue(credType)) {
+				finalTypes.push(credType);
 			}
 
-			const verifiableCredential: IDidVerifiableCredential<T> = {
+			const verifiableCredential: IDidVerifiableCredential = {
 				"@context":
-					JsonLdProcessor.combineContexts("https://www.w3.org/2018/credentials/v1", contexts) ??
+					JsonLdProcessor.combineContexts("https://www.w3.org/2018/credentials/v2", credContext) ??
 					null,
-				id: credentialId,
+				id,
 				type: finalTypes,
-				credentialSubject: subject,
+				credentialSubject: credential,
 				issuer: issuerDidDocument.id,
 				issuanceDate: new Date().toISOString(),
 				credentialStatus:
@@ -525,9 +512,7 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 				iss: idParts.id,
 				nbf: Math.floor(Date.now() / 1000),
 				jti: verifiableCredential.id,
-				sub: Is.array(subject)
-					? ObjectHelper.propertyGet<string>(subject[0], "id")
-					: ObjectHelper.propertyGet<string>(subject, "id"),
+				sub: credId,
 				vc: jwtVc
 			};
 
@@ -557,9 +542,9 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 	 * @param credentialJwt The credential to verify.
 	 * @returns The credential stored in the jwt and the revocation status.
 	 */
-	public async checkVerifiableCredential<T>(credentialJwt: string): Promise<{
+	public async checkVerifiableCredential(credentialJwt: string): Promise<{
 		revoked: boolean;
-		verifiableCredential?: IDidVerifiableCredential<T>;
+		verifiableCredential?: IDidVerifiableCredential;
 	}> {
 		Guards.stringValue(this.CLASS_NAME, nameof(credentialJwt), credentialJwt);
 
@@ -615,7 +600,7 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 				throw new GeneralError(this.CLASS_NAME, "jwkSignatureFailed");
 			}
 
-			const verifiableCredential = jwtPayload.vc as IDidVerifiableCredential<T>;
+			const verifiableCredential = jwtPayload.vc as IDidVerifiableCredential;
 			if (Is.object(verifiableCredential)) {
 				if (Is.string(jwtPayload.jti)) {
 					verifiableCredential.id = jwtPayload.jti;
@@ -783,9 +768,10 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 	 * Create a verifiable presentation from the supplied verifiable credentials.
 	 * @param controller The controller of the identity who can make changes.
 	 * @param presentationMethodId The method to associate with the presentation.
+	 * @param presentationId The id of the presentation.
+	 * @param contexts The contexts for the data stored in the verifiable credential.
 	 * @param types The types for the data stored in the verifiable credential.
 	 * @param verifiableCredentials The credentials to use for creating the presentation in jwt format.
-	 * @param contexts Additional contexts to include in the presentation.
 	 * @param expiresInMinutes The time in minutes for the presentation to expire.
 	 * @returns The created verifiable presentation and its token.
 	 * @throws NotFoundError if the id can not be resolved.
@@ -793,9 +779,10 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 	public async createVerifiablePresentation(
 		controller: string,
 		presentationMethodId: string,
+		presentationId: string | undefined,
+		contexts: IJsonLdContextDefinitionRoot | undefined,
 		types: string | string[] | undefined,
-		verifiableCredentials: string[],
-		contexts?: IJsonLdContextDefinitionRoot,
+		verifiableCredentials: (string | IDidVerifiableCredential)[],
 		expiresInMinutes?: number
 	): Promise<{
 		verifiablePresentation: IDidVerifiablePresentation;
@@ -809,11 +796,6 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 			Guards.stringValue(this.CLASS_NAME, nameof(types), types);
 		}
 		Guards.arrayValue(this.CLASS_NAME, nameof(verifiableCredentials), verifiableCredentials);
-		if (Is.array(contexts)) {
-			Guards.arrayValue(this.CLASS_NAME, nameof(contexts), contexts);
-		} else if (Is.string(contexts)) {
-			Guards.stringValue(this.CLASS_NAME, nameof(contexts), contexts);
-		}
 		if (!Is.undefined(expiresInMinutes)) {
 			Guards.integer(this.CLASS_NAME, nameof(expiresInMinutes), expiresInMinutes);
 		}
@@ -857,8 +839,9 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 
 			const verifiablePresentation: IDidVerifiablePresentation = {
 				"@context":
-					JsonLdProcessor.combineContexts("https://www.w3.org/2018/credentials/v1", contexts) ??
+					JsonLdProcessor.combineContexts("https://www.w3.org/2018/credentials/v2", contexts) ??
 					null,
+				id: presentationId,
 				type: finalTypes,
 				verifiableCredential: verifiableCredentials,
 				holder: idParts.id
@@ -956,27 +939,31 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 				Is.array(verifiablePresentation.verifiableCredential)
 			) {
 				for (const vcJwt of verifiablePresentation.verifiableCredential) {
-					const jwt = await Jwt.decode(vcJwt);
 					let revoked = true;
+					if (Is.stringValue(vcJwt)) {
+						const jwt = await Jwt.decode(vcJwt);
 
-					if (Is.string(jwt.payload?.iss)) {
-						const issuerDocumentId = jwt.payload.iss;
-						verifiablePresentation.holder = issuerDocumentId;
+						if (Is.string(jwt.payload?.iss)) {
+							const issuerDocumentId = jwt.payload.iss;
+							verifiablePresentation.holder = issuerDocumentId;
 
-						const issuerDidDocument = await this._didDocumentEntityStorage.get(issuerDocumentId);
-						if (Is.undefined(issuerDidDocument)) {
-							throw new NotFoundError(this.CLASS_NAME, "documentNotFound", issuerDocumentId);
+							const issuerDidDocument = await this._didDocumentEntityStorage.get(issuerDocumentId);
+							if (Is.undefined(issuerDidDocument)) {
+								throw new NotFoundError(this.CLASS_NAME, "documentNotFound", issuerDocumentId);
+							}
+							await this.verifyDocument(issuerDidDocument);
+							issuers.push(issuerDidDocument);
+
+							const vc = jwt.payload.vc as IDidVerifiableCredential;
+							if (Is.object<IDidVerifiableCredential>(vc)) {
+								revoked = await this.checkRevocation(
+									issuerDidDocument,
+									vc.credentialStatus?.revocationBitmapIndex
+								);
+							}
 						}
-						await this.verifyDocument(issuerDidDocument);
-						issuers.push(issuerDidDocument);
-
-						const vc = jwt.payload.vc as IDidVerifiableCredential;
-						if (Is.object<IDidVerifiableCredential>(vc)) {
-							revoked = await this.checkRevocation(
-								issuerDidDocument,
-								vc.credentialStatus?.revocationBitmapIndex
-							);
-						}
+					} else {
+						revoked = false;
 					}
 					tokensRevoked.push(revoked);
 				}
