@@ -94,14 +94,14 @@ export interface IIdentityConnector extends IComponent {
 	 * @returns The created verifiable credential and its token.
 	 * @throws NotFoundError if the id can not be resolved.
 	 */
-	createVerifiableCredential(
+	createVerifiableCredential<T extends IJsonLdNodeObject = IJsonLdNodeObject>(
 		controller: string,
 		verificationMethodId: string,
 		id: string | undefined,
-		credential: IJsonLdNodeObject,
+		credential: T,
 		revocationIndex?: number
 	): Promise<{
-		verifiableCredential: IDidVerifiableCredential;
+		verifiableCredential: IDidVerifiableCredential<T>;
 		jwt: string;
 	}>;
 
@@ -110,9 +110,11 @@ export interface IIdentityConnector extends IComponent {
 	 * @param credentialJwt The credential to verify.
 	 * @returns The credential stored in the jwt and the revocation status.
 	 */
-	checkVerifiableCredential(credentialJwt: string): Promise<{
+	checkVerifiableCredential<T extends IJsonLdNodeObject = IJsonLdNodeObject>(
+		credentialJwt: string
+	): Promise<{
 		revoked: boolean;
-		verifiableCredential?: IDidVerifiableCredential;
+		verifiableCredential?: IDidVerifiableCredential<T>;
 	}>;
 
 	/**
@@ -153,16 +155,16 @@ export interface IIdentityConnector extends IComponent {
 	 * @returns The created verifiable presentation and its token.
 	 * @throws NotFoundError if the id can not be resolved.
 	 */
-	createVerifiablePresentation(
+	createVerifiablePresentation<T extends IJsonLdNodeObject = IJsonLdNodeObject>(
 		controller: string,
 		presentationMethodId: string,
 		presentationId: string | undefined,
 		contexts: IJsonLdContextDefinitionRoot | undefined,
 		types: string | string[] | undefined,
-		verifiableCredentials: (string | IDidVerifiableCredential)[],
+		verifiableCredentials: (string | IDidVerifiableCredential<T>)[],
 		expiresInMinutes?: number
 	): Promise<{
-		verifiablePresentation: IDidVerifiablePresentation;
+		verifiablePresentation: IDidVerifiablePresentation<T>;
 		jwt: string;
 	}>;
 
@@ -171,9 +173,11 @@ export interface IIdentityConnector extends IComponent {
 	 * @param presentationJwt The presentation to verify.
 	 * @returns The presentation stored in the jwt and the revocation status.
 	 */
-	checkVerifiablePresentation(presentationJwt: string): Promise<{
+	checkVerifiablePresentation<T extends IJsonLdNodeObject = IJsonLdNodeObject>(
+		presentationJwt: string
+	): Promise<{
 		revoked: boolean;
-		verifiablePresentation?: IDidVerifiablePresentation;
+		verifiablePresentation?: IDidVerifiablePresentation<T>;
 		issuers?: IDidDocument[];
 	}>;
 

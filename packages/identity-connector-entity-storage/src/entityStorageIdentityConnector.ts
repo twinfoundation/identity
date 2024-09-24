@@ -407,14 +407,14 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 	 * @returns The created verifiable credential and its token.
 	 * @throws NotFoundError if the id can not be resolved.
 	 */
-	public async createVerifiableCredential(
+	public async createVerifiableCredential<T extends IJsonLdNodeObject = IJsonLdNodeObject>(
 		controller: string,
 		verificationMethodId: string,
 		id: string | undefined,
-		credential: IJsonLdNodeObject,
+		credential: T,
 		revocationIndex?: number
 	): Promise<{
-		verifiableCredential: IDidVerifiableCredential;
+		verifiableCredential: IDidVerifiableCredential<T>;
 		jwt: string;
 	}> {
 		Guards.stringValue(this.CLASS_NAME, nameof(controller), controller);
@@ -467,7 +467,7 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 				finalTypes.push(credType);
 			}
 
-			const verifiableCredential: IDidVerifiableCredential = {
+			const verifiableCredential: IDidVerifiableCredential<T> = {
 				"@context": JsonLdProcessor.combineContexts(DidContexts.ContextV1, credContext) ?? null,
 				id,
 				type: finalTypes,
@@ -542,9 +542,11 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 	 * @param credentialJwt The credential to verify.
 	 * @returns The credential stored in the jwt and the revocation status.
 	 */
-	public async checkVerifiableCredential(credentialJwt: string): Promise<{
+	public async checkVerifiableCredential<T extends IJsonLdNodeObject = IJsonLdNodeObject>(
+		credentialJwt: string
+	): Promise<{
 		revoked: boolean;
-		verifiableCredential?: IDidVerifiableCredential;
+		verifiableCredential?: IDidVerifiableCredential<T>;
 	}> {
 		Guards.stringValue(this.CLASS_NAME, nameof(credentialJwt), credentialJwt);
 
@@ -626,7 +628,9 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 
 			return {
 				revoked,
-				verifiableCredential: revoked ? undefined : verifiableCredential
+				verifiableCredential: revoked
+					? undefined
+					: (verifiableCredential as IDidVerifiableCredential<T>)
 			};
 		} catch (error) {
 			throw new GeneralError(
@@ -776,16 +780,16 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 	 * @returns The created verifiable presentation and its token.
 	 * @throws NotFoundError if the id can not be resolved.
 	 */
-	public async createVerifiablePresentation(
+	public async createVerifiablePresentation<T extends IJsonLdNodeObject = IJsonLdNodeObject>(
 		controller: string,
 		presentationMethodId: string,
 		presentationId: string | undefined,
 		contexts: IJsonLdContextDefinitionRoot | undefined,
 		types: string | string[] | undefined,
-		verifiableCredentials: (string | IDidVerifiableCredential)[],
+		verifiableCredentials: (string | IDidVerifiableCredential<T>)[],
 		expiresInMinutes?: number
 	): Promise<{
-		verifiablePresentation: IDidVerifiablePresentation;
+		verifiablePresentation: IDidVerifiablePresentation<T>;
 		jwt: string;
 	}> {
 		Guards.stringValue(this.CLASS_NAME, nameof(controller), controller);
@@ -837,7 +841,7 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 				finalTypes.push(types);
 			}
 
-			const verifiablePresentation: IDidVerifiablePresentation = {
+			const verifiablePresentation: IDidVerifiablePresentation<T> = {
 				"@context": JsonLdProcessor.combineContexts(DidContexts.ContextV1, contexts) ?? null,
 				id: presentationId,
 				type: finalTypes,
@@ -899,9 +903,11 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 	 * @param presentationJwt The presentation to verify.
 	 * @returns The presentation stored in the jwt and the revocation status.
 	 */
-	public async checkVerifiablePresentation(presentationJwt: string): Promise<{
+	public async checkVerifiablePresentation<T extends IJsonLdNodeObject = IJsonLdNodeObject>(
+		presentationJwt: string
+	): Promise<{
 		revoked: boolean;
-		verifiablePresentation?: IDidVerifiablePresentation;
+		verifiablePresentation?: IDidVerifiablePresentation<T>;
 		issuers?: IDidDocument[];
 	}> {
 		Guards.stringValue(this.CLASS_NAME, nameof(presentationJwt), presentationJwt);
@@ -931,7 +937,7 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 
 			const issuers: IDidDocument[] = [];
 			const tokensRevoked: boolean[] = [];
-			const verifiablePresentation = jwtPayload?.vp as IDidVerifiablePresentation;
+			const verifiablePresentation = jwtPayload?.vp as IDidVerifiablePresentation<T>;
 			if (
 				Is.object<IDidVerifiablePresentation>(verifiablePresentation) &&
 				Is.array(verifiablePresentation.verifiableCredential)

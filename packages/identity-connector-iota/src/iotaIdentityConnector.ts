@@ -433,14 +433,14 @@ export class IotaIdentityConnector implements IIdentityConnector {
 	 * @returns The created verifiable credential and its token.
 	 * @throws NotFoundError if the id can not be resolved.
 	 */
-	public async createVerifiableCredential(
+	public async createVerifiableCredential<T extends IJsonLdNodeObject = IJsonLdNodeObject>(
 		controller: string,
 		verificationMethodId: string,
 		id: string | undefined,
-		credential: IJsonLdNodeObject,
+		credential: T,
 		revocationIndex?: number
 	): Promise<{
-		verifiableCredential: IDidVerifiableCredential;
+		verifiableCredential: IDidVerifiableCredential<T>;
 		jwt: string;
 	}> {
 		Guards.stringValue(this.CLASS_NAME, nameof(controller), controller);
@@ -543,7 +543,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 			);
 
 			return {
-				verifiableCredential: decoded.credential().toJSON() as IDidVerifiableCredential,
+				verifiableCredential: decoded.credential().toJSON() as IDidVerifiableCredential<T>,
 				jwt: credentialJwt.toString()
 			};
 		} catch (error) {
@@ -561,9 +561,11 @@ export class IotaIdentityConnector implements IIdentityConnector {
 	 * @param credentialJwt The credential to verify.
 	 * @returns The credential stored in the jwt and the revocation status.
 	 */
-	public async checkVerifiableCredential(credentialJwt: string): Promise<{
+	public async checkVerifiableCredential<T extends IJsonLdNodeObject = IJsonLdNodeObject>(
+		credentialJwt: string
+	): Promise<{
 		revoked: boolean;
-		verifiableCredential?: IDidVerifiableCredential;
+		verifiableCredential?: IDidVerifiableCredential<T>;
 	}> {
 		Guards.stringValue(this.CLASS_NAME, nameof(credentialJwt), credentialJwt);
 
@@ -593,7 +595,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 
 			return {
 				revoked: false,
-				verifiableCredential: credential.toJSON() as IDidVerifiableCredential
+				verifiableCredential: credential.toJSON() as IDidVerifiableCredential<T>
 			};
 		} catch (error) {
 			if (error instanceof Error && error.message.toLowerCase().includes("revoked")) {
@@ -696,16 +698,16 @@ export class IotaIdentityConnector implements IIdentityConnector {
 	 * @returns The created verifiable presentation and its token.
 	 * @throws NotFoundError if the id can not be resolved.
 	 */
-	public async createVerifiablePresentation(
+	public async createVerifiablePresentation<T extends IJsonLdNodeObject = IJsonLdNodeObject>(
 		controller: string,
 		presentationMethodId: string,
 		presentationId: string | undefined,
 		contexts: IJsonLdContextDefinitionRoot | undefined,
 		types: string | string[] | undefined,
-		verifiableCredentials: (string | IDidVerifiableCredential)[],
+		verifiableCredentials: (string | IDidVerifiableCredential<T>)[],
 		expiresInMinutes?: number
 	): Promise<{
-		verifiablePresentation: IDidVerifiablePresentation;
+		verifiablePresentation: IDidVerifiablePresentation<T>;
 		jwt: string;
 	}> {
 		Guards.stringValue(this.CLASS_NAME, nameof(controller), controller);
@@ -814,7 +816,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 			);
 
 			return {
-				verifiablePresentation: decoded.presentation().toJSON() as IDidVerifiablePresentation,
+				verifiablePresentation: decoded.presentation().toJSON() as IDidVerifiablePresentation<T>,
 				jwt: presentationJwt.toString()
 			};
 		} catch (error) {
@@ -832,9 +834,11 @@ export class IotaIdentityConnector implements IIdentityConnector {
 	 * @param presentationJwt The presentation to verify.
 	 * @returns The presentation stored in the jwt and the revocation status.
 	 */
-	public async checkVerifiablePresentation(presentationJwt: string): Promise<{
+	public async checkVerifiablePresentation<T extends IJsonLdNodeObject = IJsonLdNodeObject>(
+		presentationJwt: string
+	): Promise<{
 		revoked: boolean;
-		verifiablePresentation?: IDidVerifiablePresentation;
+		verifiablePresentation?: IDidVerifiablePresentation<T>;
 		issuers?: IDidDocument[];
 	}> {
 		Guards.stringValue(this.CLASS_NAME, nameof(presentationJwt), presentationJwt);
@@ -906,7 +910,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 
 			return {
 				revoked: false,
-				verifiablePresentation: presentation.toJSON() as IDidVerifiablePresentation,
+				verifiablePresentation: presentation.toJSON() as IDidVerifiablePresentation<T>,
 				issuers: jsonIssuers as IDidDocument[]
 			};
 		} catch (error) {
