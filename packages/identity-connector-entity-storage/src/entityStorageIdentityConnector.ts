@@ -16,9 +16,9 @@ import {
 } from "@twin.org/core";
 import { Sha256 } from "@twin.org/crypto";
 import {
-	type IJsonLdObject,
 	JsonLdProcessor,
-	type IJsonLdContextDefinitionRoot
+	type IJsonLdContextDefinitionRoot,
+	type IJsonLdObject
 } from "@twin.org/data-json-ld";
 import {
 	EntityStorageConnectorFactory,
@@ -407,7 +407,7 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 	 * @returns The created verifiable credential and its token.
 	 * @throws NotFoundError if the id can not be resolved.
 	 */
-	public async createVerifiableCredential<T extends IJsonLdObject = IJsonLdObject>(
+	public async createVerifiableCredential<T extends IJsonLdObject>(
 		controller: string,
 		verificationMethodId: string,
 		id: string | undefined,
@@ -541,7 +541,7 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 	 * @param credentialJwt The credential to verify.
 	 * @returns The credential stored in the jwt and the revocation status.
 	 */
-	public async checkVerifiableCredential<T extends IJsonLdObject = IJsonLdObject>(
+	public async checkVerifiableCredential<T extends IJsonLdObject>(
 		credentialJwt: string
 	): Promise<{
 		revoked: boolean;
@@ -779,7 +779,7 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 	 * @returns The created verifiable presentation and its token.
 	 * @throws NotFoundError if the id can not be resolved.
 	 */
-	public async createVerifiablePresentation<T extends IJsonLdObject = IJsonLdObject>(
+	public async createVerifiablePresentation<T extends IJsonLdObject>(
 		controller: string,
 		presentationMethodId: string,
 		presentationId: string | undefined,
@@ -902,7 +902,7 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 	 * @param presentationJwt The presentation to verify.
 	 * @returns The presentation stored in the jwt and the revocation status.
 	 */
-	public async checkVerifiablePresentation<T extends IJsonLdObject = IJsonLdObject>(
+	public async checkVerifiablePresentation<T extends IJsonLdObject>(
 		presentationJwt: string
 	): Promise<{
 		revoked: boolean;

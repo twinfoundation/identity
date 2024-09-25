@@ -94,7 +94,7 @@ export interface IIdentityConnector extends IComponent {
 	 * @returns The created verifiable credential and its token.
 	 * @throws NotFoundError if the id can not be resolved.
 	 */
-	createVerifiableCredential<T extends IJsonLdObject = IJsonLdObject>(
+	createVerifiableCredential<T extends IJsonLdObject>(
 		controller: string,
 		verificationMethodId: string,
 		id: string | undefined,
@@ -110,7 +110,7 @@ export interface IIdentityConnector extends IComponent {
 	 * @param credentialJwt The credential to verify.
 	 * @returns The credential stored in the jwt and the revocation status.
 	 */
-	checkVerifiableCredential<T extends IJsonLdObject = IJsonLdObject>(
+	checkVerifiableCredential<T extends IJsonLdObject>(
 		credentialJwt: string
 	): Promise<{
 		revoked: boolean;
@@ -155,7 +155,7 @@ export interface IIdentityConnector extends IComponent {
 	 * @returns The created verifiable presentation and its token.
 	 * @throws NotFoundError if the id can not be resolved.
 	 */
-	createVerifiablePresentation<T extends IJsonLdObject = IJsonLdObject>(
+	createVerifiablePresentation<T extends IJsonLdObject>(
 		controller: string,
 		presentationMethodId: string,
 		presentationId: string | undefined,
@@ -173,7 +173,7 @@ export interface IIdentityConnector extends IComponent {
 	 * @param presentationJwt The presentation to verify.
 	 * @returns The presentation stored in the jwt and the revocation status.
 	 */
-	checkVerifiablePresentation<T extends IJsonLdObject = IJsonLdObject>(
+	checkVerifiablePresentation<T extends IJsonLdObject>(
 		presentationJwt: string
 	): Promise<{
 		revoked: boolean;
