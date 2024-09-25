@@ -16,7 +16,7 @@ import {
 } from "@twin.org/core";
 import { Sha256 } from "@twin.org/crypto";
 import {
-	type IJsonLdNodeObject,
+	type IJsonLdObject,
 	JsonLdProcessor,
 	type IJsonLdContextDefinitionRoot
 } from "@twin.org/data-json-ld";
@@ -407,7 +407,7 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 	 * @returns The created verifiable credential and its token.
 	 * @throws NotFoundError if the id can not be resolved.
 	 */
-	public async createVerifiableCredential<T extends IJsonLdNodeObject = IJsonLdNodeObject>(
+	public async createVerifiableCredential<T extends IJsonLdObject = IJsonLdObject>(
 		controller: string,
 		verificationMethodId: string,
 		id: string | undefined,
@@ -419,7 +419,7 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 	}> {
 		Guards.stringValue(this.CLASS_NAME, nameof(controller), controller);
 		Guards.stringValue(this.CLASS_NAME, nameof(verificationMethodId), verificationMethodId);
-		Guards.object<IJsonLdNodeObject>(this.CLASS_NAME, nameof(credential), credential);
+		Guards.object<IJsonLdObject>(this.CLASS_NAME, nameof(credential), credential);
 		if (!Is.undefined(revocationIndex)) {
 			Guards.number(this.CLASS_NAME, nameof(revocationIndex), revocationIndex);
 		}
@@ -457,12 +457,11 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 			const revocationService = issuerDidDocument.service?.find(s => s.id.endsWith("#revocation"));
 
 			const finalTypes: string[] = [DidTypes.VerifiableCredential];
-			const credContext = JsonLdProcessor.extractProperty<IJsonLdContextDefinitionRoot>(
-				credential,
-				["@context"]
-			);
-			const credId = JsonLdProcessor.extractProperty<string>(credential, ["@id", "id"], false);
-			const credType = JsonLdProcessor.extractProperty<string>(credential, ["@type", "type"]);
+			const credContext = ObjectHelper.extractProperty<IJsonLdContextDefinitionRoot>(credential, [
+				"@context"
+			]);
+			const credId = ObjectHelper.extractProperty<string>(credential, ["@id", "id"], false);
+			const credType = ObjectHelper.extractProperty<string>(credential, ["@type", "type"]);
 			if (Is.stringValue(credType)) {
 				finalTypes.push(credType);
 			}
@@ -542,7 +541,7 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 	 * @param credentialJwt The credential to verify.
 	 * @returns The credential stored in the jwt and the revocation status.
 	 */
-	public async checkVerifiableCredential<T extends IJsonLdNodeObject = IJsonLdNodeObject>(
+	public async checkVerifiableCredential<T extends IJsonLdObject = IJsonLdObject>(
 		credentialJwt: string
 	): Promise<{
 		revoked: boolean;
@@ -780,7 +779,7 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 	 * @returns The created verifiable presentation and its token.
 	 * @throws NotFoundError if the id can not be resolved.
 	 */
-	public async createVerifiablePresentation<T extends IJsonLdNodeObject = IJsonLdNodeObject>(
+	public async createVerifiablePresentation<T extends IJsonLdObject = IJsonLdObject>(
 		controller: string,
 		presentationMethodId: string,
 		presentationId: string | undefined,
@@ -903,7 +902,7 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 	 * @param presentationJwt The presentation to verify.
 	 * @returns The presentation stored in the jwt and the revocation status.
 	 */
-	public async checkVerifiablePresentation<T extends IJsonLdNodeObject = IJsonLdNodeObject>(
+	public async checkVerifiablePresentation<T extends IJsonLdObject = IJsonLdObject>(
 		presentationJwt: string
 	): Promise<{
 		revoked: boolean;

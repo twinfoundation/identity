@@ -37,13 +37,17 @@ import {
 	type Subject
 } from "@iota/identity-wasm/node/index.js";
 import { Client, Utils } from "@iota/sdk-wasm/node/lib/index.js";
-import { Converter, GeneralError, Guards, Is, NotFoundError, RandomHelper } from "@twin.org/core";
-import { Sha256 } from "@twin.org/crypto";
 import {
-	JsonLdProcessor,
-	type IJsonLdContextDefinitionRoot,
-	type IJsonLdNodeObject
-} from "@twin.org/data-json-ld";
+	Converter,
+	GeneralError,
+	Guards,
+	Is,
+	NotFoundError,
+	ObjectHelper,
+	RandomHelper
+} from "@twin.org/core";
+import { Sha256 } from "@twin.org/crypto";
+import type { IJsonLdContextDefinitionRoot, IJsonLdObject } from "@twin.org/data-json-ld";
 import { Iota } from "@twin.org/dlt-iota";
 import { DocumentHelper, type IIdentityConnector } from "@twin.org/identity-models";
 import { nameof } from "@twin.org/nameof";
@@ -433,7 +437,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 	 * @returns The created verifiable credential and its token.
 	 * @throws NotFoundError if the id can not be resolved.
 	 */
-	public async createVerifiableCredential<T extends IJsonLdNodeObject = IJsonLdNodeObject>(
+	public async createVerifiableCredential<T extends IJsonLdObject = IJsonLdObject>(
 		controller: string,
 		verificationMethodId: string,
 		id: string | undefined,
@@ -445,7 +449,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 	}> {
 		Guards.stringValue(this.CLASS_NAME, nameof(controller), controller);
 		Guards.stringValue(this.CLASS_NAME, nameof(verificationMethodId), verificationMethodId);
-		Guards.object<IJsonLdNodeObject>(this.CLASS_NAME, nameof(credential), credential);
+		Guards.object<IJsonLdObject>(this.CLASS_NAME, nameof(credential), credential);
 		if (!Is.undefined(revocationIndex)) {
 			Guards.number(this.CLASS_NAME, nameof(revocationIndex), revocationIndex);
 		}
@@ -475,11 +479,10 @@ export class IotaIdentityConnector implements IIdentityConnector {
 			}
 
 			const finalTypes = [];
-			const credContext = JsonLdProcessor.extractProperty<IJsonLdContextDefinitionRoot>(
-				credential,
-				["@context"]
-			);
-			const credType = JsonLdProcessor.extractProperty<string>(credential, ["@type", "type"]);
+			const credContext = ObjectHelper.extractProperty<IJsonLdContextDefinitionRoot>(credential, [
+				"@context"
+			]);
+			const credType = ObjectHelper.extractProperty<string>(credential, ["@type", "type"]);
 			if (Is.stringValue(credType)) {
 				finalTypes.push(credType);
 			}
@@ -492,7 +495,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 				id,
 				type: finalTypes,
 				issuer: idParts.id,
-				credentialSubject: credential as Subject,
+				credentialSubject: credential as unknown as Subject,
 				credentialStatus: Is.undefined(revocationIndex)
 					? undefined
 					: {
@@ -561,7 +564,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 	 * @param credentialJwt The credential to verify.
 	 * @returns The credential stored in the jwt and the revocation status.
 	 */
-	public async checkVerifiableCredential<T extends IJsonLdNodeObject = IJsonLdNodeObject>(
+	public async checkVerifiableCredential<T extends IJsonLdObject = IJsonLdObject>(
 		credentialJwt: string
 	): Promise<{
 		revoked: boolean;
@@ -698,7 +701,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 	 * @returns The created verifiable presentation and its token.
 	 * @throws NotFoundError if the id can not be resolved.
 	 */
-	public async createVerifiablePresentation<T extends IJsonLdNodeObject = IJsonLdNodeObject>(
+	public async createVerifiablePresentation<T extends IJsonLdObject = IJsonLdObject>(
 		controller: string,
 		presentationMethodId: string,
 		presentationId: string | undefined,
@@ -834,7 +837,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 	 * @param presentationJwt The presentation to verify.
 	 * @returns The presentation stored in the jwt and the revocation status.
 	 */
-	public async checkVerifiablePresentation<T extends IJsonLdNodeObject = IJsonLdNodeObject>(
+	public async checkVerifiablePresentation<T extends IJsonLdObject = IJsonLdObject>(
 		presentationJwt: string
 	): Promise<{
 		revoked: boolean;

@@ -1,7 +1,7 @@
 // Copyright 2024 IOTA Stiftung.
 // SPDX-License-Identifier: Apache-2.0.
 import type { IComponent } from "@twin.org/core";
-import type { IJsonLdContextDefinitionRoot, IJsonLdNodeObject } from "@twin.org/data-json-ld";
+import type { IJsonLdContextDefinitionRoot, IJsonLdObject } from "@twin.org/data-json-ld";
 import type {
 	DidVerificationMethodType,
 	IDidDocument,
@@ -94,7 +94,7 @@ export interface IIdentityConnector extends IComponent {
 	 * @returns The created verifiable credential and its token.
 	 * @throws NotFoundError if the id can not be resolved.
 	 */
-	createVerifiableCredential<T extends IJsonLdNodeObject = IJsonLdNodeObject>(
+	createVerifiableCredential<T extends IJsonLdObject = IJsonLdObject>(
 		controller: string,
 		verificationMethodId: string,
 		id: string | undefined,
@@ -110,7 +110,7 @@ export interface IIdentityConnector extends IComponent {
 	 * @param credentialJwt The credential to verify.
 	 * @returns The credential stored in the jwt and the revocation status.
 	 */
-	checkVerifiableCredential<T extends IJsonLdNodeObject = IJsonLdNodeObject>(
+	checkVerifiableCredential<T extends IJsonLdObject = IJsonLdObject>(
 		credentialJwt: string
 	): Promise<{
 		revoked: boolean;
@@ -155,7 +155,7 @@ export interface IIdentityConnector extends IComponent {
 	 * @returns The created verifiable presentation and its token.
 	 * @throws NotFoundError if the id can not be resolved.
 	 */
-	createVerifiablePresentation<T extends IJsonLdNodeObject = IJsonLdNodeObject>(
+	createVerifiablePresentation<T extends IJsonLdObject = IJsonLdObject>(
 		controller: string,
 		presentationMethodId: string,
 		presentationId: string | undefined,
@@ -173,7 +173,7 @@ export interface IIdentityConnector extends IComponent {
 	 * @param presentationJwt The presentation to verify.
 	 * @returns The presentation stored in the jwt and the revocation status.
 	 */
-	checkVerifiablePresentation<T extends IJsonLdNodeObject = IJsonLdNodeObject>(
+	checkVerifiablePresentation<T extends IJsonLdObject = IJsonLdObject>(
 		presentationJwt: string
 	): Promise<{
 		revoked: boolean;

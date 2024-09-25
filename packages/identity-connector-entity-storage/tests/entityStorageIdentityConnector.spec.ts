@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0.
 import { Converter, Is, ObjectHelper } from "@twin.org/core";
 import { Ed25519 } from "@twin.org/crypto";
-import type { IJsonLdNodeObject } from "@twin.org/data-json-ld";
+import type { IJsonLdObject } from "@twin.org/data-json-ld";
 import { MemoryEntityStorageConnector } from "@twin.org/entity-storage-connector-memory";
 import { EntityStorageConnectorFactory } from "@twin.org/entity-storage-models";
 import { nameof } from "@twin.org/nameof";
@@ -355,7 +355,7 @@ describe("EntityStorageIdentityConnector", () => {
 				TEST_IDENTITY_ID,
 				undefined as unknown as string,
 				undefined as unknown as string,
-				undefined as unknown as IJsonLdNodeObject,
+				undefined as unknown as IJsonLdObject,
 				undefined as unknown as number
 			)
 		).rejects.toMatchObject({
@@ -375,7 +375,7 @@ describe("EntityStorageIdentityConnector", () => {
 				TEST_IDENTITY_ID,
 				"foo",
 				"UniversityDegreeCredential",
-				undefined as unknown as IJsonLdNodeObject,
+				undefined as unknown as IJsonLdObject,
 				undefined as unknown as number
 			)
 		).rejects.toMatchObject({
@@ -463,7 +463,11 @@ describe("EntityStorageIdentityConnector", () => {
 		await vaultKeyEntityStorageConnector.set(testDocumentKey);
 		const identityConnector = new EntityStorageIdentityConnector();
 
-		const result = await identityConnector.checkVerifiableCredential(testVcJwt);
+		const result = await identityConnector.checkVerifiableCredential<{
+			"@context": "http://schema.org/";
+			id: string;
+			name: string;
+		}>(testVcJwt);
 
 		expect(result.revoked).toBeFalsy();
 		expect(result.verifiableCredential?.["@context"]).toEqual([
