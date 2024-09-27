@@ -456,12 +456,15 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 
 			const revocationService = issuerDidDocument.service?.find(s => s.id.endsWith("#revocation"));
 
+			const credentialClone = ObjectHelper.clone(credential);
+
 			const finalTypes: string[] = [DidTypes.VerifiableCredential];
-			const credContext = ObjectHelper.extractProperty<IJsonLdContextDefinitionRoot>(credential, [
-				"@context"
-			]);
-			const credId = ObjectHelper.extractProperty<string>(credential, ["@id", "id"], false);
-			const credType = ObjectHelper.extractProperty<string>(credential, ["@type", "type"]);
+			const credContext = ObjectHelper.extractProperty<IJsonLdContextDefinitionRoot>(
+				credentialClone,
+				["@context"]
+			);
+			const credId = ObjectHelper.extractProperty<string>(credentialClone, ["@id", "id"], false);
+			const credType = ObjectHelper.extractProperty<string>(credentialClone, ["@type", "type"]);
 			if (Is.stringValue(credType)) {
 				finalTypes.push(credType);
 			}
@@ -470,7 +473,7 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 				"@context": JsonLdProcessor.combineContexts(DidContexts.ContextV1, credContext) ?? null,
 				id,
 				type: finalTypes,
-				credentialSubject: credential,
+				credentialSubject: credentialClone,
 				issuer: issuerDidDocument.id,
 				issuanceDate: new Date().toISOString(),
 				credentialStatus:

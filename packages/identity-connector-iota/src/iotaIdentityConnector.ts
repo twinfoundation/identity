@@ -478,11 +478,14 @@ export class IotaIdentityConnector implements IIdentityConnector {
 				throw new GeneralError(this.CLASS_NAME, "publicKeyJwkMissing");
 			}
 
+			const credentialClone = ObjectHelper.clone(credential);
+
 			const finalTypes = [];
-			const credContext = ObjectHelper.extractProperty<IJsonLdContextDefinitionRoot>(credential, [
-				"@context"
-			]);
-			const credType = ObjectHelper.extractProperty<string>(credential, ["@type", "type"]);
+			const credContext = ObjectHelper.extractProperty<IJsonLdContextDefinitionRoot>(
+				credentialClone,
+				["@context"]
+			);
+			const credType = ObjectHelper.extractProperty<string>(credentialClone, ["@type", "type"]);
 			if (Is.stringValue(credType)) {
 				finalTypes.push(credType);
 			}
@@ -495,7 +498,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 				id,
 				type: finalTypes,
 				issuer: idParts.id,
-				credentialSubject: credential as unknown as Subject,
+				credentialSubject: credentialClone as unknown as Subject,
 				credentialStatus: Is.undefined(revocationIndex)
 					? undefined
 					: {
