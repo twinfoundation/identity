@@ -470,7 +470,7 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 			}
 
 			const verifiableCredential: IDidVerifiableCredential<T> = {
-				"@context": JsonLdProcessor.combineContexts(DidContexts.ContextV1, credContext) ?? null,
+				"@context": JsonLdProcessor.combineContexts(DidContexts.ContextVCv1, credContext) ?? null,
 				id,
 				type: finalTypes,
 				credentialSubject: credentialClone,
@@ -844,7 +844,7 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 			}
 
 			const verifiablePresentation: IDidVerifiablePresentation<T> = {
-				"@context": JsonLdProcessor.combineContexts(DidContexts.ContextV1, contexts) ?? null,
+				"@context": JsonLdProcessor.combineContexts(DidContexts.ContextVCv1, contexts) ?? null,
 				id: presentationId,
 				type: finalTypes,
 				verifiableCredential: verifiableCredentials,

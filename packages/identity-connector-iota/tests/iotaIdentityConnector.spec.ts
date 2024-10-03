@@ -495,7 +495,7 @@ describe("IotaIdentityConnector", () => {
 		);
 
 		expect(result.verifiableCredential["@context"]).toEqual([
-			DidContexts.ContextV1,
+			DidContexts.ContextVCv1,
 			"http://schema.org/"
 		]);
 		expect(result.verifiableCredential.id).toEqual("https://example.com/credentials/3732");
@@ -553,7 +553,7 @@ describe("IotaIdentityConnector", () => {
 
 		expect(result.revoked).toBeFalsy();
 		expect(result.verifiableCredential?.["@context"]).toEqual([
-			DidContexts.ContextV1,
+			DidContexts.ContextVCv1,
 			"http://schema.org/"
 		]);
 		expect(result.verifiableCredential?.id).toEqual("https://example.com/credentials/3732");
@@ -804,7 +804,7 @@ describe("IotaIdentityConnector", () => {
 		);
 
 		expect(result.verifiablePresentation["@context"]).toEqual([
-			DidContexts.ContextV1,
+			DidContexts.ContextVCv1,
 			"http://schema.org/"
 		]);
 		expect(result.verifiablePresentation.type).toEqual([DidTypes.VerifiablePresentation, "Person"]);
@@ -845,7 +845,7 @@ describe("IotaIdentityConnector", () => {
 
 		expect(result.revoked).toBeFalsy();
 		expect(result.verifiablePresentation?.["@context"]).toEqual([
-			DidContexts.ContextV1,
+			DidContexts.ContextVCv1,
 			"http://schema.org/"
 		]);
 		expect(result.verifiablePresentation?.type).toEqual([
