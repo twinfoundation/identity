@@ -7,7 +7,7 @@ import {
 	CLIUtils,
 	type CliOutputOptions
 } from "@twin.org/cli-core";
-import { Converter, I18n, Is } from "@twin.org/core";
+import { I18n, Is } from "@twin.org/core";
 import { IotaIdentityConnector } from "@twin.org/identity-connector-iota";
 import { VaultConnectorFactory, VaultKeyType } from "@twin.org/vault-models";
 import { IotaWalletConnector } from "@twin.org/wallet-connector-iota";
@@ -121,13 +121,10 @@ export async function actionCommandProofCreate(
 
 	const proof = await iotaIdentityConnector.createProof(localIdentity, id, data);
 
-	const proofValue = Converter.bytesToBase64(proof.value);
-
 	CLIDisplay.spinnerStop();
 
 	if (opts.console) {
-		CLIDisplay.value(I18n.formatMessage("commands.proof-create.labels.type"), proof.type);
-		CLIDisplay.value(I18n.formatMessage("commands.proof-create.labels.value"), proofValue);
+		CLIDisplay.json(proof);
 
 		CLIDisplay.break();
 	}
@@ -135,14 +132,14 @@ export async function actionCommandProofCreate(
 	if (Is.stringValue(opts?.json)) {
 		await CLIUtils.writeJsonFile(
 			opts.json,
-			{ type: proof.type, value: proofValue },
+			{ cryptosuite: proof.cryptosuite, value: proof.proofValue },
 			opts.mergeJson
 		);
 	}
 	if (Is.stringValue(opts?.env)) {
 		await CLIUtils.writeEnvFile(
 			opts.env,
-			[`DID_PROOF_TYPE="${proof.type}"`, `DID_PROOF_VALUE="${proofValue}"`],
+			[`DID_CRYPTOSUITE="${proof.cryptosuite}"`, `DID_PROOF_VALUE="${proof.proofValue}"`],
 			opts.mergeEnv
 		);
 	}

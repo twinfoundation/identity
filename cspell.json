@@ -20,6 +20,8 @@
 	"words": [
 		"bech",
 		"Bitstring",
+		"cryptosuite",
+		"eddsa",
 		"Faucet",
 		"Multibase",
 		"nameof",

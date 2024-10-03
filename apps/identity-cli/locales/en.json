@@ -272,9 +272,7 @@
 				"creatingProof": "Creating Proof"
 			},
 			"labels": {
-				"verificationMethodId": "Verification Method Id",
-				"type": "Proof Type",
-				"value": "Proof Value"
+				"verificationMethodId": "Verification Method Id"
 			}
 		},
 		"proof-verify": {
@@ -289,9 +287,9 @@
 					"param": "--data '<'data'>'",
 					"description": "The base64 or hex encoded data to verify the proof for, or start with ! to read environment variable."
 				},
-				"type": {
-					"param": "--type '<'type'>'",
-					"description": "The type of the proof, or start with ! to read environment variable."
+				"cryptosuite": {
+					"param": "--cryptosuite '<'cryptosuite'>'",
+					"description": "The cryptosuite of the proof, or start with ! to read environment variable."
 				},
 				"value": {
 					"param": "--value '<'value'>'",
@@ -303,7 +301,7 @@
 			},
 			"labels": {
 				"verificationMethodId": "Verification Method Id",
-				"type": "Proof Type",
+				"cryptosuite": "Proof Cryptosuite",
 				"value": "Proof Value",
 				"isVerified": "Is Verified"
 			}

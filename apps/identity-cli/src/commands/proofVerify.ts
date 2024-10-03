@@ -7,8 +7,9 @@ import {
 	CLIUtils,
 	type CliOutputOptions
 } from "@twin.org/cli-core";
-import { Converter, I18n, Is } from "@twin.org/core";
+import { I18n, Is } from "@twin.org/core";
 import { IotaIdentityConnector } from "@twin.org/identity-connector-iota";
+import { DidContexts, DidTypes, type IDidProof } from "@twin.org/standards-w3c-did";
 import { IotaWalletConnector } from "@twin.org/wallet-connector-iota";
 import { WalletConnectorFactory } from "@twin.org/wallet-models";
 import { Command } from "commander";
@@ -33,8 +34,8 @@ export function buildCommandProofVerify(): Command {
 			I18n.formatMessage("commands.proof-verify.options.data.description")
 		)
 		.requiredOption(
-			I18n.formatMessage("commands.proof-verify.options.type.param"),
-			I18n.formatMessage("commands.proof-verify.options.type.description")
+			I18n.formatMessage("commands.proof-verify.options.cryptosuite.param"),
+			I18n.formatMessage("commands.proof-verify.options.cryptosuite.description")
 		)
 		.requiredOption(
 			I18n.formatMessage("commands.proof-verify.options.value.param"),
@@ -65,7 +66,7 @@ export function buildCommandProofVerify(): Command {
  * @param opts The options for the command.
  * @param opts.id The id of the verification method to use for the credential.
  * @param opts.data The data to verify the proof for.
- * @param opts.type The type of the proof.
+ * @param opts.cryptosuite The cryptosuite of the proof.
  * @param opts.value The proof value.
  * @param opts.node The node URL.
  */
@@ -73,23 +74,20 @@ export async function actionCommandProofVerify(
 	opts: {
 		id: string;
 		data: string;
-		type: string;
+		cryptosuite: string;
 		value: string;
 		node: string;
 	} & CliOutputOptions
 ): Promise<void> {
 	const id: string = CLIParam.stringValue("id", opts.id);
 	const data: Uint8Array = CLIParam.hexBase64("data", opts.data);
-	const type: string = CLIParam.stringValue("type", opts.type);
-	const value: Uint8Array = CLIParam.hexBase64("value", opts.value);
+	const cryptosuite: string = CLIParam.stringValue("cryptosuite", opts.cryptosuite);
+	const value: string = CLIParam.stringValue("value", opts.value);
 	const nodeEndpoint: string = CLIParam.url("node", opts.node);
 
 	CLIDisplay.value(I18n.formatMessage("commands.proof-verify.labels.verificationMethodId"), id);
-	CLIDisplay.value(I18n.formatMessage("commands.proof-verify.labels.type"), type);
-	CLIDisplay.value(
-		I18n.formatMessage("commands.proof-verify.labels.value"),
-		Converter.bytesToBase64(value)
-	);
+	CLIDisplay.value(I18n.formatMessage("commands.proof-verify.labels.cryptosuite"), cryptosuite);
+	CLIDisplay.value(I18n.formatMessage("commands.proof-verify.labels.value"), value);
 
 	CLIDisplay.value(I18n.formatMessage("commands.common.labels.node"), nodeEndpoint);
 	CLIDisplay.break();
@@ -120,7 +118,16 @@ export async function actionCommandProofVerify(
 
 	CLIDisplay.spinnerStart();
 
-	const isVerified = await iotaIdentityConnector.verifyProof(id, data, type, value);
+	const proof: IDidProof = {
+		"@context": DidContexts.ContextVCDataIntegrity,
+		type: DidTypes.DataIntegrityProof,
+		verificationMethod: id,
+		cryptosuite,
+		proofPurpose: "assertionMethod",
+		proofValue: value
+	};
+
+	const isVerified = await iotaIdentityConnector.verifyProof(data, proof);
 
 	CLIDisplay.spinnerStop();
 

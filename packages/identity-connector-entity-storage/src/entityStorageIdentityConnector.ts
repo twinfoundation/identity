@@ -30,6 +30,7 @@ import {
 	DidContexts,
 	DidTypes,
 	DidVerificationMethodType,
+	type IDidProof,
 	type IDidDocument,
 	type IDidDocumentVerificationMethod,
 	type IDidService,
@@ -1001,19 +1002,15 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 	 * @param controller The controller of the identity who can make changes.
 	 * @param verificationMethodId The verification method id to use.
 	 * @param bytes The data bytes to sign.
-	 * @returns The proof signature type and value.
+	 * @returns The proof.
 	 */
 	public async createProof(
 		controller: string,
 		verificationMethodId: string,
 		bytes: Uint8Array
-	): Promise<{
-		type: string;
-		value: Uint8Array;
-	}> {
+	): Promise<IDidProof> {
 		Guards.stringValue(this.CLASS_NAME, nameof(controller), controller);
 		Guards.stringValue(this.CLASS_NAME, nameof(verificationMethodId), verificationMethodId);
-
 		Guards.uint8Array(this.CLASS_NAME, nameof(bytes), bytes);
 
 		try {
@@ -1052,8 +1049,13 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 			);
 
 			return {
-				type: "Ed25519",
-				value: signature
+				"@context": DidContexts.ContextVCDataIntegrity,
+				type: DidTypes.DataIntegrityProof,
+				cryptosuite: "eddsa-jcs-2022",
+				created: new Date(Date.now()).toISOString(),
+				verificationMethod: verificationMethodId,
+				proofPurpose: "assertionMethod",
+				proofValue: Converter.bytesToBase58(signature)
 			};
 		} catch (error) {
 			throw new GeneralError(this.CLASS_NAME, "createProofFailed", undefined, error);
@@ -1062,27 +1064,28 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 
 	/**
 	 * Verify proof for arbitrary data with the specified verification method.
-	 * @param verificationMethodId The verification method id to use.
 	 * @param bytes The data bytes to verify.
-	 * @param signatureType The type of the signature for the proof.
-	 * @param signatureValue The value of the signature for the proof.
-	 * @returns True if the signature is valid.
+	 * @param proof The proof to verify.
+	 * @returns True if the proof is verified.
 	 */
-	public async verifyProof(
-		verificationMethodId: string,
-		bytes: Uint8Array,
-		signatureType: string,
-		signatureValue: Uint8Array
-	): Promise<boolean> {
-		Guards.stringValue(this.CLASS_NAME, nameof(verificationMethodId), verificationMethodId);
+	public async verifyProof(bytes: Uint8Array, proof: IDidProof): Promise<boolean> {
 		Guards.uint8Array(this.CLASS_NAME, nameof(bytes), bytes);
-		Guards.stringValue(this.CLASS_NAME, nameof(signatureType), signatureType);
-		Guards.uint8Array(this.CLASS_NAME, nameof(signatureValue), signatureValue);
+		Guards.object(this.CLASS_NAME, nameof(proof), proof);
+		Guards.stringValue(this.CLASS_NAME, nameof(proof.type), proof.type);
+		Guards.stringValue(this.CLASS_NAME, nameof(proof.cryptosuite), proof.cryptosuite);
+		Guards.stringValue(this.CLASS_NAME, nameof(proof.verificationMethod), proof.verificationMethod);
+		Guards.stringBase58(this.CLASS_NAME, nameof(proof.proofValue), proof.proofValue);
 
 		try {
-			const idParts = DocumentHelper.parse(verificationMethodId);
+			if (proof.type !== DidTypes.DataIntegrityProof) {
+				throw new GeneralError(this.CLASS_NAME, "proofType", { proofType: proof.type });
+			}
+			if (proof.cryptosuite !== "eddsa-jcs-2022") {
+				throw new GeneralError(this.CLASS_NAME, "cryptoSuite", { cryptosuite: proof.cryptosuite });
+			}
+			const idParts = DocumentHelper.parse(proof.verificationMethod);
 			if (Is.empty(idParts.hash)) {
-				throw new NotFoundError(this.CLASS_NAME, "missingDid", verificationMethodId);
+				throw new NotFoundError(this.CLASS_NAME, "missingDid", proof.verificationMethod);
 			}
 
 			const didIdentityDocument = await this._didDocumentEntityStorage.get(idParts.id);
@@ -1093,11 +1096,12 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 			const didDocument = didIdentityDocument.document;
 
 			const methods = this.getAllMethods(didDocument);
+
 			const methodAndArray = methods.find(m => {
 				if (Is.string(m.method)) {
-					return m.method === verificationMethodId;
+					return m.method === proof.verificationMethod;
 				}
-				return m.method.id === verificationMethodId;
+				return m.method.id === proof.verificationMethod;
 			});
 
 			if (!methodAndArray) {
@@ -1110,9 +1114,9 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 			}
 
 			return this._vaultConnector.verify(
-				this.buildVaultKey(didIdentityDocument.id, verificationMethodId),
+				this.buildVaultKey(didIdentityDocument.id, proof.verificationMethod),
 				bytes,
-				signatureValue
+				Converter.base58ToBytes(proof.proofValue)
 			);
 		} catch (error) {
 			throw new GeneralError(this.CLASS_NAME, "verifyProofFailed", undefined, error);

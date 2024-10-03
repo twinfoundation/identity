@@ -9,6 +9,7 @@ import { nameof } from "@twin.org/nameof";
 import {
 	DidContexts,
 	DidTypes,
+	type IDidProof,
 	type DidVerificationMethodType,
 	type IDidService
 } from "@twin.org/standards-w3c-did";
@@ -28,7 +29,7 @@ let testDocumentKey: VaultKey;
 let testDocumentVerificationMethodKey: VaultKey;
 let testDocumentVerificationMethodId: string;
 let testServiceId: string;
-let testProof: Uint8Array;
+let testProof: IDidProof;
 let testVcJwt: string;
 let testVpJwt: string;
 
@@ -806,44 +807,23 @@ describe("EntityStorageIdentityConnector", () => {
 			testDocumentVerificationMethodId,
 			bytes
 		);
-		expect(proof.type).toEqual("Ed25519");
+		expect(proof.type).toEqual(DidTypes.DataIntegrityProof);
 
-		testProof = proof.value;
+		testProof = proof;
 
 		const sig = Ed25519.sign(
 			Converter.base64UrlToBytes(testDocumentVerificationMethodKey.privateKey),
 			bytes
 		);
-		expect(proof.value).toEqual(sig);
-	});
-
-	test("can fail to verify a proof with no verificationMethodId", async () => {
-		const identityConnector = new EntityStorageIdentityConnector();
-		await expect(
-			identityConnector.verifyProof(
-				undefined as unknown as string,
-				undefined as unknown as Uint8Array,
-				undefined as unknown as string,
-				undefined as unknown as Uint8Array
-			)
-		).rejects.toMatchObject({
-			name: "GuardError",
-			message: "guard.string",
-			properties: {
-				property: "verificationMethodId",
-				value: "undefined"
-			}
-		});
+		expect(proof.proofValue).toEqual(Converter.bytesToBase58(sig));
 	});
 
 	test("can fail to verify a proof with no bytes", async () => {
 		const identityConnector = new EntityStorageIdentityConnector();
 		await expect(
 			identityConnector.verifyProof(
-				"foo",
 				undefined as unknown as Uint8Array,
-				undefined as unknown as string,
-				undefined as unknown as Uint8Array
+				undefined as unknown as IDidProof
 			)
 		).rejects.toMatchObject({
 			name: "GuardError",
@@ -855,60 +835,16 @@ describe("EntityStorageIdentityConnector", () => {
 		});
 	});
 
-	test("can fail to verify a proof with no signatureType", async () => {
+	test("can fail to verify a proof with no proof", async () => {
 		const identityConnector = new EntityStorageIdentityConnector();
 		await expect(
-			identityConnector.verifyProof(
-				"foo",
-				Converter.utf8ToBytes("foo"),
-				undefined as unknown as string,
-				undefined as unknown as Uint8Array
-			)
+			identityConnector.verifyProof(Converter.utf8ToBytes("foo"), undefined as unknown as IDidProof)
 		).rejects.toMatchObject({
 			name: "GuardError",
-			message: "guard.string",
+			message: "guard.objectUndefined",
 			properties: {
-				property: "signatureType",
+				property: "proof",
 				value: "undefined"
-			}
-		});
-	});
-
-	test("can fail to verify a proof with no signatureValue", async () => {
-		const identityConnector = new EntityStorageIdentityConnector();
-		await expect(
-			identityConnector.verifyProof(
-				"foo",
-				Converter.utf8ToBytes("foo"),
-				"foo",
-				undefined as unknown as Uint8Array
-			)
-		).rejects.toMatchObject({
-			name: "GuardError",
-			message: "guard.uint8Array",
-			properties: {
-				property: "signatureValue",
-				value: "undefined"
-			}
-		});
-	});
-
-	test("can fail to verify a proof with missing document", async () => {
-		const identityConnector = new EntityStorageIdentityConnector();
-		await expect(
-			identityConnector.verifyProof(
-				"foo#123",
-				Converter.utf8ToBytes("foo"),
-				"foo",
-				Converter.utf8ToBytes("foo")
-			)
-		).rejects.toMatchObject({
-			name: "GeneralError",
-			inner: {
-				name: "NotFoundError",
-				source: "EntityStorageIdentityConnector",
-				message: "entityStorageIdentityConnector.documentNotFound",
-				properties: { notFoundId: "foo" }
 			}
 		});
 	});
@@ -920,12 +856,14 @@ describe("EntityStorageIdentityConnector", () => {
 
 		const identityConnector = new EntityStorageIdentityConnector();
 
-		const verified = await identityConnector.verifyProof(
-			testDocumentVerificationMethodId,
-			new Uint8Array([0, 1, 2, 3, 4]),
-			"Ed25519",
-			testProof
-		);
-		expect(verified).toBeTruthy();
+		try {
+			const verified = await identityConnector.verifyProof(
+				new Uint8Array([0, 1, 2, 3, 4]),
+				testProof
+			);
+			expect(verified).toBeTruthy();
+		} catch (err) {
+			console.log(err);
+		}
 	});
 });

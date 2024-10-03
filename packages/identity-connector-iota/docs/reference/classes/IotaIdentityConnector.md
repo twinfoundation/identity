@@ -524,7 +524,7 @@ The presentation stored in the jwt and the revocation status.
 
 ### createProof()
 
-> **createProof**(`controller`, `verificationMethodId`, `bytes`): `Promise`\<`object`\>
+> **createProof**(`controller`, `verificationMethodId`, `bytes`): `Promise`\<`IDidProof`\>
 
 Create a proof for arbitrary data with the specified verification method.
 
@@ -544,17 +544,9 @@ The data bytes to sign.
 
 #### Returns
 
-`Promise`\<`object`\>
+`Promise`\<`IDidProof`\>
 
-The proof signature type and value.
-
-##### type
-
-> **type**: `string`
-
-##### value
-
-> **value**: `Uint8Array`
+The proof.
 
 #### Implementation of
 
@@ -564,33 +556,25 @@ The proof signature type and value.
 
 ### verifyProof()
 
-> **verifyProof**(`verificationMethodId`, `bytes`, `signatureType`, `signatureValue`): `Promise`\<`boolean`\>
+> **verifyProof**(`bytes`, `proof`): `Promise`\<`boolean`\>
 
 Verify proof for arbitrary data with the specified verification method.
 
 #### Parameters
 
-• **verificationMethodId**: `string`
-
-The verification method id to use.
-
 • **bytes**: `Uint8Array`
 
 The data bytes to verify.
 
-• **signatureType**: `string`
+• **proof**: `IDidProof`
 
-The type of the signature for the proof.
-
-• **signatureValue**: `Uint8Array`
-
-The value of the signature for the proof.
+The proof to verify.
 
 #### Returns
 
 `Promise`\<`boolean`\>
 
-True if the signature is valid.
+True if the proof is verified.
 
 #### Implementation of
 

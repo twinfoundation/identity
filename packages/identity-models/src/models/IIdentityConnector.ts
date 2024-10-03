@@ -6,6 +6,7 @@ import type {
 	DidVerificationMethodType,
 	IDidDocument,
 	IDidDocumentVerificationMethod,
+	IDidProof,
 	IDidService,
 	IDidVerifiableCredential,
 	IDidVerifiablePresentation
@@ -186,29 +187,19 @@ export interface IIdentityConnector extends IComponent {
 	 * @param controller The controller of the identity who can make changes.
 	 * @param verificationMethodId The verification method id to use.
 	 * @param bytes The data bytes to sign.
-	 * @returns The proof signature type and value.
+	 * @returns The proof.
 	 */
 	createProof(
 		controller: string,
 		verificationMethodId: string,
 		bytes: Uint8Array
-	): Promise<{
-		type: string;
-		value: Uint8Array;
-	}>;
+	): Promise<IDidProof>;
 
 	/**
 	 * Verify proof for arbitrary data with the specified verification method.
-	 * @param verificationMethodId The verification method id to use.
 	 * @param bytes The data bytes to verify.
-	 * @param signatureType The type of the signature for the proof.
-	 * @param signatureValue The value of the signature for the proof.
-	 * @returns True if the signature is valid.
+	 * @param proof The proof to verify.
+	 * @returns True if the proof is verified.
 	 */
-	verifyProof(
-		verificationMethodId: string,
-		bytes: Uint8Array,
-		signatureType: string,
-		signatureValue: Uint8Array
-	): Promise<boolean>;
+	verifyProof(bytes: Uint8Array, proof: IDidProof): Promise<boolean>;
 }

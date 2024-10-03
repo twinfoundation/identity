@@ -7,6 +7,7 @@ import { EntityStorageConnectorFactory } from "@twin.org/entity-storage-models";
 import {
 	DidContexts,
 	DidTypes,
+	type IDidProof,
 	type DidVerificationMethodType,
 	type IDidDocumentVerificationMethod,
 	type IDidService
@@ -29,7 +30,7 @@ let testServiceId: string;
 let holderDocumentVerificationMethodId: string;
 let testVcJwt: string;
 let testVpJwt: string;
-let testProofSignature: Uint8Array;
+let testProof: IDidProof;
 
 describe("IotaIdentityConnector", () => {
 	beforeAll(async () => {
@@ -913,34 +914,10 @@ describe("IotaIdentityConnector", () => {
 			testDocumentVerificationMethodId,
 			new Uint8Array([0, 1, 2, 3, 4])
 		);
-		expect(proof.type).toEqual("Ed25519");
-		expect(proof.value).toBeDefined();
+		expect(proof.type).toEqual(DidTypes.DataIntegrityProof);
+		expect(proof.proofValue).toBeDefined();
 
-		testProofSignature = proof.value;
-	});
-
-	test("can fail to verify a proof with no verificationMethodId", async () => {
-		const identityConnector = new IotaIdentityConnector({
-			config: {
-				clientOptions: TEST_CLIENT_OPTIONS,
-				vaultMnemonicId: TEST_MNEMONIC_NAME
-			}
-		});
-		await expect(
-			identityConnector.verifyProof(
-				undefined as unknown as string,
-				undefined as unknown as Uint8Array,
-				undefined as unknown as string,
-				undefined as unknown as Uint8Array
-			)
-		).rejects.toMatchObject({
-			name: "GuardError",
-			message: "guard.string",
-			properties: {
-				property: "verificationMethodId",
-				value: "undefined"
-			}
-		});
+		testProof = proof;
 	});
 
 	test("can fail to verify a proof with no bytes", async () => {
@@ -952,10 +929,8 @@ describe("IotaIdentityConnector", () => {
 		});
 		await expect(
 			identityConnector.verifyProof(
-				"foo",
 				undefined as unknown as Uint8Array,
-				undefined as unknown as string,
-				undefined as unknown as Uint8Array
+				undefined as unknown as IDidProof
 			)
 		).rejects.toMatchObject({
 			name: "GuardError",
@@ -967,7 +942,7 @@ describe("IotaIdentityConnector", () => {
 		});
 	});
 
-	test("can fail to verify a proof with no signatureType", async () => {
+	test("can fail to verify a proof with no proof", async () => {
 		const identityConnector = new IotaIdentityConnector({
 			config: {
 				clientOptions: TEST_CLIENT_OPTIONS,
@@ -975,41 +950,12 @@ describe("IotaIdentityConnector", () => {
 			}
 		});
 		await expect(
-			identityConnector.verifyProof(
-				"foo",
-				Converter.utf8ToBytes("foo"),
-				undefined as unknown as string,
-				undefined as unknown as Uint8Array
-			)
+			identityConnector.verifyProof(Converter.utf8ToBytes("foo"), undefined as unknown as IDidProof)
 		).rejects.toMatchObject({
 			name: "GuardError",
-			message: "guard.string",
+			message: "guard.objectUndefined",
 			properties: {
-				property: "signatureType",
-				value: "undefined"
-			}
-		});
-	});
-
-	test("can fail to verify a proof with no signatureValue", async () => {
-		const identityConnector = new IotaIdentityConnector({
-			config: {
-				clientOptions: TEST_CLIENT_OPTIONS,
-				vaultMnemonicId: TEST_MNEMONIC_NAME
-			}
-		});
-		await expect(
-			identityConnector.verifyProof(
-				"foo",
-				Converter.utf8ToBytes("foo"),
-				"foo",
-				undefined as unknown as Uint8Array
-			)
-		).rejects.toMatchObject({
-			name: "GuardError",
-			message: "guard.uint8Array",
-			properties: {
-				property: "signatureValue",
+				property: "proof",
 				value: "undefined"
 			}
 		});
@@ -1023,10 +969,8 @@ describe("IotaIdentityConnector", () => {
 			}
 		});
 		const verified = await identityConnector.verifyProof(
-			testDocumentVerificationMethodId,
 			new Uint8Array([0, 1, 2, 3, 4]),
-			"Ed25519",
-			testProofSignature
+			testProof
 		);
 		expect(verified).toBeTruthy();
 	});
