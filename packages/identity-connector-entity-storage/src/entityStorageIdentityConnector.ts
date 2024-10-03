@@ -28,6 +28,7 @@ import { DocumentHelper, type IIdentityConnector } from "@twin.org/identity-mode
 import { nameof } from "@twin.org/nameof";
 import {
 	DidContexts,
+	DidCryptoSuites,
 	DidTypes,
 	DidVerificationMethodType,
 	type IDidDocument,
@@ -1049,7 +1050,7 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 			return {
 				"@context": DidContexts.ContextVCDataIntegrity,
 				type: DidTypes.DataIntegrityProof,
-				cryptosuite: "eddsa-jcs-2022",
+				cryptosuite: DidCryptoSuites.EdDSAJcs2022,
 				created: new Date(Date.now()).toISOString(),
 				verificationMethod: verificationMethodId,
 				proofPurpose: "assertionMethod",
@@ -1078,7 +1079,7 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 			if (proof.type !== DidTypes.DataIntegrityProof) {
 				throw new GeneralError(this.CLASS_NAME, "proofType", { proofType: proof.type });
 			}
-			if (proof.cryptosuite !== "eddsa-jcs-2022") {
+			if (proof.cryptosuite !== DidCryptoSuites.EdDSAJcs2022) {
 				throw new GeneralError(this.CLASS_NAME, "cryptoSuite", { cryptosuite: proof.cryptosuite });
 			}
 			const idParts = DocumentHelper.parse(proof.verificationMethod);

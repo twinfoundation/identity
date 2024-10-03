@@ -26,7 +26,9 @@
 			"methodMissing": "The verification method specified does not exist",
 			"verifyProofFailed": "Verifying the signature for the data failed",
 			"revokeVerifiableCredentialsFailed": "Revoking verifiable credentials failed",
-			"unrevokeVerifiableCredentialsFailed": "Unrevoking verifiable credentials failed"
+			"unrevokeVerifiableCredentialsFailed": "Unrevoking verifiable credentials failed",
+			"proofType": "The proof type must be DataIntegrityProof, it is currently {proofType}",
+			"cryptosuite": "The proof cryptosuite must be eddsa-jcs-2022, it is currently {cryptosuite}"
 		},
 		"entityStorageIdentityProfileConnector": {
 			"alreadyExists": "The identity profile already exists for the identity \"{existingId}\"",
