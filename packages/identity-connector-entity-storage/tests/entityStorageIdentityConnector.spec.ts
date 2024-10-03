@@ -852,14 +852,10 @@ describe("EntityStorageIdentityConnector", () => {
 
 		const identityConnector = new EntityStorageIdentityConnector();
 
-		try {
-			const verified = await identityConnector.verifyProof(
-				new Uint8Array([0, 1, 2, 3, 4]),
-				testProof
-			);
-			expect(verified).toBeTruthy();
-		} catch (err) {
-			console.log(err);
-		}
+		const verified = await identityConnector.verifyProof(
+			new Uint8Array([0, 1, 2, 3, 4]),
+			testProof
+		);
+		expect(verified).toBeTruthy();
 	});
 });
