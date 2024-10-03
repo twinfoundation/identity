@@ -1,15 +1,15 @@
 // Copyright 2024 IOTA Stiftung.
 // SPDX-License-Identifier: Apache-2.0.
 import { Converter, Is } from "@twin.org/core";
-import type { IJsonLdObject } from "@twin.org/data-json-ld";
+import type { IJsonLdNodeObject } from "@twin.org/data-json-ld";
 import type { MemoryEntityStorageConnector } from "@twin.org/entity-storage-connector-memory";
 import { EntityStorageConnectorFactory } from "@twin.org/entity-storage-models";
 import {
 	DidContexts,
 	DidTypes,
-	type IDidProof,
 	type DidVerificationMethodType,
 	type IDidDocumentVerificationMethod,
+	type IDidProof,
 	type IDidService
 } from "@twin.org/standards-w3c-did";
 import type { VaultSecret } from "@twin.org/vault-connector-entity-storage";
@@ -427,7 +427,7 @@ describe("IotaIdentityConnector", () => {
 				TEST_IDENTITY_ID,
 				undefined as unknown as string,
 				undefined as unknown as string,
-				undefined as unknown as IJsonLdObject,
+				undefined as unknown as IJsonLdNodeObject,
 				undefined as unknown as number
 			)
 		).rejects.toMatchObject({
@@ -452,7 +452,7 @@ describe("IotaIdentityConnector", () => {
 				TEST_IDENTITY_ID,
 				"foo",
 				"UniversityDegreeCredential",
-				undefined as unknown as IJsonLdObject,
+				undefined as unknown as IJsonLdNodeObject,
 				undefined as unknown as number
 			)
 		).rejects.toMatchObject({
@@ -546,11 +546,7 @@ describe("IotaIdentityConnector", () => {
 			}
 		});
 
-		const result = await identityConnector.checkVerifiableCredential<{
-			"@context": "http://schema.org/";
-			id: string;
-			name: string;
-		}>(testVcJwt);
+		const result = await identityConnector.checkVerifiableCredential(testVcJwt);
 
 		expect(result.revoked).toBeFalsy();
 		expect(result.verifiableCredential?.["@context"]).toEqual([
@@ -797,7 +793,7 @@ describe("IotaIdentityConnector", () => {
 		const result = await identityConnector.createVerifiablePresentation(
 			TEST_IDENTITY_ID,
 			holderDocumentVerificationMethodId,
-			"presentationId",
+			"http://example.com/12345",
 			"http://schema.org/",
 			["Person"],
 			[testVcJwt],

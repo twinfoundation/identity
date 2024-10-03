@@ -2,15 +2,15 @@
 // SPDX-License-Identifier: Apache-2.0.
 import { Converter, Is, ObjectHelper } from "@twin.org/core";
 import { Ed25519 } from "@twin.org/crypto";
-import type { IJsonLdObject } from "@twin.org/data-json-ld";
+import type { IJsonLdNodeObject } from "@twin.org/data-json-ld";
 import { MemoryEntityStorageConnector } from "@twin.org/entity-storage-connector-memory";
 import { EntityStorageConnectorFactory } from "@twin.org/entity-storage-models";
 import { nameof } from "@twin.org/nameof";
 import {
 	DidContexts,
 	DidTypes,
-	type IDidProof,
 	type DidVerificationMethodType,
+	type IDidProof,
 	type IDidService
 } from "@twin.org/standards-w3c-did";
 import {
@@ -356,7 +356,7 @@ describe("EntityStorageIdentityConnector", () => {
 				TEST_IDENTITY_ID,
 				undefined as unknown as string,
 				undefined as unknown as string,
-				undefined as unknown as IJsonLdObject,
+				undefined as unknown as IJsonLdNodeObject,
 				undefined as unknown as number
 			)
 		).rejects.toMatchObject({
@@ -376,7 +376,7 @@ describe("EntityStorageIdentityConnector", () => {
 				TEST_IDENTITY_ID,
 				"foo",
 				"UniversityDegreeCredential",
-				undefined as unknown as IJsonLdObject,
+				undefined as unknown as IJsonLdNodeObject,
 				undefined as unknown as number
 			)
 		).rejects.toMatchObject({
@@ -419,7 +419,7 @@ describe("EntityStorageIdentityConnector", () => {
 		);
 
 		expect(result.verifiableCredential["@context"]).toEqual([
-			DidContexts.ContextVCv1,
+			DidContexts.ContextVCv2,
 			"http://schema.org/"
 		]);
 		expect(result.verifiableCredential.id).toEqual("https://example.com/credentials/3732");
@@ -464,15 +464,11 @@ describe("EntityStorageIdentityConnector", () => {
 		await vaultKeyEntityStorageConnector.set(testDocumentKey);
 		const identityConnector = new EntityStorageIdentityConnector();
 
-		const result = await identityConnector.checkVerifiableCredential<{
-			"@context": "http://schema.org/";
-			id: string;
-			name: string;
-		}>(testVcJwt);
+		const result = await identityConnector.checkVerifiableCredential(testVcJwt);
 
 		expect(result.revoked).toBeFalsy();
 		expect(result.verifiableCredential?.["@context"]).toEqual([
-			DidContexts.ContextVCv1,
+			DidContexts.ContextVCv2,
 			"http://schema.org/"
 		]);
 		expect(result.verifiableCredential?.id).toEqual("https://example.com/credentials/3732");
@@ -715,7 +711,7 @@ describe("EntityStorageIdentityConnector", () => {
 		);
 
 		expect(result.verifiablePresentation["@context"]).toEqual([
-			DidContexts.ContextVCv1,
+			DidContexts.ContextVCv2,
 			"http://schema.org/"
 		]);
 		expect(result.verifiablePresentation.type).toEqual([DidTypes.VerifiablePresentation, "Person"]);
@@ -748,7 +744,7 @@ describe("EntityStorageIdentityConnector", () => {
 
 		expect(result.revoked).toBeFalsy();
 		expect(result.verifiablePresentation?.["@context"]).toEqual([
-			DidContexts.ContextVCv1,
+			DidContexts.ContextVCv2,
 			"http://schema.org/"
 		]);
 		expect(result.verifiablePresentation?.type).toEqual([

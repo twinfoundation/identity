@@ -9,7 +9,7 @@ import {
 	type CliOutputOptions
 } from "@twin.org/cli-core";
 import { Coerce, GeneralError, I18n, Is } from "@twin.org/core";
-import type { IJsonLdObject } from "@twin.org/data-json-ld";
+import type { IJsonLdNodeObject } from "@twin.org/data-json-ld";
 import { IotaIdentityConnector } from "@twin.org/identity-connector-iota";
 import { VaultConnectorFactory, VaultKeyType } from "@twin.org/vault-models";
 import { IotaWalletConnector } from "@twin.org/wallet-connector-iota";
@@ -151,7 +151,7 @@ export async function actionCommandVerifiableCredentialCreate(
 	);
 	CLIDisplay.break();
 
-	const jsonData = await CLIUtils.readJsonFile<IJsonLdObject>(subjectJson);
+	const jsonData = await CLIUtils.readJsonFile<IJsonLdNodeObject>(subjectJson);
 	if (Is.undefined(jsonData)) {
 		throw new GeneralError(
 			"commands",
