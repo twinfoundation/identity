@@ -163,7 +163,7 @@ export async function actionCommandVerificationMethodAdd(
 
 	const keyPair = await vaultConnector.getKey(`${localIdentity}/${verificationMethod.id}`);
 	const privateKey = Converter.bytesToBase64(keyPair.privateKey);
-	const publicKey = Converter.bytesToBase64(keyPair.publicKey);
+	const publicKey = Is.uint8Array(keyPair.publicKey) ? Converter.bytesToBase64(keyPair.publicKey) : "";
 
 	if (opts.console) {
 		CLIDisplay.value(

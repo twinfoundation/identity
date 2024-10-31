@@ -211,7 +211,7 @@ describe("IotaIdentityConnector", () => {
 			EntityStorageConnectorFactory.get<MemoryEntityStorageConnector<VaultSecret>>(
 				"vault-key"
 			).getStore();
-		expect(keyStore?.[0].id).toEqual(`${TEST_IDENTITY_ID}/${testDocumentId}#my-verification-id`);
+		expect(keyStore?.[0].id).toEqual(`${TEST_IDENTITY_ID}/my-verification-id`);
 	});
 
 	test("can fail to remove a verification method with no verification method id", async () => {

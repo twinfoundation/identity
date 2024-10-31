@@ -98,7 +98,7 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 		try {
 			const did = `did:${EntityStorageIdentityConnector.NAMESPACE}:${Converter.bytesToHex(RandomHelper.generate(32), true)}`;
 
-			await this._vaultConnector.createKey(this.buildVaultKey(did, did), VaultKeyType.Ed25519);
+			await this._vaultConnector.createKey(this.buildVaultKey(did, "did"), VaultKeyType.Ed25519);
 
 			const bitString = new BitString(EntityStorageIdentityConnector._REVOCATION_BITS_SIZE);
 			const compressed = await Compression.compress(bitString.getBits(), CompressionType.Gzip);
@@ -178,7 +178,7 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 
 			const didDocument = didIdentityDocument.document;
 
-			const tempKeyId = `temp-${Converter.bytesToBase64Url(RandomHelper.generate(32))}`;
+			const tempKeyId = `temp-vm-${Converter.bytesToBase64Url(RandomHelper.generate(16))}`;
 			const verificationPublicKey = await this._vaultConnector.createKey(
 				this.buildVaultKey(didDocument.id, tempKeyId),
 				VaultKeyType.Ed25519
@@ -199,7 +199,7 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 
 			await this._vaultConnector.renameKey(
 				this.buildVaultKey(didDocument.id, tempKeyId),
-				this.buildVaultKey(didDocument.id, methodId)
+				this.buildVaultKey(didDocument.id, verificationMethodId ?? kid)
 			);
 
 			const methods = this.getAllMethods(didDocument);
@@ -527,7 +527,7 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 				jwtPayload,
 				async (alg, key, payload) => {
 					const sig = await this._vaultConnector.sign(
-						this.buildVaultKey(idParts.id, verificationMethodId),
+						this.buildVaultKey(idParts.id, idParts.hash ?? ""),
 						payload
 					);
 					return sig;
@@ -881,7 +881,7 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 				jwtPayload,
 				async (alg, key, payload) => {
 					const sig = await this._vaultConnector.sign(
-						this.buildVaultKey(idParts.id, presentationMethodId),
+						this.buildVaultKey(idParts.id, idParts.hash ?? ""),
 						payload
 					);
 					return sig;
@@ -1043,7 +1043,7 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 			}
 
 			const signature = await this._vaultConnector.sign(
-				this.buildVaultKey(didDocument.id, verificationMethodId),
+				this.buildVaultKey(didDocument.id, idParts.hash ?? ""),
 				bytes
 			);
 
@@ -1113,7 +1113,7 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 			}
 
 			return this._vaultConnector.verify(
-				this.buildVaultKey(didIdentityDocument.id, proof.verificationMethod),
+				this.buildVaultKey(didIdentityDocument.id, idParts.hash),
 				bytes,
 				Converter.base58ToBytes(proof.proofValue)
 			);
@@ -1204,7 +1204,7 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 		const docBytes = Converter.utf8ToBytes(stringifiedDocument);
 
 		const verified = await this._vaultConnector.verify(
-			this.buildVaultKey(didDocument.id, didDocument.id),
+			this.buildVaultKey(didDocument.id, "did"),
 			docBytes,
 			Converter.base64ToBytes(didDocument.signature)
 		);
@@ -1225,7 +1225,7 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 		const docBytes = Converter.utf8ToBytes(stringifiedDocument);
 
 		const signature = await this._vaultConnector.sign(
-			this.buildVaultKey(didDocument.id, didDocument.id),
+			this.buildVaultKey(didDocument.id, "did"),
 			docBytes
 		);
 

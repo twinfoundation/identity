@@ -214,7 +214,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 
 			const tempKeyId = this.buildKey(
 				controller,
-				`temp-${Converter.bytesToBase64Url(RandomHelper.generate(32))}`
+				`temp-vm-${Converter.bytesToBase64Url(RandomHelper.generate(16))}`
 			);
 			const verificationPublicKey = await this._vaultConnector.createKey(
 				tempKeyId,
@@ -239,10 +239,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 
 			const methodId = `#${verificationMethodId ?? kid}`;
 
-			await this._vaultConnector.renameKey(
-				tempKeyId,
-				this.buildKey(controller, `${document.id().toString()}${methodId}`)
-			);
+			await this._vaultConnector.renameKey(tempKeyId, this.buildKey(controller, methodId.slice(1)));
 
 			const method = VerificationMethod.newFromJwk(document.id(), jwk, methodId);
 
@@ -517,7 +514,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 			});
 
 			const verificationMethodKey = await this._vaultConnector.getKey(
-				this.buildKey(controller, verificationMethodId)
+				this.buildKey(controller, idParts.hash)
 			);
 			if (Is.undefined(verificationMethodKey)) {
 				throw new GeneralError(this.CLASS_NAME, "publicKeyJwkMissing");
@@ -785,7 +782,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 			});
 
 			const verificationMethodKey = await this._vaultConnector.getKey(
-				this.buildKey(controller, presentationMethodId)
+				this.buildKey(controller, idParts.hash)
 			);
 			if (Is.undefined(verificationMethodKey)) {
 				throw new GeneralError(this.CLASS_NAME, "publicKeyJwkMissing");
@@ -985,13 +982,13 @@ export class IotaIdentityConnector implements IIdentityConnector {
 			const jwkMemStore = new JwkMemStore();
 
 			const verificationMethodKey = await this._vaultConnector.getKey(
-				this.buildKey(controller, verificationMethodId)
+				this.buildKey(controller, idParts.hash)
 			);
 			if (Is.undefined(verificationMethodKey)) {
 				throw new GeneralError(this.CLASS_NAME, "publicKeyJwkMissing");
 			}
 
-			const jwk = new Jwk({
+			const jwkParams = new Jwk({
 				alg: didMethod.publicKeyJwk.alg,
 				kty: didMethod.publicKeyJwk.kty as JwkType,
 				crv: didMethod.publicKeyJwk.crv,
@@ -999,9 +996,9 @@ export class IotaIdentityConnector implements IIdentityConnector {
 				d: Converter.bytesToBase64Url(verificationMethodKey.privateKey)
 			} as IJwkParams);
 
-			const keyId = await jwkMemStore.insert(jwk);
+			const keyId = await jwkMemStore.insert(jwkParams);
 
-			const signature = await jwkMemStore.sign(keyId, bytes, jwk);
+			const signature = await jwkMemStore.sign(keyId, bytes, jwkParams);
 
 			return {
 				"@context": DidContexts.ContextVCDataIntegrity,
