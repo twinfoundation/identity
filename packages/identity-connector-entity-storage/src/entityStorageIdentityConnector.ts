@@ -210,7 +210,7 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 				return m.method.id === methodId;
 			});
 
-			if (existingMethodIndex >= 0) {
+			if (existingMethodIndex !== -1) {
 				const methodArray =
 					didDocument[methods[existingMethodIndex].arrayKey as keyof IDidDocument];
 
@@ -276,7 +276,7 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 				return m.method.id === verificationMethodId;
 			});
 
-			if (existingMethodIndex >= 0) {
+			if (existingMethodIndex !== -1) {
 				const methodArray =
 					didDocument[methods[existingMethodIndex].arrayKey as keyof IDidDocument];
 
@@ -335,7 +335,7 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 
 			if (Is.array(didDocument.service)) {
 				const existingServiceIndex = didDocument.service.findIndex(s => s.id === fullServiceId);
-				if (existingServiceIndex >= 0) {
+				if (existingServiceIndex !== -1) {
 					didDocument.service?.splice(existingServiceIndex, 1);
 				}
 			}
@@ -383,7 +383,7 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 
 			if (Is.array(didDocument.service)) {
 				const existingServiceIndex = didDocument.service.findIndex(s => s.id === serviceId);
-				if (existingServiceIndex >= 0) {
+				if (existingServiceIndex !== -1) {
 					didDocument.service?.splice(existingServiceIndex, 1);
 					if (didDocument.service?.length === 0) {
 						delete didDocument.service;
@@ -448,12 +448,14 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 			});
 
 			if (!methodAndArray) {
-				throw new GeneralError(this.CLASS_NAME, "methodMissing");
+				throw new GeneralError(this.CLASS_NAME, "methodMissing", { method: verificationMethodId });
 			}
 
 			const verificationDidMethod = methodAndArray.method;
 			if (!Is.stringValue(verificationDidMethod.publicKeyJwk?.x)) {
-				throw new GeneralError(this.CLASS_NAME, "publicKeyJwkMissing");
+				throw new GeneralError(this.CLASS_NAME, "publicKeyJwkMissing", {
+					method: verificationMethodId
+				});
 			}
 
 			const revocationService = issuerDidDocument.service?.find(s => s.id.endsWith("#revocation"));
@@ -587,12 +589,12 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 			});
 
 			if (!methodAndArray) {
-				throw new GeneralError(this.CLASS_NAME, "methodMissing");
+				throw new GeneralError(this.CLASS_NAME, "methodMissing", { method: jwtHeader.kid });
 			}
 
 			const didMethod = methodAndArray.method;
 			if (!Is.stringValue(didMethod.publicKeyJwk?.x)) {
-				throw new GeneralError(this.CLASS_NAME, "publicKeyJwkMissing");
+				throw new GeneralError(this.CLASS_NAME, "publicKeyJwkMissing", { method: jwtHeader.kid });
 			}
 
 			const verified = Jwt.verifySignature(
@@ -828,12 +830,14 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 			});
 
 			if (!methodAndArray) {
-				throw new GeneralError(this.CLASS_NAME, "methodMissing");
+				throw new GeneralError(this.CLASS_NAME, "methodMissing", { method: presentationMethodId });
 			}
 
 			const didMethod = methodAndArray.method;
 			if (!Is.stringValue(didMethod.publicKeyJwk?.x)) {
-				throw new GeneralError(this.CLASS_NAME, "publicKeyJwkMissing");
+				throw new GeneralError(this.CLASS_NAME, "publicKeyJwkMissing", {
+					method: presentationMethodId
+				});
 			}
 
 			const finalTypes: string[] = [DidTypes.VerifiablePresentation];
@@ -1034,12 +1038,14 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 			});
 
 			if (!methodAndArray) {
-				throw new GeneralError(this.CLASS_NAME, "methodMissing");
+				throw new GeneralError(this.CLASS_NAME, "methodMissing", { method: verificationMethodId });
 			}
 
 			const didMethod = methodAndArray.method;
 			if (!Is.stringValue(didMethod.publicKeyJwk?.x)) {
-				throw new GeneralError(this.CLASS_NAME, "publicKeyJwkMissing");
+				throw new GeneralError(this.CLASS_NAME, "publicKeyJwkMissing", {
+					method: verificationMethodId
+				});
 			}
 
 			const signature = await this._vaultConnector.sign(
@@ -1104,12 +1110,16 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 			});
 
 			if (!methodAndArray) {
-				throw new GeneralError(this.CLASS_NAME, "methodMissing");
+				throw new GeneralError(this.CLASS_NAME, "methodMissing", {
+					method: proof.verificationMethod
+				});
 			}
 
 			const didMethod = methodAndArray.method;
 			if (!Is.stringValue(didMethod.publicKeyJwk?.x)) {
-				throw new GeneralError(this.CLASS_NAME, "publicKeyJwkMissing");
+				throw new GeneralError(this.CLASS_NAME, "publicKeyJwkMissing", {
+					method: proof.verificationMethodId
+				});
 			}
 
 			return this._vaultConnector.verify(
