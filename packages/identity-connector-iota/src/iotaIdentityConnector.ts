@@ -475,12 +475,14 @@ export class IotaIdentityConnector implements IIdentityConnector {
 			const methods = issuerDocument.methods();
 			const method = methods.find(m => m.id().toString() === verificationMethodId);
 			if (!method) {
-				throw new GeneralError(this.CLASS_NAME, "methodMissing");
+				throw new GeneralError(this.CLASS_NAME, "methodMissing", { method: verificationMethodId });
 			}
 
 			const didMethod = method.toJSON() as IDidDocumentVerificationMethod;
 			if (Is.undefined(didMethod.publicKeyJwk)) {
-				throw new GeneralError(this.CLASS_NAME, "publicKeyJwkMissing");
+				throw new GeneralError(this.CLASS_NAME, "publicKeyJwkMissing", {
+					method: verificationMethodId
+				});
 			}
 
 			const credentialClone = ObjectHelper.clone(credential);
@@ -517,7 +519,9 @@ export class IotaIdentityConnector implements IIdentityConnector {
 				this.buildKey(controller, idParts.hash)
 			);
 			if (Is.undefined(verificationMethodKey)) {
-				throw new GeneralError(this.CLASS_NAME, "publicKeyJwkMissing");
+				throw new GeneralError(this.CLASS_NAME, "verificationKeyMissing", {
+					method: verificationMethodId
+				});
 			}
 
 			const jwkParams = {
@@ -746,12 +750,14 @@ export class IotaIdentityConnector implements IIdentityConnector {
 			const methods = issuerDocument.methods();
 			const method = methods.find(m => m.id().toString() === presentationMethodId);
 			if (!method) {
-				throw new GeneralError(this.CLASS_NAME, "methodMissing");
+				throw new GeneralError(this.CLASS_NAME, "methodMissing", { method: presentationMethodId });
 			}
 
 			const didMethod = method.toJSON() as IDidDocumentVerificationMethod;
 			if (Is.undefined(didMethod.publicKeyJwk)) {
-				throw new GeneralError(this.CLASS_NAME, "publicKeyJwkMissing");
+				throw new GeneralError(this.CLASS_NAME, "publicKeyJwkMissing", {
+					method: presentationMethodId
+				});
 			}
 
 			const finalTypes = [];
@@ -785,7 +791,9 @@ export class IotaIdentityConnector implements IIdentityConnector {
 				this.buildKey(controller, idParts.hash)
 			);
 			if (Is.undefined(verificationMethodKey)) {
-				throw new GeneralError(this.CLASS_NAME, "publicKeyJwkMissing");
+				throw new GeneralError(this.CLASS_NAME, "verificationKeyMissing", {
+					method: presentationMethodId
+				});
 			}
 
 			const jwkParams = {
@@ -971,12 +979,14 @@ export class IotaIdentityConnector implements IIdentityConnector {
 			const method = methods.find(m => m.id().toString() === verificationMethodId);
 
 			if (!method) {
-				throw new GeneralError(this.CLASS_NAME, "methodMissing");
+				throw new GeneralError(this.CLASS_NAME, "methodMissing", { method: verificationMethodId });
 			}
 
 			const didMethod = method.toJSON() as IDidDocumentVerificationMethod;
 			if (Is.undefined(didMethod.publicKeyJwk)) {
-				throw new GeneralError(this.CLASS_NAME, "publicKeyJwkMissing");
+				throw new GeneralError(this.CLASS_NAME, "publicKeyJwkMissing", {
+					method: verificationMethodId
+				});
 			}
 
 			const jwkMemStore = new JwkMemStore();
@@ -1056,7 +1066,9 @@ export class IotaIdentityConnector implements IIdentityConnector {
 			const method = methods.find(m => m.id().toString() === proof.verificationMethod);
 
 			if (!method) {
-				throw new GeneralError(this.CLASS_NAME, "methodMissing");
+				throw new GeneralError(this.CLASS_NAME, "methodMissing", {
+					method: proof.verificationMethod
+				});
 			}
 
 			const jwk = method.data().tryPublicKeyJwk();
