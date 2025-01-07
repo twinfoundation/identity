@@ -18,6 +18,7 @@ import {
 import type { IIdentityProfileConnector } from "@twin.org/identity-models";
 import { nameof } from "@twin.org/nameof";
 import type { IdentityProfile } from "./entities/identityProfile";
+import type { IEntityStorageIdentityProfileConnectorConstructorOptions } from "./models/IEntityStorageIdentityProfileConnectorConstructorOptions";
 
 /**
  * Class which implements the identity profile connector contract.
@@ -44,11 +45,10 @@ export class EntityStorageIdentityProfileConnector<
 	private readonly _profileEntityStorage: IEntityStorageConnector<IdentityProfile>;
 
 	/**
-	 * Create a new instance of Identity.
-	 * @param options The dependencies for the identity service.
-	 * @param options.profileEntityStorageType The storage connector for the profiles, default to "identity-profile".
+	 * Create a new instance of EntityStorageIdentityProfileConnector.
+	 * @param options The options for the identity service.
 	 */
-	constructor(options?: { profileEntityStorageType?: string }) {
+	constructor(options?: IEntityStorageIdentityProfileConnectorConstructorOptions) {
 		this._profileEntityStorage = EntityStorageConnectorFactory.get(
 			options?.profileEntityStorageType ?? "identity-profile"
 		);

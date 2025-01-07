@@ -2,8 +2,16 @@
 	"error": {
 		"identityService": {
 			"noConnectors": "There are no connectors registered with the identity factory",
-			"resolveFailed": "Resolving the identity failed",
-			"namespaceMismatch": "The namespace in the urn \"{id}\" does not match the namespace of the identity service \"{namespace}\""
+			"namespaceMismatch": "The namespace in the urn \"{id}\" does not match the namespace of the identity service \"{namespace}\"",
+			"connectorNotFound": "There is no connector with the namespace \"{namespace}\" registered with the identity factory",
+			"jwtDecodeFailed": "Decoding the JWT failed",
+			"identityCreateFailed": "Creating the identity failed",
+			"identityResolveFailed": "Resolving the identity failed \"{identity}\"",
+			"verificationMethodCreateFailed": "Creating the verification method failed for identity \"{identity}\"",
+			"verificationMethodRemoveFailed": "Removing the verification method failed \"{verificationMethodId}\"",
+			"serviceCreateFailed": "Creating the service failed for identity \"{identity}\", service \"{serviceId}\"",
+			"serviceRemoveFailed": "Removing the service failed \"{serviceId}\"",
+			"verifiableCredentialCreateFailed": "Creating the verifiable credential failed for method \"{verificationMethodId}\""
 		},
 		"identityProfileConnectorService": {
 			"noConnectors": "There are no connectors registered with the identity profile factory"

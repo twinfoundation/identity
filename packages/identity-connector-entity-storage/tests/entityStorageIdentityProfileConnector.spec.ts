@@ -3,7 +3,7 @@
 import { I18n } from "@twin.org/core";
 import { MemoryEntityStorageConnector } from "@twin.org/entity-storage-connector-memory";
 import { EntityStorageConnectorFactory } from "@twin.org/entity-storage-models";
-import { IdentityConnectorFactory, IdentityRole } from "@twin.org/identity-models";
+import { IdentityConnectorFactory } from "@twin.org/identity-models";
 import { nameof } from "@twin.org/nameof";
 import {
 	EntityStorageVaultConnector,
@@ -306,7 +306,7 @@ describe("EntityStorageIdentityProfileConnector", () => {
 				"@context": "http://schema.org/",
 				"@type": "Person",
 				name: `Test Node Identity ${i}`,
-				role: IdentityRole.Node
+				role: "node"
 			});
 		}
 
@@ -316,14 +316,14 @@ describe("EntityStorageIdentityProfileConnector", () => {
 				"@context": "http://schema.org/",
 				"@type": "Person",
 				name: `Test User Identity ${i}`,
-				role: IdentityRole.User
+				role: "user"
 			});
 		}
 
 		const identitiesNode = await service.list([
 			{
 				propertyName: "role",
-				propertyValue: IdentityRole.Node
+				propertyValue: "node"
 			}
 		]);
 		expect(identitiesNode.items.length).toEqual(3);
@@ -331,7 +331,7 @@ describe("EntityStorageIdentityProfileConnector", () => {
 		const identitiesUsers = await service.list([
 			{
 				propertyName: "role",
-				propertyValue: IdentityRole.User
+				propertyValue: "user"
 			}
 		]);
 		expect(identitiesUsers.items.length).toEqual(7);

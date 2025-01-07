@@ -104,7 +104,7 @@ export async function identityResolve(
 
 	const component = ComponentFactory.get<IIdentityComponent>(componentName);
 
-	const result = await component.resolve(request.pathParams.id);
+	const result = await component.identityResolve(request.pathParams.id);
 
 	return {
 		body: result

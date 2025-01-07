@@ -69,6 +69,7 @@ import {
 } from "@twin.org/standards-w3c-did";
 import { VaultConnectorFactory, VaultKeyType, type IVaultConnector } from "@twin.org/vault-models";
 import type { IIotaIdentityConnectorConfig } from "./models/IIotaIdentityConnectorConfig";
+import type { IIotaIdentityConnectorConstructorOptions } from "./models/IIotaIdentityConnectorConstructorOptions";
 
 /**
  * Class for performing identity operations on IOTA.
@@ -99,10 +100,8 @@ export class IotaIdentityConnector implements IIdentityConnector {
 	/**
 	 * Create a new instance of IotaIdentityConnector.
 	 * @param options The options for the identity connector.
-	 * @param options.vaultConnectorType The vault connector type for the private keys, defaults to "vault".
-	 * @param options.config The configuration to use.
 	 */
-	constructor(options: { vaultConnectorType?: string; config: IIotaIdentityConnectorConfig }) {
+	constructor(options: IIotaIdentityConnectorConstructorOptions) {
 		Guards.object(this.CLASS_NAME, nameof(options), options);
 		Guards.object<IIotaIdentityConnectorConfig>(
 			this.CLASS_NAME,

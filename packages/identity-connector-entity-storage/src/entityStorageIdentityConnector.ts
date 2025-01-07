@@ -41,6 +41,7 @@ import {
 import { VaultConnectorFactory, VaultKeyType, type IVaultConnector } from "@twin.org/vault-models";
 import { Jwt, type IJwk, type IJwtHeader, type IJwtPayload } from "@twin.org/web";
 import type { IdentityDocument } from "./entities/identityDocument";
+import type { IEntityStorageIdentityConnectorConstructorOptions } from "./models/IEntityStorageIdentityConnectorConstructorOptions";
 
 /**
  * Class for performing identity operations using entity storage.
@@ -76,11 +77,9 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 
 	/**
 	 * Create a new instance of EntityStorageIdentityConnector.
-	 * @param options The dependencies for the identity connector.
-	 * @param options.didDocumentEntityStorageType The entity storage for the did documents, defaults to "identity-document".
-	 * @param options.vaultConnectorType The vault for the private keys, defaults to "vault".
+	 * @param options The options for the identity connector.
 	 */
-	constructor(options?: { didDocumentEntityStorageType?: string; vaultConnectorType?: string }) {
+	constructor(options?: IEntityStorageIdentityConnectorConstructorOptions) {
 		this._didDocumentEntityStorage = EntityStorageConnectorFactory.get(
 			options?.didDocumentEntityStorageType ?? "identity-document"
 		);

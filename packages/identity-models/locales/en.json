@@ -1,8 +1,9 @@
 {
-	"identityRole": {
-		"organization": "Organization",
-		"user": "User",
-		"node": "Node"
+	"error": {
+		"jwtHelper": {
+			"jwtDecodeFailed": "Decoding the JWT failed",
+			"jwtPayloadMissingParam": "The JWT is missing the required parameter \"{param}\""
+		}
 	},
 	"verifiableCredentialStates": {
 		"pendingVerification": "Pending Verification",
