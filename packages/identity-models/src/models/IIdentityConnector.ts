@@ -24,14 +24,6 @@ export interface IIdentityConnector extends IComponent {
 	createDocument(controller: string): Promise<IDidDocument>;
 
 	/**
-	 * Resolve a document from its id.
-	 * @param documentId The id of the document to resolve.
-	 * @returns The resolved document.
-	 * @throws NotFoundError if the id can not be resolved.
-	 */
-	resolveDocument(documentId: string): Promise<IDidDocument>;
-
-	/**
 	 * Add a verification method to the document in JSON Web key Format.
 	 * @param controller The controller of the identity who can make changes.
 	 * @param documentId The id of the document to add the verification method to.

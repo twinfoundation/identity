@@ -1,9 +1,12 @@
 {
 	"error": {
+		"entityStorageIdentityResolverConnector": {
+			"documentNotFound": "The document could not be found",
+			"resolveDocumentFailed": "Resolving the document failed"
+		},
 		"entityStorageIdentityConnector": {
 			"createDocumentFailed": "Creating the document failed",
 			"signatureVerificationFailed": "The document integrity check failed",
-			"resolveDocumentFailed": "Resolving the document failed",
 			"missingDid": "The full id including DID is required",
 			"addVerificationMethodFailed": "Adding the verification method failed",
 			"removeVerificationMethodFailed": "Removing the verification method failed",

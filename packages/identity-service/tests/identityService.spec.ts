@@ -6,10 +6,14 @@ import { MemoryEntityStorageConnector } from "@twin.org/entity-storage-connector
 import { EntityStorageConnectorFactory } from "@twin.org/entity-storage-models";
 import {
 	EntityStorageIdentityConnector,
+	EntityStorageIdentityResolverConnector,
 	type IdentityDocument,
 	initSchema as initSchemaIdentity
 } from "@twin.org/identity-connector-entity-storage";
-import { IdentityConnectorFactory } from "@twin.org/identity-models";
+import {
+	IdentityConnectorFactory,
+	IdentityResolverConnectorFactory
+} from "@twin.org/identity-models";
 import { nameof } from "@twin.org/nameof";
 import { DidVerificationMethodType } from "@twin.org/standards-w3c-did";
 import {
@@ -19,6 +23,7 @@ import {
 	initSchema as initSchemaVault
 } from "@twin.org/vault-connector-entity-storage";
 import { VaultConnectorFactory } from "@twin.org/vault-models";
+import { IdentityResolverService } from "../src/identityResolverService";
 import { IdentityService } from "../src/identityService";
 
 export const TEST_IDENTITY_ID = "test-identity";
@@ -56,6 +61,10 @@ describe("IdentityService", () => {
 		VaultConnectorFactory.register("vault", () => new EntityStorageVaultConnector());
 
 		IdentityConnectorFactory.register("entity-storage", () => new EntityStorageIdentityConnector());
+		IdentityResolverConnectorFactory.register(
+			"entity-storage",
+			() => new EntityStorageIdentityResolverConnector()
+		);
 	});
 
 	beforeEach(() => {
@@ -98,26 +107,6 @@ describe("IdentityService", () => {
 		});
 	});
 
-	test("Can resolve an identity", async () => {
-		const service = new IdentityService();
-
-		const identity = await service.identityResolve(
-			"did:entity-storage:0x0101010101010101010101010101010101010101010101010101010101010101"
-		);
-
-		expect(identity).toEqual({
-			id: "did:entity-storage:0x0101010101010101010101010101010101010101010101010101010101010101",
-			service: [
-				{
-					id: "did:entity-storage:0x0101010101010101010101010101010101010101010101010101010101010101#revocation",
-					type: "BitstringStatusList",
-					serviceEndpoint:
-						"data:application/octet-stream;base64,H4sIAAAAAAAAA-3BMQEAAADCoPVPbQwfoAAAAAAAAAAAAAAAAAAAAIC3AYbSVKsAQAAA"
-				}
-			]
-		});
-	});
-
 	test("Can create a verification method", async () => {
 		const service = new IdentityService();
 
@@ -141,7 +130,8 @@ describe("IdentityService", () => {
 			}
 		});
 
-		const document = await service.identityResolve(
+		const resolverService = new IdentityResolverService();
+		const document = await resolverService.identityResolve(
 			"did:entity-storage:0x0101010101010101010101010101010101010101010101010101010101010101"
 		);
 		expect(document.assertionMethod).toHaveLength(1);
@@ -155,7 +145,8 @@ describe("IdentityService", () => {
 			"did:entity-storage:0x0101010101010101010101010101010101010101010101010101010101010101#uDTA0SwHsiBjRdhTls4aeU-hhvKlj_HPf1Nk1L_b0eI"
 		);
 
-		const document = await service.identityResolve(
+		const resolverService = new IdentityResolverService();
+		const document = await resolverService.identityResolve(
 			"did:entity-storage:0x0101010101010101010101010101010101010101010101010101010101010101"
 		);
 		expect(document.assertionMethod).toBeUndefined();
@@ -178,7 +169,8 @@ describe("IdentityService", () => {
 			serviceEndpoint: "https://bar.example.com/"
 		});
 
-		const document = await service.identityResolve(
+		const resolverService = new IdentityResolverService();
+		const document = await resolverService.identityResolve(
 			"did:entity-storage:0x0101010101010101010101010101010101010101010101010101010101010101"
 		);
 		expect(document.service).toHaveLength(2);
@@ -192,7 +184,8 @@ describe("IdentityService", () => {
 			"did:entity-storage:0x0101010101010101010101010101010101010101010101010101010101010101#linked-domain"
 		);
 
-		const document = await service.identityResolve(
+		const resolverService = new IdentityResolverService();
+		const document = await resolverService.identityResolve(
 			"did:entity-storage:0x0101010101010101010101010101010101010101010101010101010101010101"
 		);
 		expect(document.service).toHaveLength(1);

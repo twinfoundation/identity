@@ -38,9 +38,10 @@ import {
 	type IDidVerifiableCredential,
 	type IDidVerifiablePresentation
 } from "@twin.org/standards-w3c-did";
-import { VaultConnectorFactory, VaultKeyType, type IVaultConnector } from "@twin.org/vault-models";
+import { type IVaultConnector, VaultConnectorFactory, VaultKeyType } from "@twin.org/vault-models";
 import { Jwt, type IJwk, type IJwtHeader, type IJwtPayload } from "@twin.org/web";
 import type { IdentityDocument } from "./entities/identityDocument";
+import type { EntityStorageIdentityResolverConnector } from "./entityStorageIdentityResolverConnector";
 import type { IEntityStorageIdentityConnectorConstructorOptions } from "./models/IEntityStorageIdentityConnectorConstructorOptions";
 
 /**
@@ -67,13 +68,13 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 	 * The entity storage for identities.
 	 * @internal
 	 */
-	private readonly _didDocumentEntityStorage: IEntityStorageConnector<IdentityDocument>;
+	protected readonly _didDocumentEntityStorage: IEntityStorageConnector<IdentityDocument>;
 
 	/**
 	 * The vault for the keys.
 	 * @internal
 	 */
-	private readonly _vaultConnector: IVaultConnector;
+	protected readonly _vaultConnector: IVaultConnector;
 
 	/**
 	 * Create a new instance of EntityStorageIdentityConnector.
@@ -87,6 +88,42 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 	}
 
 	/**
+	 * Build the key name to access the specified key in the vault.
+	 * @param identity The identity of the user to access the vault keys.
+	 * @returns The vault key.
+	 * @internal
+	 */
+	public static buildVaultKey(identity: string, key: string): string {
+		return `${identity}/${key}`;
+	}
+
+	/**
+	 * Verify the document in storage.
+	 * @param didDocument The did document that was stored.
+	 * @internal
+	 */
+	public static async verifyDocument(
+		didDocument: IdentityDocument,
+		vaultConnector: IVaultConnector
+	): Promise<void> {
+		const stringifiedDocument = JsonHelper.canonicalize(didDocument.document);
+		const docBytes = Converter.utf8ToBytes(stringifiedDocument);
+
+		const verified = await vaultConnector.verify(
+			EntityStorageIdentityConnector.buildVaultKey(didDocument.id, "did"),
+			docBytes,
+			Converter.base64ToBytes(didDocument.signature)
+		);
+
+		if (!verified) {
+			throw new GeneralError(
+				nameof<EntityStorageIdentityResolverConnector>(),
+				"signatureVerificationFailed"
+			);
+		}
+	}
+
+	/**
 	 * Create a new document.
 	 * @param controller The controller of the identity who can make changes.
 	 * @returns The created document.
@@ -97,7 +134,10 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 		try {
 			const did = `did:${EntityStorageIdentityConnector.NAMESPACE}:${Converter.bytesToHex(RandomHelper.generate(32), true)}`;
 
-			await this._vaultConnector.createKey(this.buildVaultKey(did, "did"), VaultKeyType.Ed25519);
+			await this._vaultConnector.createKey(
+				EntityStorageIdentityConnector.buildVaultKey(did, "did"),
+				VaultKeyType.Ed25519
+			);
 
 			const bitString = new BitString(EntityStorageIdentityConnector._REVOCATION_BITS_SIZE);
 			const compressed = await Compression.compress(bitString.getBits(), CompressionType.Gzip);
@@ -118,28 +158,6 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 			return didDocument;
 		} catch (error) {
 			throw new GeneralError(this.CLASS_NAME, "createDocumentFailed", undefined, error);
-		}
-	}
-
-	/**
-	 * Resolve a document from its id.
-	 * @param documentId The id of the document to resolve.
-	 * @returns The resolved document.
-	 * @throws NotFoundError if the id can not be resolved.
-	 */
-	public async resolveDocument(documentId: string): Promise<IDidDocument> {
-		Guards.stringValue(this.CLASS_NAME, nameof(documentId), documentId);
-
-		try {
-			const didIdentityDocument = await this._didDocumentEntityStorage.get(documentId);
-			if (Is.undefined(didIdentityDocument)) {
-				throw new NotFoundError(this.CLASS_NAME, "documentNotFound", documentId);
-			}
-			await this.verifyDocument(didIdentityDocument);
-
-			return didIdentityDocument.document;
-		} catch (error) {
-			throw new GeneralError(this.CLASS_NAME, "resolveDocumentFailed", undefined, error);
 		}
 	}
 
@@ -173,13 +191,16 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 			if (Is.undefined(didIdentityDocument)) {
 				throw new NotFoundError(this.CLASS_NAME, "documentNotFound", documentId);
 			}
-			await this.verifyDocument(didIdentityDocument);
+			await EntityStorageIdentityConnector.verifyDocument(
+				didIdentityDocument,
+				this._vaultConnector
+			);
 
 			const didDocument = didIdentityDocument.document;
 
 			const tempKeyId = `temp-vm-${Converter.bytesToBase64Url(RandomHelper.generate(16))}`;
 			const verificationPublicKey = await this._vaultConnector.createKey(
-				this.buildVaultKey(didDocument.id, tempKeyId),
+				EntityStorageIdentityConnector.buildVaultKey(didDocument.id, tempKeyId),
 				VaultKeyType.Ed25519
 			);
 
@@ -197,8 +218,8 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 			const methodId = `${documentId}#${verificationMethodId ?? kid}`;
 
 			await this._vaultConnector.renameKey(
-				this.buildVaultKey(didDocument.id, tempKeyId),
-				this.buildVaultKey(didDocument.id, verificationMethodId ?? kid)
+				EntityStorageIdentityConnector.buildVaultKey(didDocument.id, tempKeyId),
+				EntityStorageIdentityConnector.buildVaultKey(didDocument.id, verificationMethodId ?? kid)
 			);
 
 			const methods = this.getAllMethods(didDocument);
@@ -264,7 +285,10 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 			if (Is.undefined(didIdentityDocument)) {
 				throw new NotFoundError(this.CLASS_NAME, "documentNotFound", idParts.id);
 			}
-			await this.verifyDocument(didIdentityDocument);
+			await EntityStorageIdentityConnector.verifyDocument(
+				didIdentityDocument,
+				this._vaultConnector
+			);
 			const didDocument = didIdentityDocument.document;
 
 			const methods = this.getAllMethods(didDocument);
@@ -327,7 +351,10 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 			if (Is.undefined(didIdentityDocument)) {
 				throw new NotFoundError(this.CLASS_NAME, "documentNotFound", documentId);
 			}
-			await this.verifyDocument(didIdentityDocument);
+			await EntityStorageIdentityConnector.verifyDocument(
+				didIdentityDocument,
+				this._vaultConnector
+			);
 			const didDocument = didIdentityDocument.document;
 
 			const fullServiceId = serviceId.includes("#") ? serviceId : `${documentId}#${serviceId}`;
@@ -377,7 +404,10 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 			if (Is.undefined(didIdentityDocument)) {
 				throw new NotFoundError(this.CLASS_NAME, "documentNotFound", idParts.id);
 			}
-			await this.verifyDocument(didIdentityDocument);
+			await EntityStorageIdentityConnector.verifyDocument(
+				didIdentityDocument,
+				this._vaultConnector
+			);
 			const didDocument = didIdentityDocument.document;
 
 			if (Is.array(didDocument.service)) {
@@ -435,7 +465,10 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 			if (Is.undefined(issuerIdentityDocument)) {
 				throw new NotFoundError(this.CLASS_NAME, "documentNotFound", idParts.id);
 			}
-			await this.verifyDocument(issuerIdentityDocument);
+			await EntityStorageIdentityConnector.verifyDocument(
+				issuerIdentityDocument,
+				this._vaultConnector
+			);
 			const issuerDidDocument = issuerIdentityDocument.document;
 
 			const methods = this.getAllMethods(issuerDidDocument);
@@ -528,7 +561,7 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 				jwtPayload,
 				async (alg, key, payload) => {
 					const sig = await this._vaultConnector.sign(
-						this.buildVaultKey(idParts.id, idParts.hash ?? ""),
+						EntityStorageIdentityConnector.buildVaultKey(idParts.id, idParts.hash ?? ""),
 						payload
 					);
 					return sig;
@@ -576,7 +609,10 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 			if (Is.undefined(issuerIdentityDocument)) {
 				throw new NotFoundError(this.CLASS_NAME, "documentNotFound", issuerDocumentId);
 			}
-			await this.verifyDocument(issuerIdentityDocument);
+			await EntityStorageIdentityConnector.verifyDocument(
+				issuerIdentityDocument,
+				this._vaultConnector
+			);
 			const issuerDidDocument = issuerIdentityDocument.document;
 
 			const methods = this.getAllMethods(issuerDidDocument);
@@ -666,7 +702,10 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 			if (Is.undefined(issuerIdentityDocument)) {
 				throw new NotFoundError(this.CLASS_NAME, "documentNotFound", issuerDocumentId);
 			}
-			await this.verifyDocument(issuerIdentityDocument);
+			await EntityStorageIdentityConnector.verifyDocument(
+				issuerIdentityDocument,
+				this._vaultConnector
+			);
 			const issuerDidDocument = issuerIdentityDocument.document;
 
 			const revocationService = issuerDidDocument.service?.find(s => s.id.endsWith("#revocation"));
@@ -729,7 +768,10 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 			if (Is.undefined(issuerIdentityDocument)) {
 				throw new NotFoundError(this.CLASS_NAME, "documentNotFound", issuerDocumentId);
 			}
-			await this.verifyDocument(issuerIdentityDocument);
+			await EntityStorageIdentityConnector.verifyDocument(
+				issuerIdentityDocument,
+				this._vaultConnector
+			);
 			const issuerDidDocument = issuerIdentityDocument.document;
 
 			const revocationService = issuerDidDocument.service?.find(s => s.id.endsWith("#revocation"));
@@ -817,7 +859,10 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 			if (Is.undefined(holderIdentityDocument)) {
 				throw new NotFoundError(this.CLASS_NAME, "documentNotFound", idParts.id);
 			}
-			await this.verifyDocument(holderIdentityDocument);
+			await EntityStorageIdentityConnector.verifyDocument(
+				holderIdentityDocument,
+				this._vaultConnector
+			);
 			const holderDidDocument = holderIdentityDocument.document;
 
 			const methods = this.getAllMethods(holderDidDocument);
@@ -884,7 +929,7 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 				jwtPayload,
 				async (alg, key, payload) => {
 					const sig = await this._vaultConnector.sign(
-						this.buildVaultKey(idParts.id, idParts.hash ?? ""),
+						EntityStorageIdentityConnector.buildVaultKey(idParts.id, idParts.hash ?? ""),
 						payload
 					);
 					return sig;
@@ -938,7 +983,10 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 			if (Is.undefined(holderIdentityDocument)) {
 				throw new NotFoundError(this.CLASS_NAME, "documentNotFound", holderDocumentId);
 			}
-			await this.verifyDocument(holderIdentityDocument);
+			await EntityStorageIdentityConnector.verifyDocument(
+				holderIdentityDocument,
+				this._vaultConnector
+			);
 
 			const issuers: IDidDocument[] = [];
 			const tokensRevoked: boolean[] = [];
@@ -960,7 +1008,10 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 							if (Is.undefined(issuerDidDocument)) {
 								throw new NotFoundError(this.CLASS_NAME, "documentNotFound", issuerDocumentId);
 							}
-							await this.verifyDocument(issuerDidDocument);
+							await EntityStorageIdentityConnector.verifyDocument(
+								issuerDidDocument,
+								this._vaultConnector
+							);
 							issuers.push(issuerDidDocument);
 
 							const vc = jwt.payload.vc as IDidVerifiableCredential;
@@ -1025,7 +1076,10 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 			if (Is.undefined(didIdentityDocument)) {
 				throw new NotFoundError(this.CLASS_NAME, "documentNotFound", idParts.id);
 			}
-			await this.verifyDocument(didIdentityDocument);
+			await EntityStorageIdentityConnector.verifyDocument(
+				didIdentityDocument,
+				this._vaultConnector
+			);
 			const didDocument = didIdentityDocument.document;
 
 			const methods = this.getAllMethods(didDocument);
@@ -1048,7 +1102,7 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 			}
 
 			const signature = await this._vaultConnector.sign(
-				this.buildVaultKey(didDocument.id, idParts.hash ?? ""),
+				EntityStorageIdentityConnector.buildVaultKey(didDocument.id, idParts.hash ?? ""),
 				bytes
 			);
 
@@ -1096,7 +1150,10 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 			if (Is.undefined(didIdentityDocument)) {
 				throw new NotFoundError(this.CLASS_NAME, "documentNotFound", idParts.id);
 			}
-			await this.verifyDocument(didIdentityDocument);
+			await EntityStorageIdentityConnector.verifyDocument(
+				didIdentityDocument,
+				this._vaultConnector
+			);
 			const didDocument = didIdentityDocument.document;
 
 			const methods = this.getAllMethods(didDocument);
@@ -1122,7 +1179,7 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 			}
 
 			return this._vaultConnector.verify(
-				this.buildVaultKey(didIdentityDocument.id, idParts.hash),
+				EntityStorageIdentityConnector.buildVaultKey(didIdentityDocument.id, idParts.hash),
 				bytes,
 				Converter.base58ToBytes(proof.proofValue)
 			);
@@ -1204,26 +1261,6 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 	}
 
 	/**
-	 * Verify the document in storage.
-	 * @param didDocument The did document that was stored.
-	 * @internal
-	 */
-	private async verifyDocument(didDocument: IdentityDocument): Promise<void> {
-		const stringifiedDocument = JsonHelper.canonicalize(didDocument.document);
-		const docBytes = Converter.utf8ToBytes(stringifiedDocument);
-
-		const verified = await this._vaultConnector.verify(
-			this.buildVaultKey(didDocument.id, "did"),
-			docBytes,
-			Converter.base64ToBytes(didDocument.signature)
-		);
-
-		if (!verified) {
-			throw new GeneralError(this.CLASS_NAME, "signatureVerificationFailed");
-		}
-	}
-
-	/**
 	 * Update the document in storage.
 	 * @param controller The controller of the document.
 	 * @param didDocument The did document to store.
@@ -1234,7 +1271,7 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 		const docBytes = Converter.utf8ToBytes(stringifiedDocument);
 
 		const signature = await this._vaultConnector.sign(
-			this.buildVaultKey(didDocument.id, "did"),
+			EntityStorageIdentityConnector.buildVaultKey(didDocument.id, "did"),
 			docBytes
 		);
 
@@ -1244,15 +1281,5 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 			signature: Converter.bytesToBase64(signature),
 			controller
 		});
-	}
-
-	/**
-	 * Build the key name to access the specified key in the vault.
-	 * @param identity The identity of the user to access the vault keys.
-	 * @returns The vault key.
-	 * @internal
-	 */
-	private buildVaultKey(identity: string, key: string): string {
-		return `${identity}/${key}`;
 	}
 }

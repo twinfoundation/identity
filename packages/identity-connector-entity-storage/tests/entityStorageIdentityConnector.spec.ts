@@ -22,6 +22,7 @@ import {
 import { VaultConnectorFactory } from "@twin.org/vault-models";
 import type { IdentityDocument } from "../src/entities/identityDocument";
 import { EntityStorageIdentityConnector } from "../src/entityStorageIdentityConnector";
+import { EntityStorageIdentityResolverConnector } from "../src/entityStorageIdentityResolverConnector";
 import { initSchema as initSchemaIdentity } from "../src/schema";
 
 let testIdentityDocument: IdentityDocument;
@@ -90,9 +91,9 @@ describe("EntityStorageIdentityConnector", () => {
 	});
 
 	test("can fail to resolve a document with no id", async () => {
-		const identityConnector = new EntityStorageIdentityConnector();
+		const identityResolverConnector = new EntityStorageIdentityResolverConnector();
 		await expect(
-			identityConnector.resolveDocument(undefined as unknown as string)
+			identityResolverConnector.resolveDocument(undefined as unknown as string)
 		).rejects.toMatchObject({
 			name: "GuardError",
 			message: "guard.string",
@@ -106,9 +107,9 @@ describe("EntityStorageIdentityConnector", () => {
 	test("can resolve a document id", async () => {
 		await didDocumentEntityStorage.set(testIdentityDocument);
 		await vaultKeyEntityStorageConnector.set(testDocumentKey);
-		const identityConnector = new EntityStorageIdentityConnector();
+		const identityResolverConnector = new EntityStorageIdentityResolverConnector();
 
-		const doc = await identityConnector.resolveDocument(testIdentityDocument.id);
+		const doc = await identityResolverConnector.resolveDocument(testIdentityDocument.id);
 		expect(doc.id.slice(0, 21)).toEqual("did:entity-storage:0x");
 		expect(doc.service).toBeDefined();
 		expect((doc.service?.[0] as IDidService)?.id).toEqual(`${doc.id}#revocation`);

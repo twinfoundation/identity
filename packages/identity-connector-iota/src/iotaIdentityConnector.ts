@@ -52,7 +52,7 @@ import type {
 	IJsonLdNodeObject,
 	IJsonLdObject
 } from "@twin.org/data-json-ld";
-import { Iota } from "@twin.org/dlt-iota";
+import { type IIotaConfig, Iota } from "@twin.org/dlt-iota";
 import { DocumentHelper, type IIdentityConnector } from "@twin.org/identity-models";
 import { nameof } from "@twin.org/nameof";
 import {
@@ -89,7 +89,13 @@ export class IotaIdentityConnector implements IIdentityConnector {
 	 * The configuration to use for tangle operations.
 	 * @internal
 	 */
-	private readonly _config: IIotaIdentityConnectorConfig;
+	private readonly _config: IIotaConfig;
+
+	/**
+	 * The wallet address index to use for funding.
+	 * @internal
+	 */
+	private readonly _walletAddressIndex: number;
 
 	/**
 	 * The vault for the keys.
@@ -114,9 +120,11 @@ export class IotaIdentityConnector implements IIdentityConnector {
 			options.config.clientOptions
 		);
 
-		this._vaultConnector = VaultConnectorFactory.get(options.vaultConnectorType ?? "vault");
 		this._config = options.config;
 		Iota.populateConfig(this._config);
+
+		this._walletAddressIndex = options.config.walletAddressIndex ?? 0;
+		this._vaultConnector = VaultConnectorFactory.get(options.vaultConnectorType ?? "vault");
 	}
 
 	/**
@@ -145,33 +153,6 @@ export class IotaIdentityConnector implements IIdentityConnector {
 			throw new GeneralError(
 				this.CLASS_NAME,
 				"createDocumentFailed",
-				undefined,
-				Iota.extractPayloadError(error)
-			);
-		}
-	}
-
-	/**
-	 * Resolve a document from its id.
-	 * @param documentId The id of the document to resolve.
-	 * @returns The resolved document.
-	 * @throws NotFoundError if the id can not be resolved.
-	 */
-	public async resolveDocument(documentId: string): Promise<IDidDocument> {
-		Guards.stringValue(this.CLASS_NAME, nameof(documentId), documentId);
-
-		try {
-			const identityClient = new IotaIdentityClient(new Client(this._config.clientOptions));
-
-			const document = await identityClient.resolveDid(IotaDID.parse(documentId));
-			if (Is.undefined(document)) {
-				throw new NotFoundError(this.CLASS_NAME, "documentNotFound", documentId);
-			}
-			return document.toJSON() as IDidDocument;
-		} catch (error) {
-			throw new GeneralError(
-				this.CLASS_NAME,
-				"resolveDocumentFailed",
 				undefined,
 				Iota.extractPayloadError(error)
 			);
@@ -1106,7 +1087,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 			this._vaultConnector,
 			controller,
 			0,
-			this._config.walletAddressIndex ?? 0,
+			this._walletAddressIndex,
 			1
 		);
 

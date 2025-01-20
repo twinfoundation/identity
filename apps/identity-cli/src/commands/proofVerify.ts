@@ -8,12 +8,12 @@ import {
 	type CliOutputOptions
 } from "@twin.org/cli-core";
 import { I18n, Is } from "@twin.org/core";
-import { IotaIdentityConnector } from "@twin.org/identity-connector-iota";
 import { DidContexts, DidTypes, type IDidProof } from "@twin.org/standards-w3c-did";
-import { IotaWalletConnector } from "@twin.org/wallet-connector-iota";
+import { setupWalletConnector } from "@twin.org/wallet-cli";
 import { WalletConnectorFactory } from "@twin.org/wallet-models";
-import { Command } from "commander";
-import { setupVault } from "./setupCommands";
+import { Command, Option } from "commander";
+import { setupIdentityConnector, setupVault } from "./setupCommands";
+import { IdentityConnectorTypes } from "../models/identityConnectorTypes";
 
 /**
  * Build the proof verify command for the CLI.
@@ -51,10 +51,23 @@ export function buildCommandProofVerify(): Command {
 	});
 
 	command
+		.addOption(
+			new Option(
+				I18n.formatMessage("commands.common.options.connector.param"),
+				I18n.formatMessage("commands.common.options.connector.description")
+			)
+				.choices(Object.values(IdentityConnectorTypes))
+				.default(IdentityConnectorTypes.Iota)
+		)
 		.option(
 			I18n.formatMessage("commands.common.options.node.param"),
 			I18n.formatMessage("commands.common.options.node.description"),
 			"!NODE_URL"
+		)
+		.option(
+			I18n.formatMessage("commands.common.options.network.param"),
+			I18n.formatMessage("commands.common.options.network.description"),
+			"!NETWORK"
 		)
 		.action(actionCommandProofVerify);
 
@@ -68,7 +81,9 @@ export function buildCommandProofVerify(): Command {
  * @param opts.data The data to verify the proof for.
  * @param opts.cryptosuite The cryptosuite of the proof.
  * @param opts.value The proof value.
+ * @param opts.connector The connector to perform the operations with.
  * @param opts.node The node URL.
+ * @param opts.network The network to use for rebased connector.
  */
 export async function actionCommandProofVerify(
 	opts: {
@@ -76,7 +91,9 @@ export async function actionCommandProofVerify(
 		data: string;
 		cryptosuite: string;
 		value: string;
+		connector?: IdentityConnectorTypes;
 		node: string;
+		network?: string;
 	} & CliOutputOptions
 ): Promise<void> {
 	const id: string = CLIParam.stringValue("id", opts.id);
@@ -84,34 +101,27 @@ export async function actionCommandProofVerify(
 	const cryptosuite: string = CLIParam.stringValue("cryptosuite", opts.cryptosuite);
 	const value: string = CLIParam.stringValue("value", opts.value);
 	const nodeEndpoint: string = CLIParam.url("node", opts.node);
+	const network: string | undefined =
+		opts.connector === IdentityConnectorTypes.IotaRebased
+			? CLIParam.stringValue("network", opts.network)
+			: undefined;
 
 	CLIDisplay.value(I18n.formatMessage("commands.proof-verify.labels.verificationMethodId"), id);
 	CLIDisplay.value(I18n.formatMessage("commands.proof-verify.labels.cryptosuite"), cryptosuite);
 	CLIDisplay.value(I18n.formatMessage("commands.proof-verify.labels.value"), value);
 
 	CLIDisplay.value(I18n.formatMessage("commands.common.labels.node"), nodeEndpoint);
+	if (Is.stringValue(network)) {
+		CLIDisplay.value(I18n.formatMessage("commands.common.labels.network"), network);
+	}
 	CLIDisplay.break();
 
 	setupVault();
 
-	const iotaWalletConnector = new IotaWalletConnector({
-		config: {
-			clientOptions: {
-				nodes: [nodeEndpoint],
-				localPow: true
-			}
-		}
-	});
-	WalletConnectorFactory.register("wallet", () => iotaWalletConnector);
+	const walletConnector = setupWalletConnector({ nodeEndpoint, network }, opts.connector);
+	WalletConnectorFactory.register("wallet", () => walletConnector);
 
-	const iotaIdentityConnector = new IotaIdentityConnector({
-		config: {
-			clientOptions: {
-				nodes: [nodeEndpoint],
-				localPow: true
-			}
-		}
-	});
+	const identityConnector = setupIdentityConnector({ nodeEndpoint, network }, opts.connector);
 
 	CLIDisplay.task(I18n.formatMessage("commands.proof-verify.progress.verifyingProof"));
 	CLIDisplay.break();
@@ -127,7 +137,7 @@ export async function actionCommandProofVerify(
 		proofValue: value
 	};
 
-	const isVerified = await iotaIdentityConnector.verifyProof(data, proof);
+	const isVerified = await identityConnector.verifyProof(data, proof);
 
 	CLIDisplay.spinnerStop();
 

@@ -25,13 +25,6 @@ export interface IIdentityComponent extends IComponent {
 	identityCreate(controller: string, namespace?: string): Promise<IDidDocument>;
 
 	/**
-	 * Resolve an identity.
-	 * @param identity The id of the document to resolve.
-	 * @returns The resolved document.
-	 */
-	identityResolve(identity: string): Promise<IDidDocument>;
-
-	/**
 	 * Add a verification method to the document in JSON Web key Format.
 	 * @param controller The controller of the identity who can make changes.
 	 * @param identity The id of the document to add the verification method to.

@@ -8,14 +8,15 @@ import {
 	type CliOutputOptions
 } from "@twin.org/cli-core";
 import { Converter, I18n, Is, StringHelper } from "@twin.org/core";
-import { IotaIdentityConnector, IotaIdentityUtils } from "@twin.org/identity-connector-iota";
+import { IotaIdentityUtils } from "@twin.org/identity-connector-iota";
 import { DidVerificationMethodType } from "@twin.org/standards-w3c-did";
 import { VaultConnectorFactory } from "@twin.org/vault-models";
 
-import { IotaWalletConnector } from "@twin.org/wallet-connector-iota";
+import { setupWalletConnector } from "@twin.org/wallet-cli";
 import { WalletConnectorFactory } from "@twin.org/wallet-models";
 import { Command, Option } from "commander";
-import { setupVault } from "./setupCommands";
+import { setupIdentityConnector, setupVault } from "./setupCommands";
+import { IdentityConnectorTypes } from "../models/identityConnectorTypes";
 
 /**
  * Build the verification method add command for the CLI.
@@ -57,10 +58,23 @@ export function buildCommandVerificationMethodAdd(): Command {
 	});
 
 	command
+		.addOption(
+			new Option(
+				I18n.formatMessage("commands.common.options.connector.param"),
+				I18n.formatMessage("commands.common.options.connector.description")
+			)
+				.choices(Object.values(IdentityConnectorTypes))
+				.default(IdentityConnectorTypes.Iota)
+		)
 		.option(
 			I18n.formatMessage("commands.common.options.node.param"),
 			I18n.formatMessage("commands.common.options.node.description"),
 			"!NODE_URL"
+		)
+		.option(
+			I18n.formatMessage("commands.common.options.network.param"),
+			I18n.formatMessage("commands.common.options.network.description"),
+			"!NETWORK"
 		)
 		.option(
 			I18n.formatMessage("commands.common.options.explorer.param"),
@@ -79,6 +93,7 @@ export function buildCommandVerificationMethodAdd(): Command {
  * @param opts.did The identity of the document to add to.
  * @param opts.type The type of the verification method to add.
  * @param opts.id The id of the verification method to add.
+ * @param opts.connector The connector to perform the operations with.
  * @param opts.node The node URL.
  * @param opts.explorer The explorer URL.
  */
@@ -88,7 +103,9 @@ export async function actionCommandVerificationMethodAdd(
 		did: string;
 		type: DidVerificationMethodType;
 		id?: string;
+		connector?: IdentityConnectorTypes;
 		node: string;
+		network?: string;
 		explorer: string;
 	} & CliOutputOptions
 ): Promise<void> {
@@ -99,6 +116,10 @@ export async function actionCommandVerificationMethodAdd(
 		opts.type
 	) as DidVerificationMethodType;
 	const nodeEndpoint: string = CLIParam.url("node", opts.node);
+	const network: string | undefined =
+		opts.connector === IdentityConnectorTypes.IotaRebased
+			? CLIParam.stringValue("network", opts.network)
+			: undefined;
 	const explorerEndpoint: string = CLIParam.url("explorer", opts.explorer);
 
 	CLIDisplay.value(I18n.formatMessage("commands.common.labels.did"), did);
@@ -113,6 +134,9 @@ export async function actionCommandVerificationMethodAdd(
 		);
 	}
 	CLIDisplay.value(I18n.formatMessage("commands.common.labels.node"), nodeEndpoint);
+	if (Is.stringValue(network)) {
+		CLIDisplay.value(I18n.formatMessage("commands.common.labels.network"), network);
+	}
 	CLIDisplay.value(I18n.formatMessage("commands.common.labels.explorer"), explorerEndpoint);
 	CLIDisplay.break();
 
@@ -124,26 +148,16 @@ export async function actionCommandVerificationMethodAdd(
 	const vaultConnector = VaultConnectorFactory.get("vault");
 	await vaultConnector.setSecret(`${localIdentity}/${vaultSeedId}`, Converter.bytesToBase64(seed));
 
-	const iotaWalletConnector = new IotaWalletConnector({
-		config: {
-			clientOptions: {
-				nodes: [nodeEndpoint],
-				localPow: true
-			},
-			vaultSeedId
-		}
-	});
-	WalletConnectorFactory.register("wallet", () => iotaWalletConnector);
+	const walletConnector = setupWalletConnector(
+		{ nodeEndpoint, vaultSeedId, network },
+		opts.connector
+	);
+	WalletConnectorFactory.register("wallet", () => walletConnector);
 
-	const iotaIdentityConnector = new IotaIdentityConnector({
-		config: {
-			clientOptions: {
-				nodes: [nodeEndpoint],
-				localPow: true
-			},
-			vaultSeedId
-		}
-	});
+	const identityConnector = setupIdentityConnector(
+		{ nodeEndpoint, network, vaultSeedId },
+		opts.connector
+	);
 
 	CLIDisplay.task(
 		I18n.formatMessage("commands.verification-method-add.progress.addingVerificationMethod")
@@ -152,7 +166,7 @@ export async function actionCommandVerificationMethodAdd(
 
 	CLIDisplay.spinnerStart();
 
-	const verificationMethod = await iotaIdentityConnector.addVerificationMethod(
+	const verificationMethod = await identityConnector.addVerificationMethod(
 		localIdentity,
 		did,
 		type,

@@ -2,13 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0.
 import { BaseRestClient } from "@twin.org/api-core";
 import type { IBaseRestClientConfig } from "@twin.org/api-models";
-import { NotImplementedError, Urn } from "@twin.org/core";
+import { NotImplementedError } from "@twin.org/core";
 import type { IJsonLdContextDefinitionRoot, IJsonLdNodeObject } from "@twin.org/data-json-ld";
-import type {
-	IIdentityComponent,
-	IIdentityResolveRequest,
-	IIdentityResolveResponse
-} from "@twin.org/identity-models";
+import type { IIdentityComponent } from "@twin.org/identity-models";
 import { nameof } from "@twin.org/nameof";
 import type {
 	DidVerificationMethodType,
@@ -45,27 +41,6 @@ export class IdentityClient extends BaseRestClient implements IIdentityComponent
 	 */
 	public async identityCreate(controller: string, namespace?: string): Promise<IDidDocument> {
 		throw new NotImplementedError(this.CLASS_NAME, "identityCreate");
-	}
-
-	/**
-	 * Resolve an identity.
-	 * @param documentId The id of the document to resolve.
-	 * @returns The resolved document.
-	 */
-	public async identityResolve(documentId: string): Promise<IDidDocument> {
-		Urn.guard(this.CLASS_NAME, nameof(documentId), documentId);
-
-		const response = await this.fetch<IIdentityResolveRequest, IIdentityResolveResponse>(
-			"/:id",
-			"GET",
-			{
-				pathParams: {
-					id: documentId
-				}
-			}
-		);
-
-		return response.body;
 	}
 
 	/**

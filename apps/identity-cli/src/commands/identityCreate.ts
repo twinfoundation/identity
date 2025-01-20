@@ -8,12 +8,13 @@ import {
 	type CliOutputOptions
 } from "@twin.org/cli-core";
 import { Converter, I18n, Is, StringHelper } from "@twin.org/core";
-import { IotaIdentityConnector, IotaIdentityUtils } from "@twin.org/identity-connector-iota";
+import { IotaIdentityUtils } from "@twin.org/identity-connector-iota";
 import { VaultConnectorFactory } from "@twin.org/vault-models";
-import { IotaWalletConnector } from "@twin.org/wallet-connector-iota";
+import { setupWalletConnector } from "@twin.org/wallet-cli";
 import { WalletConnectorFactory } from "@twin.org/wallet-models";
-import { Command } from "commander";
-import { setupVault } from "./setupCommands";
+import { Command, Option } from "commander";
+import { setupIdentityConnector, setupVault } from "./setupCommands";
+import { IdentityConnectorTypes } from "../models/identityConnectorTypes";
 
 /**
  * Build the identity create command for the CLI.
@@ -28,6 +29,11 @@ export function buildCommandIdentityCreate(): Command {
 		.requiredOption(
 			I18n.formatMessage("commands.identity-create.options.seed.param"),
 			I18n.formatMessage("commands.identity-create.options.seed.description")
+		)
+		.option(
+			I18n.formatMessage("commands.identity-create.options.addressIndex.param"),
+			I18n.formatMessage("commands.identity-create.options.addressIndex.description"),
+			"0"
 		);
 
 	CLIOptions.output(command, {
@@ -39,10 +45,23 @@ export function buildCommandIdentityCreate(): Command {
 	});
 
 	command
+		.addOption(
+			new Option(
+				I18n.formatMessage("commands.common.options.connector.param"),
+				I18n.formatMessage("commands.common.options.connector.description")
+			)
+				.choices(Object.values(IdentityConnectorTypes))
+				.default(IdentityConnectorTypes.Iota)
+		)
 		.option(
 			I18n.formatMessage("commands.common.options.node.param"),
 			I18n.formatMessage("commands.common.options.node.description"),
 			"!NODE_URL"
+		)
+		.option(
+			I18n.formatMessage("commands.common.options.network.param"),
+			I18n.formatMessage("commands.common.options.network.description"),
+			"!NETWORK"
 		)
 		.option(
 			I18n.formatMessage("commands.common.options.explorer.param"),
@@ -58,22 +77,39 @@ export function buildCommandIdentityCreate(): Command {
  * Action the identity create command.
  * @param opts The options for the command.
  * @param opts.seed The private key for the controller.
+ * @param opts.connector The connector to perform the operations with.
  * @param opts.node The node URL.
+ * @param opts.network The network to use for rebased connector.
  * @param opts.explorer The explorer URL.
  */
 export async function actionCommandIdentityCreate(
 	opts: {
 		seed: string;
+		connector?: IdentityConnectorTypes;
 		node: string;
+		network?: string;
 		explorer: string;
+		addressIndex?: string;
 	} & CliOutputOptions
 ): Promise<void> {
 	const seed: Uint8Array = CLIParam.hexBase64("seed", opts.seed);
 	const nodeEndpoint: string = CLIParam.url("node", opts.node);
+	const network: string | undefined =
+		opts.connector === IdentityConnectorTypes.IotaRebased
+			? CLIParam.stringValue("network", opts.network)
+			: undefined;
 	const explorerEndpoint: string = CLIParam.url("explorer", opts.explorer);
+	const addressIndex: number = CLIParam.integer("addressIndex", opts.addressIndex ?? "0", false, 0);
 
 	CLIDisplay.value(I18n.formatMessage("commands.common.labels.node"), nodeEndpoint);
+	if (Is.stringValue(network)) {
+		CLIDisplay.value(I18n.formatMessage("commands.common.labels.network"), network);
+	}
 	CLIDisplay.value(I18n.formatMessage("commands.common.labels.explorer"), explorerEndpoint);
+	CLIDisplay.value(
+		I18n.formatMessage("commands.identity-create.labels.addressIndex"),
+		addressIndex
+	);
 	CLIDisplay.break();
 
 	setupVault();
@@ -84,33 +120,23 @@ export async function actionCommandIdentityCreate(
 	const vaultConnector = VaultConnectorFactory.get("vault");
 	await vaultConnector.setSecret(`${localIdentity}/${vaultSeedId}`, Converter.bytesToBase64(seed));
 
-	const iotaWalletConnector = new IotaWalletConnector({
-		config: {
-			clientOptions: {
-				nodes: [nodeEndpoint],
-				localPow: true
-			},
-			vaultSeedId
-		}
-	});
-	WalletConnectorFactory.register("wallet", () => iotaWalletConnector);
+	const walletConnector = setupWalletConnector(
+		{ nodeEndpoint, vaultSeedId, network },
+		opts.connector
+	);
+	WalletConnectorFactory.register("wallet", () => walletConnector);
 
-	const iotaIdentityConnector = new IotaIdentityConnector({
-		config: {
-			clientOptions: {
-				nodes: [nodeEndpoint],
-				localPow: true
-			},
-			vaultSeedId
-		}
-	});
+	const identityConnector = setupIdentityConnector(
+		{ nodeEndpoint, vaultSeedId, network, addressIndex },
+		opts.connector
+	);
 
 	CLIDisplay.task(I18n.formatMessage("commands.identity-create.progress.creatingIdentity"));
 	CLIDisplay.break();
 
 	CLIDisplay.spinnerStart();
 
-	const document = await iotaIdentityConnector.createDocument(localIdentity);
+	const document = await identityConnector.createDocument(localIdentity);
 
 	CLIDisplay.spinnerStop();
 

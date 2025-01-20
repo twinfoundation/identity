@@ -72,32 +72,6 @@ export class IdentityService implements IIdentityComponent {
 	}
 
 	/**
-	 * Resolve an identity.
-	 * @param identity The id of the document to resolve.
-	 * @returns The resolved document.
-	 */
-	public async identityResolve(identity: string): Promise<IDidDocument> {
-		Urn.guard(this.CLASS_NAME, nameof(identity), identity);
-
-		try {
-			const identityConnector = this.getConnectorByUri(identity);
-
-			const document = await identityConnector.resolveDocument(identity);
-
-			return document;
-		} catch (error) {
-			throw new GeneralError(
-				this.CLASS_NAME,
-				"identityResolveFailed",
-				{
-					identity
-				},
-				error
-			);
-		}
-	}
-
-	/**
 	 * Add a verification method to the document in JSON Web key Format.
 	 * @param controller The controller of the identity who can make changes.
 	 * @param identity The id of the document to add the verification method to.

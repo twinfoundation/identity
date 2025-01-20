@@ -14,13 +14,18 @@
 				"seed": {
 					"param": "--seed '<'seed'>'",
 					"description": "The seed for the controller address in hex or base64 used to create the DID, or start with ! to read environment variable."
+				},
+				"addressIndex": {
+					"param": "--address-index '<'index'>'",
+					"description": "The address index to use for the creation."
 				}
 			},
 			"progress": {
 				"creatingIdentity": "Creating identity"
 			},
 			"labels": {
-				"identity": "Identity"
+				"identity": "Identity",
+				"addressIndex": "Address Index"
 			}
 		},
 		"identity-resolve": {
@@ -308,16 +313,26 @@
 		},
 		"common": {
 			"options": {
+				"connector": {
+					"param": "--connector '<'connector'>'",
+					"description": "The connector to use for the identity operation."
+				},
 				"node": {
 					"param": "--node '<'url'>'",
 					"description": "The url for the node endpoint, or an environment variable name containing the url."
+				},
+				"network": {
+					"param": "--network '<'network'>'",
+					"description": "The network to use for the identity operation."
 				}
 			},
 			"labels": {
 				"did": "DID",
 				"node": "Node",
 				"explorer": "Explorer",
-				"explore": "Explore"
+				"explore": "Explore",
+				"connector": "Connector",
+				"network": "Network"
 			}
 		}
 	}

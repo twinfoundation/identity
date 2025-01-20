@@ -3,17 +3,21 @@
 ## Classes
 
 - [IdentityProfileService](classes/IdentityProfileService.md)
+- [IdentityResolverService](classes/IdentityResolverService.md)
 - [IdentityService](classes/IdentityService.md)
 
 ## Interfaces
 
 - [IIdentityProfileServiceConstructorOptions](interfaces/IIdentityProfileServiceConstructorOptions.md)
+- [IIdentityResolverServiceConfig](interfaces/IIdentityResolverServiceConfig.md)
+- [IIdentityResolverServiceConstructorOptions](interfaces/IIdentityResolverServiceConstructorOptions.md)
 - [IIdentityServiceConfig](interfaces/IIdentityServiceConfig.md)
 - [IIdentityServiceConstructorOptions](interfaces/IIdentityServiceConstructorOptions.md)
 
 ## Variables
 
 - [tagsIdentityProfile](variables/tagsIdentityProfile.md)
+- [tagsIdentityResolver](variables/tagsIdentityResolver.md)
 - [tagsIdentity](variables/tagsIdentity.md)
 - [restEntryPoints](variables/restEntryPoints.md)
 
@@ -26,5 +30,6 @@
 - [identityProfileUpdate](functions/identityProfileUpdate.md)
 - [identityProfileRemove](functions/identityProfileRemove.md)
 - [identitiesList](functions/identitiesList.md)
-- [generateRestRoutesIdentity](functions/generateRestRoutesIdentity.md)
+- [generateRestRoutesIdentityResolver](functions/generateRestRoutesIdentityResolver.md)
 - [identityResolve](functions/identityResolve.md)
+- [generateRestRoutesIdentity](functions/generateRestRoutesIdentity.md)

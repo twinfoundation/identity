@@ -20,6 +20,7 @@ import {
 	setupTestEnv
 } from "./setupTestEnv";
 import { IotaIdentityConnector } from "../src/iotaIdentityConnector";
+import { IotaIdentityResolverConnector } from "../src/iotaIdentityResolverConnector";
 import { IotaIdentityUtils } from "../src/iotaIdentityUtils";
 import type { IIotaIdentityConnectorConfig } from "../src/models/IIotaIdentityConnectorConfig";
 
@@ -108,14 +109,14 @@ describe("IotaIdentityConnector", () => {
 	});
 
 	test("can fail to resolve a document with no id", async () => {
-		const identityConnector = new IotaIdentityConnector({
+		const identityResolverConnector = new IotaIdentityResolverConnector({
 			config: {
 				clientOptions: TEST_CLIENT_OPTIONS,
 				vaultMnemonicId: TEST_MNEMONIC_NAME
 			}
 		});
 		await expect(
-			identityConnector.resolveDocument(undefined as unknown as string)
+			identityResolverConnector.resolveDocument(undefined as unknown as string)
 		).rejects.toMatchObject({
 			name: "GuardError",
 			message: "guard.string",
@@ -127,14 +128,14 @@ describe("IotaIdentityConnector", () => {
 	});
 
 	test("can resolve a document id", async () => {
-		const identityConnector = new IotaIdentityConnector({
+		const identityResolverConnector = new IotaIdentityResolverConnector({
 			config: {
 				clientOptions: TEST_CLIENT_OPTIONS,
 				vaultMnemonicId: TEST_MNEMONIC_NAME
 			}
 		});
 
-		const doc = await identityConnector.resolveDocument(testDocumentId);
+		const doc = await identityResolverConnector.resolveDocument(testDocumentId);
 		expect(doc.id.slice(0, 15)).toEqual(`did:iota:${process.env.TEST_BECH32_HRP}:0x`);
 		expect(doc.service).toBeDefined();
 		expect((doc.service?.[0] as IDidService)?.id).toEqual(`${doc.id}#revocation`);
@@ -248,7 +249,13 @@ describe("IotaIdentityConnector", () => {
 			"test-method"
 		);
 
-		let doc = await identityConnector.resolveDocument(testDocumentId);
+		const identityResolverConnector = new IotaIdentityResolverConnector({
+			config: {
+				clientOptions: TEST_CLIENT_OPTIONS,
+				vaultMnemonicId: TEST_MNEMONIC_NAME
+			}
+		});
+		let doc = await identityResolverConnector.resolveDocument(testDocumentId);
 		expect(doc.authentication).toBeDefined();
 		expect(doc.authentication?.length).toEqual(1);
 		expect(
@@ -257,7 +264,7 @@ describe("IotaIdentityConnector", () => {
 
 		await identityConnector.removeVerificationMethod(TEST_IDENTITY_ID, vm.id);
 
-		doc = await identityConnector.resolveDocument(testDocumentId);
+		doc = await identityResolverConnector.resolveDocument(testDocumentId);
 		expect(doc.authentication).toBeUndefined();
 	});
 

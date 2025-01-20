@@ -10,12 +10,12 @@ import {
 } from "@twin.org/cli-core";
 import { Coerce, GeneralError, I18n, Is } from "@twin.org/core";
 import type { IJsonLdNodeObject } from "@twin.org/data-json-ld";
-import { IotaIdentityConnector } from "@twin.org/identity-connector-iota";
 import { VaultConnectorFactory, VaultKeyType } from "@twin.org/vault-models";
-import { IotaWalletConnector } from "@twin.org/wallet-connector-iota";
+import { setupWalletConnector } from "@twin.org/wallet-cli";
 import { WalletConnectorFactory } from "@twin.org/wallet-models";
-import { Command } from "commander";
-import { setupVault } from "./setupCommands";
+import { Command, Option } from "commander";
+import { setupIdentityConnector, setupVault } from "./setupCommands";
+import { IdentityConnectorTypes } from "../models/identityConnectorTypes";
 
 /**
  * Build the verifiable credential create command for the CLI.
@@ -59,10 +59,23 @@ export function buildCommandVerifiableCredentialCreate(): Command {
 	});
 
 	command
+		.addOption(
+			new Option(
+				I18n.formatMessage("commands.common.options.connector.param"),
+				I18n.formatMessage("commands.common.options.connector.description")
+			)
+				.choices(Object.values(IdentityConnectorTypes))
+				.default(IdentityConnectorTypes.Iota)
+		)
 		.option(
 			I18n.formatMessage("commands.common.options.node.param"),
 			I18n.formatMessage("commands.common.options.node.description"),
 			"!NODE_URL"
+		)
+		.option(
+			I18n.formatMessage("commands.common.options.network.param"),
+			I18n.formatMessage("commands.common.options.network.description"),
+			"!NETWORK"
 		)
 		.action(actionCommandVerifiableCredentialCreate);
 
@@ -77,6 +90,7 @@ export function buildCommandVerifiableCredentialCreate(): Command {
  * @param opts.credentialId The id of the credential.
  * @param opts.subjectJson The JSON data for the subject.
  * @param opts.revocationIndex The revocation index for the credential.
+ * @param opts.connector The connector to perform the operations with.
  * @param opts.node The node URL.
  */
 export async function actionCommandVerifiableCredentialCreate(
@@ -86,7 +100,9 @@ export async function actionCommandVerifiableCredentialCreate(
 		credentialId?: string;
 		subjectJson: string;
 		revocationIndex?: string;
+		connector?: IdentityConnectorTypes;
 		node: string;
+		network?: string;
 	} & CliOutputOptions
 ): Promise<void> {
 	const id: string = CLIParam.stringValue("id", opts.id);
@@ -95,6 +111,10 @@ export async function actionCommandVerifiableCredentialCreate(
 	const subjectJson: string = path.resolve(CLIParam.stringValue("subject-json", opts.subjectJson));
 	const revocationIndex: number | undefined = Coerce.number(opts.revocationIndex);
 	const nodeEndpoint: string = CLIParam.url("node", opts.node);
+	const network: string | undefined =
+		opts.connector === IdentityConnectorTypes.IotaRebased
+			? CLIParam.stringValue("network", opts.network)
+			: undefined;
 
 	CLIDisplay.value(
 		I18n.formatMessage("commands.verifiable-credential-create.labels.verificationMethodId"),
@@ -113,6 +133,9 @@ export async function actionCommandVerifiableCredentialCreate(
 		revocationIndex
 	);
 	CLIDisplay.value(I18n.formatMessage("commands.common.labels.node"), nodeEndpoint);
+	if (Is.stringValue(network)) {
+		CLIDisplay.value(I18n.formatMessage("commands.common.labels.network"), network);
+	}
 	CLIDisplay.break();
 
 	setupVault();
@@ -127,24 +150,10 @@ export async function actionCommandVerifiableCredentialCreate(
 		new Uint8Array()
 	);
 
-	const iotaWalletConnector = new IotaWalletConnector({
-		config: {
-			clientOptions: {
-				nodes: [nodeEndpoint],
-				localPow: true
-			}
-		}
-	});
-	WalletConnectorFactory.register("wallet", () => iotaWalletConnector);
+	const walletConnector = setupWalletConnector({ nodeEndpoint, network }, opts.connector);
+	WalletConnectorFactory.register("wallet", () => walletConnector);
 
-	const iotaIdentityConnector = new IotaIdentityConnector({
-		config: {
-			clientOptions: {
-				nodes: [nodeEndpoint],
-				localPow: true
-			}
-		}
-	});
+	const identityConnector = setupIdentityConnector({ nodeEndpoint, network }, opts.connector);
 
 	CLIDisplay.task(
 		I18n.formatMessage("commands.verifiable-credential-create.progress.loadingSubjectData")
@@ -168,7 +177,7 @@ export async function actionCommandVerifiableCredentialCreate(
 
 	CLIDisplay.spinnerStart();
 
-	const verifiableCredential = await iotaIdentityConnector.createVerifiableCredential(
+	const verifiableCredential = await identityConnector.createVerifiableCredential(
 		localIdentity,
 		id,
 		credentialId,

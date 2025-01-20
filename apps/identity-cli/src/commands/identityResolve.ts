@@ -8,11 +8,15 @@ import {
 	type CliOutputOptions
 } from "@twin.org/cli-core";
 import { I18n, Is, StringHelper } from "@twin.org/core";
-import { IotaIdentityConnector, IotaIdentityUtils } from "@twin.org/identity-connector-iota";
-import { IotaWalletConnector } from "@twin.org/wallet-connector-iota";
+import {
+	IotaIdentityResolverConnector,
+	IotaIdentityUtils
+} from "@twin.org/identity-connector-iota";
+import { setupWalletConnector } from "@twin.org/wallet-cli";
 import { WalletConnectorFactory } from "@twin.org/wallet-models";
-import { Command } from "commander";
+import { Command, Option } from "commander";
 import { setupVault } from "./setupCommands";
+import { IdentityConnectorTypes } from "../models/identityConnectorTypes";
 
 /**
  * Build the identity resolve command for the CLI.
@@ -38,6 +42,14 @@ export function buildCommandIdentityResolve(): Command {
 	});
 
 	command
+		.addOption(
+			new Option(
+				I18n.formatMessage("commands.common.options.connector.param"),
+				I18n.formatMessage("commands.common.options.connector.description")
+			)
+				.choices(Object.values(IdentityConnectorTypes))
+				.default(IdentityConnectorTypes.Iota)
+		)
 		.option(
 			I18n.formatMessage("commands.common.options.node.param"),
 			I18n.formatMessage("commands.common.options.node.description"),
@@ -48,6 +60,11 @@ export function buildCommandIdentityResolve(): Command {
 			I18n.formatMessage("commands.common.options.explorer.description"),
 			"!EXPLORER_URL"
 		)
+		.option(
+			I18n.formatMessage("commands.common.options.network.param"),
+			I18n.formatMessage("commands.common.options.network.description"),
+			"!NETWORK"
+		)
 		.action(actionCommandIdentityResolve);
 
 	return command;
@@ -57,38 +74,42 @@ export function buildCommandIdentityResolve(): Command {
  * Action the identity resolve command.
  * @param opts The options for the command.
  * @param opts.did The identity to resolve.
+ * @param opts.connector The connector to perform the operations with.
  * @param opts.node The node URL.
+ * @param opts.network The network to use for rebased connector.
  * @param opts.explorer The explorer URL.
  */
 export async function actionCommandIdentityResolve(
 	opts: {
 		did: string;
+		connector?: IdentityConnectorTypes;
 		node: string;
+		network?: string;
 		explorer: string;
 	} & CliOutputOptions
 ): Promise<void> {
 	const did: string = CLIParam.stringValue("did", opts.did);
 	const nodeEndpoint: string = CLIParam.url("node", opts.node);
+	const network: string | undefined =
+		opts.connector === IdentityConnectorTypes.IotaRebased
+			? CLIParam.stringValue("network", opts.network)
+			: undefined;
 	const explorerEndpoint: string = CLIParam.url("explorer", opts.explorer);
 
 	CLIDisplay.value(I18n.formatMessage("commands.common.labels.did"), did);
 	CLIDisplay.value(I18n.formatMessage("commands.common.labels.node"), nodeEndpoint);
+	if (Is.stringValue(network)) {
+		CLIDisplay.value(I18n.formatMessage("commands.common.labels.network"), network);
+	}
 	CLIDisplay.value(I18n.formatMessage("commands.common.labels.explorer"), explorerEndpoint);
 	CLIDisplay.break();
 
 	setupVault();
 
-	const iotaWalletConnector = new IotaWalletConnector({
-		config: {
-			clientOptions: {
-				nodes: [nodeEndpoint],
-				localPow: true
-			}
-		}
-	});
-	WalletConnectorFactory.register("wallet", () => iotaWalletConnector);
+	const walletConnector = setupWalletConnector({ nodeEndpoint, network }, opts.connector);
+	WalletConnectorFactory.register("wallet", () => walletConnector);
 
-	const iotaIdentityConnector = new IotaIdentityConnector({
+	const iotaIdentityResolverConnector = new IotaIdentityResolverConnector({
 		config: {
 			clientOptions: {
 				nodes: [nodeEndpoint],
@@ -102,7 +123,7 @@ export async function actionCommandIdentityResolve(
 
 	CLIDisplay.spinnerStart();
 
-	const document = await iotaIdentityConnector.resolveDocument(did);
+	const document = await iotaIdentityResolverConnector.resolveDocument(did);
 
 	CLIDisplay.spinnerStop();
 
