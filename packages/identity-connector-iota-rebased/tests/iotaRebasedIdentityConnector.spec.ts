@@ -1,7 +1,7 @@
 // Copyright 2024 IOTA Stiftung.
 // SPDX-License-Identifier: Apache-2.0.
 import { setupTestEnv } from "./setupTestEnv";
-import { IotaRebasedIdentityConnector } from "../src/IotaRebasedIdentityConnector";
+import { IotaRebasedIdentityConnector } from "../src/iotaRebasedIdentityConnector";
 import type { IIotaRebasedIdentityConnectorConfig } from "../src/models/IIotaRebasedIdentityConnectorConfig";
 
 describe("IotaRebasedIdentityConnector", () => {
