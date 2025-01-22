@@ -18,7 +18,7 @@ export class IdentityResolverService implements IIdentityResolverComponent {
 	/**
 	 * The namespace supported by the identity service.
 	 */
-	public static readonly NAMESPACE: string = "did";
+	public static readonly NAMESPACE: string = "identity-resolver";
 
 	/**
 	 * Runtime name for the class.
@@ -98,9 +98,9 @@ export class IdentityResolverService implements IIdentityResolverComponent {
 	private getConnectorByUri(id: string): IIdentityResolverConnector {
 		const idUri = Urn.fromValidString(id);
 
-		if (idUri.namespaceIdentifier() !== IdentityResolverService.NAMESPACE) {
+		if (idUri.namespaceIdentifier() !== "did") {
 			throw new GeneralError(this.CLASS_NAME, "namespaceMismatch", {
-				namespace: IdentityResolverService.NAMESPACE,
+				namespace: "did",
 				id
 			});
 		}

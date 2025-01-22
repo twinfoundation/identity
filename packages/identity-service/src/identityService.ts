@@ -28,7 +28,7 @@ export class IdentityService implements IIdentityComponent {
 	/**
 	 * The namespace supported by the identity service.
 	 */
-	public static readonly NAMESPACE: string = "did";
+	public static readonly NAMESPACE: string = "identity";
 
 	/**
 	 * Runtime name for the class.
@@ -423,9 +423,9 @@ export class IdentityService implements IIdentityComponent {
 	private getConnectorByUri(id: string): IIdentityConnector {
 		const idUri = Urn.fromValidString(id);
 
-		if (idUri.namespaceIdentifier() !== IdentityService.NAMESPACE) {
+		if (idUri.namespaceIdentifier() !== "did") {
 			throw new GeneralError(this.CLASS_NAME, "namespaceMismatch", {
-				namespace: IdentityService.NAMESPACE,
+				namespace: "did",
 				id
 			});
 		}

@@ -30,7 +30,7 @@ The options for the service.
 
 ### NAMESPACE
 
-> `readonly` `static` **NAMESPACE**: `string` = `"did"`
+> `readonly` `static` **NAMESPACE**: `string` = `"identity-resolver"`
 
 The namespace supported by the identity service.
 
