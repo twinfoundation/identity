@@ -92,7 +92,7 @@ describe("IdentityService", () => {
 	test("Can create an identity", async () => {
 		const service = new IdentityService();
 
-		const identity = await service.identityCreate(TEST_CONTROLLER);
+		const identity = await service.identityCreate(undefined, TEST_CONTROLLER);
 
 		expect(identity).toEqual({
 			id: "did:entity-storage:0x0101010101010101010101010101010101010101010101010101010101010101",
@@ -111,9 +111,10 @@ describe("IdentityService", () => {
 		const service = new IdentityService();
 
 		const verificationMethod = await service.verificationMethodCreate(
-			TEST_CONTROLLER,
 			"did:entity-storage:0x0101010101010101010101010101010101010101010101010101010101010101",
-			DidVerificationMethodType.AssertionMethod
+			DidVerificationMethodType.AssertionMethod,
+			undefined,
+			TEST_CONTROLLER
 		);
 
 		expect(verificationMethod).toEqual({
@@ -141,8 +142,8 @@ describe("IdentityService", () => {
 		const service = new IdentityService();
 
 		await service.verificationMethodRemove(
-			TEST_CONTROLLER,
-			"did:entity-storage:0x0101010101010101010101010101010101010101010101010101010101010101#uDTA0SwHsiBjRdhTls4aeU-hhvKlj_HPf1Nk1L_b0eI"
+			"did:entity-storage:0x0101010101010101010101010101010101010101010101010101010101010101#uDTA0SwHsiBjRdhTls4aeU-hhvKlj_HPf1Nk1L_b0eI",
+			TEST_CONTROLLER
 		);
 
 		const resolverService = new IdentityResolverService();
@@ -156,11 +157,11 @@ describe("IdentityService", () => {
 		const service = new IdentityService();
 
 		const createdService = await service.serviceCreate(
-			TEST_CONTROLLER,
 			"did:entity-storage:0x0101010101010101010101010101010101010101010101010101010101010101",
 			"linked-domain",
 			"LinkedDomains",
-			"https://bar.example.com/"
+			"https://bar.example.com/",
+			TEST_CONTROLLER
 		);
 
 		expect(createdService).toEqual({
@@ -180,8 +181,8 @@ describe("IdentityService", () => {
 		const service = new IdentityService();
 
 		await service.serviceRemove(
-			TEST_CONTROLLER,
-			"did:entity-storage:0x0101010101010101010101010101010101010101010101010101010101010101#linked-domain"
+			"did:entity-storage:0x0101010101010101010101010101010101010101010101010101010101010101#linked-domain",
+			TEST_CONTROLLER
 		);
 
 		const resolverService = new IdentityResolverService();
@@ -195,26 +196,27 @@ describe("IdentityService", () => {
 		const service = new IdentityService();
 
 		const verificationMethod = await service.verificationMethodCreate(
-			TEST_CONTROLLER,
 			"did:entity-storage:0x0101010101010101010101010101010101010101010101010101010101010101",
-			DidVerificationMethodType.AssertionMethod
+			DidVerificationMethodType.AssertionMethod,
+			undefined,
+			TEST_CONTROLLER
 		);
 
 		const vc = await service.verifiableCredentialCreate(
-			TEST_CONTROLLER,
 			verificationMethod.id,
 			"https://example.com/credentials/3732",
 			{
-				"@context": "http://schema.org/",
+				"@context": "https://schema.org",
 				"@type": "Person",
 				name: "Jane Doe"
 			},
-			5
+			5,
+			TEST_CONTROLLER
 		);
 
 		expect(vc).toEqual({
 			verifiableCredential: {
-				"@context": ["https://www.w3.org/ns/credentials/v2", "http://schema.org/"],
+				"@context": ["https://www.w3.org/ns/credentials/v2", "https://schema.org"],
 				id: "https://example.com/credentials/3732",
 				type: ["VerifiableCredential", "Person"],
 				credentialSubject: {
@@ -229,7 +231,7 @@ describe("IdentityService", () => {
 					revocationBitmapIndex: "5"
 				}
 			},
-			jwt: "eyJraWQiOiJkaWQ6ZW50aXR5LXN0b3JhZ2U6MHgwMTAxMDEwMTAxMDEwMTAxMDEwMTAxMDEwMTAxMDEwMTAxMDEwMTAxMDEwMTAxMDEwMTAxMDEwMTAxMDEwMTAxI3VEVEEwU3dIc2lCalJkaFRsczRhZVUtaGh2S2xqX0hQZjFOazFMX2IwZUkiLCJ0eXAiOiJKV1QiLCJhbGciOiJFZERTQSJ9.eyJpc3MiOiJkaWQ6ZW50aXR5LXN0b3JhZ2U6MHgwMTAxMDEwMTAxMDEwMTAxMDEwMTAxMDEwMTAxMDEwMTAxMDEwMTAxMDEwMTAxMDEwMTAxMDEwMTAxMDEwMTAxIiwibmJmIjoxNTc3ODM2ODAwLCJqdGkiOiJodHRwczovL2V4YW1wbGUuY29tL2NyZWRlbnRpYWxzLzM3MzIiLCJ2YyI6eyJAY29udGV4dCI6WyJodHRwczovL3d3dy53My5vcmcvbnMvY3JlZGVudGlhbHMvdjIiLCJodHRwOi8vc2NoZW1hLm9yZy8iXSwidHlwZSI6WyJWZXJpZmlhYmxlQ3JlZGVudGlhbCIsIlBlcnNvbiJdLCJjcmVkZW50aWFsU3ViamVjdCI6eyJuYW1lIjoiSmFuZSBEb2UifSwiY3JlZGVudGlhbFN0YXR1cyI6eyJpZCI6ImRpZDplbnRpdHktc3RvcmFnZToweDAxMDEwMTAxMDEwMTAxMDEwMTAxMDEwMTAxMDEwMTAxMDEwMTAxMDEwMTAxMDEwMTAxMDEwMTAxMDEwMTAxMDEjcmV2b2NhdGlvbiIsInR5cGUiOiJCaXRzdHJpbmdTdGF0dXNMaXN0IiwicmV2b2NhdGlvbkJpdG1hcEluZGV4IjoiNSJ9fX0.sodBmNDawPWIR8ZBq_gt5W8BMi1nXsLYhW6cOOi1vGo9erYEOlY7WOKYawfAcJtWq2sp3H5IXlK3Xdqr86YMDQ"
+			jwt: "eyJraWQiOiJkaWQ6ZW50aXR5LXN0b3JhZ2U6MHgwMTAxMDEwMTAxMDEwMTAxMDEwMTAxMDEwMTAxMDEwMTAxMDEwMTAxMDEwMTAxMDEwMTAxMDEwMTAxMDEwMTAxI3VEVEEwU3dIc2lCalJkaFRsczRhZVUtaGh2S2xqX0hQZjFOazFMX2IwZUkiLCJ0eXAiOiJKV1QiLCJhbGciOiJFZERTQSJ9.eyJpc3MiOiJkaWQ6ZW50aXR5LXN0b3JhZ2U6MHgwMTAxMDEwMTAxMDEwMTAxMDEwMTAxMDEwMTAxMDEwMTAxMDEwMTAxMDEwMTAxMDEwMTAxMDEwMTAxMDEwMTAxIiwibmJmIjoxNTc3ODM2ODAwLCJqdGkiOiJodHRwczovL2V4YW1wbGUuY29tL2NyZWRlbnRpYWxzLzM3MzIiLCJ2YyI6eyJAY29udGV4dCI6WyJodHRwczovL3d3dy53My5vcmcvbnMvY3JlZGVudGlhbHMvdjIiLCJodHRwczovL3NjaGVtYS5vcmciXSwidHlwZSI6WyJWZXJpZmlhYmxlQ3JlZGVudGlhbCIsIlBlcnNvbiJdLCJjcmVkZW50aWFsU3ViamVjdCI6eyJuYW1lIjoiSmFuZSBEb2UifSwiY3JlZGVudGlhbFN0YXR1cyI6eyJpZCI6ImRpZDplbnRpdHktc3RvcmFnZToweDAxMDEwMTAxMDEwMTAxMDEwMTAxMDEwMTAxMDEwMTAxMDEwMTAxMDEwMTAxMDEwMTAxMDEwMTAxMDEwMTAxMDEjcmV2b2NhdGlvbiIsInR5cGUiOiJCaXRzdHJpbmdTdGF0dXNMaXN0IiwicmV2b2NhdGlvbkJpdG1hcEluZGV4IjoiNSJ9fX0.QpoikxxOv1BktLQ8Os979xBU_5L-atWKx4ZxCyuW4nYZgTEJuQJtngGzrUpDB2ZrPpGmobqfSgbW49b1jSFQAA"
 		});
 	});
 });

@@ -11,22 +11,49 @@ export class DocumentHelper {
 	 * @param documentId The full document id.
 	 * @returns The parsed document id.
 	 */
-	public static parse(documentId: string): {
+	public static parseId(documentId: string): {
 		id: string;
-		hash: string | undefined;
+		fragment: string | undefined;
 	} {
 		if (!Is.stringValue(documentId)) {
 			return {
 				id: "",
-				hash: ""
+				fragment: ""
 			};
 		}
 
-		const hashIndex = documentId.indexOf("#");
+		const fragmentIndex = documentId.indexOf("#");
 
 		return {
-			id: hashIndex === -1 ? documentId : documentId.slice(0, hashIndex),
-			hash: hashIndex === -1 ? undefined : documentId.slice(hashIndex + 1)
+			id: fragmentIndex === -1 ? documentId : documentId.slice(0, fragmentIndex),
+			fragment: fragmentIndex === -1 ? undefined : documentId.slice(fragmentIndex + 1)
 		};
+	}
+
+	/**
+	 * Join the document id parts.
+	 * @param documentId The document id.
+	 * @param fragment The fragment part for the identifier.
+	 * @returns The full id.
+	 */
+	public static joinId(documentId: string, fragment?: string): string {
+		if (!Is.stringValue(documentId)) {
+			return "";
+		}
+
+		let fullId = documentId;
+
+		if (Is.stringValue(fragment)) {
+			if (fragment.startsWith(documentId)) {
+				fragment = fragment.slice(documentId.length);
+			}
+			if (fragment.startsWith("#")) {
+				fullId += fragment;
+			} else {
+				fullId += `#${fragment}`;
+			}
+		}
+
+		return fullId;
 	}
 }

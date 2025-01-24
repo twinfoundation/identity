@@ -18,82 +18,82 @@ import type {
 export interface IIdentityComponent extends IComponent {
 	/**
 	 * Create a new identity.
-	 * @param controller The controller of the identity who can make changes.
 	 * @param namespace The namespace of the connector to use for the identity, defaults to service configured namespace.
+	 * @param controller The controller of the identity who can make changes.
 	 * @returns The created identity document.
 	 */
-	identityCreate(controller: string, namespace?: string): Promise<IDidDocument>;
+	identityCreate(namespace?: string, controller?: string): Promise<IDidDocument>;
 
 	/**
 	 * Add a verification method to the document in JSON Web key Format.
-	 * @param controller The controller of the identity who can make changes.
 	 * @param identity The id of the document to add the verification method to.
 	 * @param verificationMethodType The type of the verification method to add.
 	 * @param verificationMethodId The id of the verification method, if undefined uses the kid of the generated JWK.
+	 * @param controller The controller of the identity who can make changes.
 	 * @returns The verification method.
 	 * @throws NotFoundError if the id can not be resolved.
 	 * @throws NotSupportedError if the platform does not support multiple keys.
 	 */
 	verificationMethodCreate(
-		controller: string,
 		identity: string,
 		verificationMethodType: DidVerificationMethodType,
-		verificationMethodId?: string
+		verificationMethodId?: string,
+		controller?: string
 	): Promise<IDidDocumentVerificationMethod>;
 
 	/**
 	 * Remove a verification method from the document.
-	 * @param controller The controller of the identity who can make changes.
 	 * @param verificationMethodId The id of the verification method.
+	 * @param controller The controller of the identity who can make changes.
 	 * @returns Nothing.
 	 * @throws NotFoundError if the id can not be resolved.
 	 * @throws NotSupportedError if the platform does not support multiple revocable keys.
 	 */
-	verificationMethodRemove(controller: string, verificationMethodId: string): Promise<void>;
+	verificationMethodRemove(verificationMethodId: string, controller?: string): Promise<void>;
 
 	/**
 	 * Add a service to the document.
-	 * @param controller The controller of the identity who can make changes.
 	 * @param identity The id of the document to add the service to.
 	 * @param serviceId The id of the service.
 	 * @param serviceType The type of the service.
 	 * @param serviceEndpoint The endpoint for the service.
+	 * @param controller The controller of the identity who can make changes.
 	 * @returns The service.
 	 * @throws NotFoundError if the id can not be resolved.
 	 */
 	serviceCreate(
-		controller: string,
 		identity: string,
 		serviceId: string,
-		serviceType: string,
-		serviceEndpoint: string
+		serviceType: string | string[],
+		serviceEndpoint: string | string[],
+		controller?: string
 	): Promise<IDidService>;
 
 	/**
 	 * Remove a service from the document.
-	 * @param controller The controller of the identity who can make changes.
 	 * @param serviceId The id of the service.
+	 * @param controller The controller of the identity who can make changes.
 	 * @returns Nothing.
 	 * @throws NotFoundError if the id can not be resolved.
 	 */
-	serviceRemove(controller: string, serviceId: string): Promise<void>;
+	serviceRemove(serviceId: string, controller?: string): Promise<void>;
 
 	/**
 	 * Create a verifiable credential for a verification method.
-	 * @param controller The controller of the identity who can make changes.
 	 * @param verificationMethodId The verification method id to use.
 	 * @param id The id of the credential.
-	 * @param credential The credential to store in the verifiable credential.
+	 * @param subject The credential subject to store in the verifiable credential.
 	 * @param revocationIndex The bitmap revocation index of the credential, if undefined will not have revocation status.
+	 * @param controller The controller of the identity who can make changes.
 	 * @returns The created verifiable credential and its token.
 	 * @throws NotFoundError if the id can not be resolved.
 	 */
 	verifiableCredentialCreate(
-		controller: string,
 		verificationMethodId: string,
 		id: string | undefined,
-		credential: IJsonLdNodeObject,
-		revocationIndex?: number
+		subject: IJsonLdNodeObject,
+		revocationIndex?: number,
+		controller?: string
 	): Promise<{
 		verifiableCredential: IDidVerifiableCredential;
 		jwt: string;
@@ -111,50 +111,50 @@ export interface IIdentityComponent extends IComponent {
 
 	/**
 	 * Revoke verifiable credential.
-	 * @param controller The controller of the identity who can make changes.
 	 * @param issuerId The id of the document to update the revocation list for.
 	 * @param credentialIndex The revocation bitmap index revoke.
+	 * @param controller The controller of the identity who can make changes.
 	 * @returns Nothing.
 	 */
 	verifiableCredentialRevoke(
-		controller: string,
 		issuerId: string,
-		credentialIndex: number
+		credentialIndex: number,
+		controller?: string
 	): Promise<void>;
 
 	/**
 	 * Unrevoke verifiable credential.
-	 * @param controller The controller of the identity who can make changes.
 	 * @param issuerId The id of the document to update the revocation list for.
 	 * @param credentialIndex The revocation bitmap index to un revoke.
+	 * @param controller The controller of the identity who can make changes.
 	 * @returns Nothing.
 	 */
 	verifiableCredentialUnrevoke(
-		controller: string,
 		issuerId: string,
-		credentialIndex: number
+		credentialIndex: number,
+		controller?: string
 	): Promise<void>;
 
 	/**
 	 * Create a verifiable presentation from the supplied verifiable credentials.
-	 * @param controller The controller of the identity who can make changes.
-	 * @param presentationMethodId The method to associate with the presentation.
+	 * @param verificationMethodId The method to associate with the presentation.
 	 * @param presentationId The id of the presentation.
 	 * @param contexts The contexts for the data stored in the verifiable credential.
 	 * @param types The types for the data stored in the verifiable credential.
 	 * @param verifiableCredentials The credentials to use for creating the presentation in jwt format.
 	 * @param expiresInMinutes The time in minutes for the presentation to expire.
+	 * @param controller The controller of the identity who can make changes.
 	 * @returns The created verifiable presentation and its token.
 	 * @throws NotFoundError if the id can not be resolved.
 	 */
 	verifiablePresentationCreate(
-		controller: string,
-		presentationMethodId: string,
+		verificationMethodId: string,
 		presentationId: string | undefined,
 		contexts: IJsonLdContextDefinitionRoot | undefined,
 		types: string | string[] | undefined,
 		verifiableCredentials: (string | IDidVerifiableCredential)[],
-		expiresInMinutes?: number
+		expiresInMinutes?: number,
+		controller?: string
 	): Promise<{
 		verifiablePresentation: IDidVerifiablePresentation;
 		jwt: string;
@@ -173,15 +173,15 @@ export interface IIdentityComponent extends IComponent {
 
 	/**
 	 * Create a proof for arbitrary data with the specified verification method.
-	 * @param controller The controller of the identity who can make changes.
 	 * @param verificationMethodId The verification method id to use.
 	 * @param bytes The data bytes to sign.
+	 * @param controller The controller of the identity who can make changes.
 	 * @returns The proof.
 	 */
 	proofCreate(
-		controller: string,
 		verificationMethodId: string,
-		bytes: Uint8Array
+		bytes: Uint8Array,
+		controller?: string
 	): Promise<IDidProof>;
 
 	/**

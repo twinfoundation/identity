@@ -1,6 +1,6 @@
 {
 	"name": "@twin.org/identity-connector-iota-rebased",
-	"version": "0.0.1-next.23",
+	"version": "0.0.1-next.24",
 	"description": "Identity connector implementation using IOTA Rebased",
 	"repository": {
 		"type": "git",
@@ -35,7 +35,7 @@
 		"@twin.org/data-json-ld": "next",
 		"@twin.org/dlt-iota-rebased": "next",
 		"@twin.org/entity": "next",
-		"@twin.org/identity-models": "0.0.1-next.23",
+		"@twin.org/identity-models": "0.0.1-next.24",
 		"@twin.org/nameof": "next",
 		"@twin.org/standards-w3c-did": "next",
 		"@twin.org/vault-models": "next",

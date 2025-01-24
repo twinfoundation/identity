@@ -1,6 +1,6 @@
 {
 	"name": "@twin.org/identity-cli",
-	"version": "0.0.1-next.23",
+	"version": "0.0.1-next.24",
 	"description": "A command line interface for interacting with the identity connectors",
 	"repository": {
 		"type": "git",
@@ -37,9 +37,9 @@
 		"@twin.org/data-json-ld": "next",
 		"@twin.org/entity": "next",
 		"@twin.org/entity-storage-connector-memory": "next",
-		"@twin.org/identity-models": "0.0.1-next.23",
-		"@twin.org/identity-connector-iota": "0.0.1-next.23",
-		"@twin.org/identity-connector-iota-rebased": "0.0.1-next.23",
+		"@twin.org/identity-models": "0.0.1-next.24",
+		"@twin.org/identity-connector-iota": "0.0.1-next.24",
+		"@twin.org/identity-connector-iota-rebased": "0.0.1-next.24",
 		"@twin.org/nameof": "next",
 		"@twin.org/standards-w3c-did": "next",
 		"@twin.org/vault-connector-entity-storage": "next",

@@ -64,8 +64,8 @@ export interface IIdentityConnector extends IComponent {
 		controller: string,
 		documentId: string,
 		serviceId: string,
-		serviceType: string,
-		serviceEndpoint: string
+		serviceType: string | string[],
+		serviceEndpoint: string | string[]
 	): Promise<IDidService>;
 
 	/**
@@ -82,7 +82,7 @@ export interface IIdentityConnector extends IComponent {
 	 * @param controller The controller of the identity who can make changes.
 	 * @param verificationMethodId The verification method id to use.
 	 * @param id The id of the credential.
-	 * @param credential The credential to store in the verifiable credential.
+	 * @param subject The credential subject to store in the verifiable credential.
 	 * @param revocationIndex The bitmap revocation index of the credential, if undefined will not have revocation status.
 	 * @returns The created verifiable credential and its token.
 	 * @throws NotFoundError if the id can not be resolved.
@@ -91,7 +91,7 @@ export interface IIdentityConnector extends IComponent {
 		controller: string,
 		verificationMethodId: string,
 		id: string | undefined,
-		credential: IJsonLdNodeObject,
+		subject: IJsonLdNodeObject,
 		revocationIndex?: number
 	): Promise<{
 		verifiableCredential: IDidVerifiableCredential;
@@ -137,7 +137,7 @@ export interface IIdentityConnector extends IComponent {
 	/**
 	 * Create a verifiable presentation from the supplied verifiable credentials.
 	 * @param controller The controller of the identity who can make changes.
-	 * @param presentationMethodId The method to associate with the presentation.
+	 * @param verificationMethodId The method to associate with the presentation.
 	 * @param presentationId The id of the presentation.
 	 * @param contexts The contexts for the data stored in the verifiable credential.
 	 * @param types The types for the data stored in the verifiable credential.
@@ -148,7 +148,7 @@ export interface IIdentityConnector extends IComponent {
 	 */
 	createVerifiablePresentation(
 		controller: string,
-		presentationMethodId: string,
+		verificationMethodId: string,
 		presentationId: string | undefined,
 		contexts: IJsonLdContextDefinitionRoot | undefined,
 		types: string | string[] | undefined,

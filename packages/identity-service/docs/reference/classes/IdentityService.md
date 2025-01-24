@@ -50,23 +50,23 @@ Runtime name for the class.
 
 ### identityCreate()
 
-> **identityCreate**(`controller`, `namespace`?): `Promise`\<`IDidDocument`\>
+> **identityCreate**(`namespace`?, `controller`?): `Promise`\<`IDidDocument`\>
 
 Create a new identity.
 
 #### Parameters
-
-##### controller
-
-`string`
-
-The controller of the identity who can make changes.
 
 ##### namespace?
 
 `string`
 
 The namespace of the connector to use for the identity, defaults to service configured namespace.
+
+##### controller?
+
+`string`
+
+The controller of the identity who can make changes.
 
 #### Returns
 
@@ -82,17 +82,11 @@ The created identity document.
 
 ### verificationMethodCreate()
 
-> **verificationMethodCreate**(`controller`, `identity`, `verificationMethodType`, `verificationMethodId`?): `Promise`\<`IDidDocumentVerificationMethod`\>
+> **verificationMethodCreate**(`identity`, `verificationMethodType`, `verificationMethodId`?, `controller`?): `Promise`\<`IDidDocumentVerificationMethod`\>
 
 Add a verification method to the document in JSON Web key Format.
 
 #### Parameters
-
-##### controller
-
-`string`
-
-The controller of the identity who can make changes.
 
 ##### identity
 
@@ -111,6 +105,12 @@ The type of the verification method to add.
 `string`
 
 The id of the verification method, if undefined uses the kid of the generated JWK.
+
+##### controller?
+
+`string`
+
+The controller of the identity who can make changes.
 
 #### Returns
 
@@ -134,23 +134,23 @@ NotSupportedError if the platform does not support multiple keys.
 
 ### verificationMethodRemove()
 
-> **verificationMethodRemove**(`controller`, `verificationMethodId`): `Promise`\<`void`\>
+> **verificationMethodRemove**(`verificationMethodId`, `controller`?): `Promise`\<`void`\>
 
 Remove a verification method from the document.
 
 #### Parameters
-
-##### controller
-
-`string`
-
-The controller of the identity who can make changes.
 
 ##### verificationMethodId
 
 `string`
 
 The id of the verification method.
+
+##### controller?
+
+`string`
+
+The controller of the identity who can make changes.
 
 #### Returns
 
@@ -174,17 +174,11 @@ NotSupportedError if the platform does not support multiple revocable keys.
 
 ### serviceCreate()
 
-> **serviceCreate**(`controller`, `identity`, `serviceId`, `serviceType`, `serviceEndpoint`): `Promise`\<`IDidService`\>
+> **serviceCreate**(`identity`, `serviceId`, `serviceType`, `serviceEndpoint`, `controller`?): `Promise`\<`IDidService`\>
 
 Add a service to the document.
 
 #### Parameters
-
-##### controller
-
-`string`
-
-The controller of the identity who can make changes.
 
 ##### identity
 
@@ -200,15 +194,21 @@ The id of the service.
 
 ##### serviceType
 
-`string`
-
 The type of the service.
+
+`string` | `string`[]
 
 ##### serviceEndpoint
 
+The endpoint for the service.
+
+`string` | `string`[]
+
+##### controller?
+
 `string`
 
-The endpoint for the service.
+The controller of the identity who can make changes.
 
 #### Returns
 
@@ -228,23 +228,23 @@ NotFoundError if the id can not be resolved.
 
 ### serviceRemove()
 
-> **serviceRemove**(`controller`, `serviceId`): `Promise`\<`void`\>
+> **serviceRemove**(`serviceId`, `controller`?): `Promise`\<`void`\>
 
 Remove a service from the document.
 
 #### Parameters
-
-##### controller
-
-`string`
-
-The controller of the identity who can make changes.
 
 ##### serviceId
 
 `string`
 
 The id of the service.
+
+##### controller?
+
+`string`
+
+The controller of the identity who can make changes.
 
 #### Returns
 
@@ -264,17 +264,11 @@ NotFoundError if the id can not be resolved.
 
 ### verifiableCredentialCreate()
 
-> **verifiableCredentialCreate**(`controller`, `verificationMethodId`, `id`, `credential`, `revocationIndex`?): `Promise`\<\{ `verifiableCredential`: `IDidVerifiableCredential`; `jwt`: `string`; \}\>
+> **verifiableCredentialCreate**(`verificationMethodId`, `id`, `subject`, `revocationIndex`?, `controller`?): `Promise`\<\{ `verifiableCredential`: `IDidVerifiableCredential`; `jwt`: `string`; \}\>
 
 Create a verifiable credential for a verification method.
 
 #### Parameters
-
-##### controller
-
-`string`
-
-The controller of the identity who can make changes.
 
 ##### verificationMethodId
 
@@ -288,17 +282,23 @@ The id of the credential.
 
 `undefined` | `string`
 
-##### credential
+##### subject
 
 `IJsonLdNodeObject`
 
-The credential to store in the verifiable credential.
+The credential subject to store in the verifiable credential.
 
 ##### revocationIndex?
 
 `number`
 
 The bitmap revocation index of the credential, if undefined will not have revocation status.
+
+##### controller?
+
+`string`
+
+The controller of the identity who can make changes.
 
 #### Returns
 
@@ -344,17 +344,11 @@ The credential stored in the jwt and the revocation status.
 
 ### verifiableCredentialRevoke()
 
-> **verifiableCredentialRevoke**(`controller`, `issuerIdentity`, `credentialIndex`): `Promise`\<`void`\>
+> **verifiableCredentialRevoke**(`issuerIdentity`, `credentialIndex`, `controller`?): `Promise`\<`void`\>
 
 Revoke verifiable credential.
 
 #### Parameters
-
-##### controller
-
-`string`
-
-The controller of the identity who can make changes.
 
 ##### issuerIdentity
 
@@ -367,6 +361,12 @@ The id of the document to update the revocation list for.
 `number`
 
 The revocation bitmap index revoke.
+
+##### controller?
+
+`string`
+
+The controller of the identity who can make changes.
 
 #### Returns
 
@@ -382,17 +382,11 @@ Nothing.
 
 ### verifiableCredentialUnrevoke()
 
-> **verifiableCredentialUnrevoke**(`controller`, `issuerIdentity`, `credentialIndex`): `Promise`\<`void`\>
+> **verifiableCredentialUnrevoke**(`issuerIdentity`, `credentialIndex`, `controller`?): `Promise`\<`void`\>
 
 Unrevoke verifiable credential.
 
 #### Parameters
-
-##### controller
-
-`string`
-
-The controller of the identity who can make changes.
 
 ##### issuerIdentity
 
@@ -405,6 +399,12 @@ The id of the document to update the revocation list for.
 `number`
 
 The revocation bitmap index to un revoke.
+
+##### controller?
+
+`string`
+
+The controller of the identity who can make changes.
 
 #### Returns
 
@@ -420,19 +420,13 @@ Nothing.
 
 ### verifiablePresentationCreate()
 
-> **verifiablePresentationCreate**(`controller`, `presentationMethodId`, `presentationId`, `contexts`, `types`, `verifiableCredentials`, `expiresInMinutes`?): `Promise`\<\{ `verifiablePresentation`: `IDidVerifiablePresentation`; `jwt`: `string`; \}\>
+> **verifiablePresentationCreate**(`verificationMethodId`, `presentationId`, `contexts`, `types`, `verifiableCredentials`, `expiresInMinutes`?, `controller`?): `Promise`\<\{ `verifiablePresentation`: `IDidVerifiablePresentation`; `jwt`: `string`; \}\>
 
 Create a verifiable presentation from the supplied verifiable credentials.
 
 #### Parameters
 
-##### controller
-
-`string`
-
-The controller of the identity who can make changes.
-
-##### presentationMethodId
+##### verificationMethodId
 
 `string`
 
@@ -467,6 +461,12 @@ The credentials to use for creating the presentation in jwt format.
 `number`
 
 The time in minutes for the presentation to expire.
+
+##### controller?
+
+`string`
+
+The controller of the identity who can make changes.
 
 #### Returns
 
@@ -512,17 +512,11 @@ The presentation stored in the jwt and the revocation status.
 
 ### proofCreate()
 
-> **proofCreate**(`controller`, `verificationMethodId`, `bytes`): `Promise`\<`IDidProof`\>
+> **proofCreate**(`verificationMethodId`, `bytes`, `controller`?): `Promise`\<`IDidProof`\>
 
 Create a proof for arbitrary data with the specified verification method.
 
 #### Parameters
-
-##### controller
-
-`string`
-
-The controller of the identity who can make changes.
 
 ##### verificationMethodId
 
@@ -535,6 +529,12 @@ The verification method id to use.
 `Uint8Array`
 
 The data bytes to sign.
+
+##### controller?
+
+`string`
+
+The controller of the identity who can make changes.
 
 #### Returns
 

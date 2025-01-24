@@ -41,7 +41,7 @@ export class IdentityResolverClient extends BaseRestClient implements IIdentityR
 			"GET",
 			{
 				pathParams: {
-					id: documentId
+					identity: documentId
 				}
 			}
 		);

@@ -1,6 +1,6 @@
 // Copyright 2024 IOTA Stiftung.
 // SPDX-License-Identifier: Apache-2.0.
-import { GeneralError, Guards, Is, NotImplementedError, Urn } from "@twin.org/core";
+import { GeneralError, Guards, Is, Urn } from "@twin.org/core";
 import type { IJsonLdContextDefinitionRoot, IJsonLdNodeObject } from "@twin.org/data-json-ld";
 import {
 	DocumentHelper,
@@ -56,11 +56,11 @@ export class IdentityService implements IIdentityComponent {
 
 	/**
 	 * Create a new identity.
-	 * @param controller The controller of the identity who can make changes.
 	 * @param namespace The namespace of the connector to use for the identity, defaults to service configured namespace.
+	 * @param controller The controller of the identity who can make changes.
 	 * @returns The created identity document.
 	 */
-	public async identityCreate(controller: string, namespace?: string): Promise<IDidDocument> {
+	public async identityCreate(namespace?: string, controller?: string): Promise<IDidDocument> {
 		Guards.stringValue(this.CLASS_NAME, nameof(controller), controller);
 
 		try {
@@ -73,19 +73,19 @@ export class IdentityService implements IIdentityComponent {
 
 	/**
 	 * Add a verification method to the document in JSON Web key Format.
-	 * @param controller The controller of the identity who can make changes.
 	 * @param identity The id of the document to add the verification method to.
 	 * @param verificationMethodType The type of the verification method to add.
 	 * @param verificationMethodId The id of the verification method, if undefined uses the kid of the generated JWK.
+	 * @param controller The controller of the identity who can make changes.
 	 * @returns The verification method.
 	 * @throws NotFoundError if the id can not be resolved.
 	 * @throws NotSupportedError if the platform does not support multiple keys.
 	 */
 	public async verificationMethodCreate(
-		controller: string,
 		identity: string,
 		verificationMethodType: DidVerificationMethodType,
-		verificationMethodId?: string
+		verificationMethodId?: string,
+		controller?: string
 	): Promise<IDidDocumentVerificationMethod> {
 		Guards.stringValue(this.CLASS_NAME, nameof(controller), controller);
 		Urn.guard(this.CLASS_NAME, nameof(identity), identity);
@@ -120,21 +120,21 @@ export class IdentityService implements IIdentityComponent {
 
 	/**
 	 * Remove a verification method from the document.
-	 * @param controller The controller of the identity who can make changes.
 	 * @param verificationMethodId The id of the verification method.
+	 * @param controller The controller of the identity who can make changes.
 	 * @returns Nothing.
 	 * @throws NotFoundError if the id can not be resolved.
 	 * @throws NotSupportedError if the platform does not support multiple revocable keys.
 	 */
 	public async verificationMethodRemove(
-		controller: string,
-		verificationMethodId: string
+		verificationMethodId: string,
+		controller?: string
 	): Promise<void> {
 		Guards.stringValue(this.CLASS_NAME, nameof(controller), controller);
 		Urn.guard(this.CLASS_NAME, nameof(verificationMethodId), verificationMethodId);
 
 		try {
-			const idParts = DocumentHelper.parse(verificationMethodId);
+			const idParts = DocumentHelper.parseId(verificationMethodId);
 
 			const identityConnector = this.getConnectorByUri(idParts.id);
 
@@ -151,26 +151,34 @@ export class IdentityService implements IIdentityComponent {
 
 	/**
 	 * Add a service to the document.
-	 * @param controller The controller of the identity who can make changes.
 	 * @param identity The id of the document to add the service to.
 	 * @param serviceId The id of the service.
 	 * @param serviceType The type of the service.
 	 * @param serviceEndpoint The endpoint for the service.
+	 * @param controller The controller of the identity who can make changes.
 	 * @returns The service.
 	 * @throws NotFoundError if the id can not be resolved.
 	 */
 	public async serviceCreate(
-		controller: string,
 		identity: string,
 		serviceId: string,
-		serviceType: string,
-		serviceEndpoint: string
+		serviceType: string | string[],
+		serviceEndpoint: string | string[],
+		controller?: string
 	): Promise<IDidService> {
 		Guards.stringValue(this.CLASS_NAME, nameof(controller), controller);
 		Urn.guard(this.CLASS_NAME, nameof(identity), identity);
 		Guards.stringValue(this.CLASS_NAME, nameof(serviceId), serviceId);
-		Guards.stringValue(this.CLASS_NAME, nameof(serviceType), serviceType);
-		Guards.stringValue(this.CLASS_NAME, nameof(serviceEndpoint), serviceEndpoint);
+		if (Is.array(serviceType)) {
+			Guards.arrayValue<string>(this.CLASS_NAME, nameof(serviceType), serviceType);
+		} else {
+			Guards.stringValue(this.CLASS_NAME, nameof(serviceType), serviceType);
+		}
+		if (Is.array(serviceEndpoint)) {
+			Guards.arrayValue<string>(this.CLASS_NAME, nameof(serviceEndpoint), serviceEndpoint);
+		} else {
+			Guards.stringValue(this.CLASS_NAME, nameof(serviceEndpoint), serviceEndpoint);
+		}
 
 		try {
 			const identityConnector = this.getConnectorByUri(identity);
@@ -196,17 +204,17 @@ export class IdentityService implements IIdentityComponent {
 
 	/**
 	 * Remove a service from the document.
-	 * @param controller The controller of the identity who can make changes.
 	 * @param serviceId The id of the service.
+	 * @param controller The controller of the identity who can make changes.
 	 * @returns Nothing.
 	 * @throws NotFoundError if the id can not be resolved.
 	 */
-	public async serviceRemove(controller: string, serviceId: string): Promise<void> {
+	public async serviceRemove(serviceId: string, controller?: string): Promise<void> {
 		Guards.stringValue(this.CLASS_NAME, nameof(controller), controller);
 		Urn.guard(this.CLASS_NAME, nameof(serviceId), serviceId);
 
 		try {
-			const idParts = DocumentHelper.parse(serviceId);
+			const idParts = DocumentHelper.parseId(serviceId);
 
 			const identityConnector = this.getConnectorByUri(idParts.id);
 
@@ -218,30 +226,30 @@ export class IdentityService implements IIdentityComponent {
 
 	/**
 	 * Create a verifiable credential for a verification method.
-	 * @param controller The controller of the identity who can make changes.
 	 * @param verificationMethodId The verification method id to use.
 	 * @param id The id of the credential.
-	 * @param credential The credential to store in the verifiable credential.
+	 * @param subject The credential subject to store in the verifiable credential.
 	 * @param revocationIndex The bitmap revocation index of the credential, if undefined will not have revocation status.
+	 * @param controller The controller of the identity who can make changes.
 	 * @returns The created verifiable credential and its token.
 	 * @throws NotFoundError if the id can not be resolved.
 	 */
 	public async verifiableCredentialCreate(
-		controller: string,
 		verificationMethodId: string,
 		id: string | undefined,
-		credential: IJsonLdNodeObject,
-		revocationIndex?: number
+		subject: IJsonLdNodeObject,
+		revocationIndex?: number,
+		controller?: string
 	): Promise<{
 		verifiableCredential: IDidVerifiableCredential;
 		jwt: string;
 	}> {
 		Guards.stringValue(this.CLASS_NAME, nameof(controller), controller);
 		Urn.guard(this.CLASS_NAME, nameof(verificationMethodId), verificationMethodId);
-		Guards.objectValue(this.CLASS_NAME, nameof(credential), credential);
+		Guards.objectValue(this.CLASS_NAME, nameof(subject), subject);
 
 		try {
-			const idParts = DocumentHelper.parse(verificationMethodId);
+			const idParts = DocumentHelper.parseId(verificationMethodId);
 
 			const identityConnector = this.getConnectorByUri(idParts.id);
 
@@ -249,7 +257,7 @@ export class IdentityService implements IIdentityComponent {
 				controller,
 				verificationMethodId,
 				id,
-				credential,
+				subject,
 				revocationIndex
 			);
 
@@ -303,59 +311,121 @@ export class IdentityService implements IIdentityComponent {
 
 	/**
 	 * Revoke verifiable credential.
-	 * @param controller The controller of the identity who can make changes.
 	 * @param issuerIdentity The id of the document to update the revocation list for.
 	 * @param credentialIndex The revocation bitmap index revoke.
+	 * @param controller The controller of the identity who can make changes.
 	 * @returns Nothing.
 	 */
 	public async verifiableCredentialRevoke(
-		controller: string,
 		issuerIdentity: string,
-		credentialIndex: number
+		credentialIndex: number,
+		controller?: string
 	): Promise<void> {
-		throw new NotImplementedError(this.CLASS_NAME, "identityCreate");
+		Guards.stringValue(this.CLASS_NAME, nameof(controller), controller);
+		Guards.stringValue(this.CLASS_NAME, nameof(issuerIdentity), issuerIdentity);
+		Guards.number(this.CLASS_NAME, nameof(credentialIndex), credentialIndex);
+
+		try {
+			const idParts = DocumentHelper.parseId(issuerIdentity);
+
+			const identityConnector = this.getConnectorByUri(idParts.id);
+
+			return identityConnector.revokeVerifiableCredentials(controller, issuerIdentity, [
+				credentialIndex
+			]);
+		} catch (error) {
+			throw new GeneralError(
+				this.CLASS_NAME,
+				"verifiableCredentialRevokeFailed",
+				{ issuerIdentity, credentialIndex },
+				error
+			);
+		}
 	}
 
 	/**
 	 * Unrevoke verifiable credential.
-	 * @param controller The controller of the identity who can make changes.
 	 * @param issuerIdentity The id of the document to update the revocation list for.
 	 * @param credentialIndex The revocation bitmap index to un revoke.
+	 * @param controller The controller of the identity who can make changes.
 	 * @returns Nothing.
 	 */
 	public async verifiableCredentialUnrevoke(
-		controller: string,
 		issuerIdentity: string,
-		credentialIndex: number
+		credentialIndex: number,
+		controller?: string
 	): Promise<void> {
-		throw new NotImplementedError(this.CLASS_NAME, "identityCreate");
+		Guards.stringValue(this.CLASS_NAME, nameof(controller), controller);
+		Guards.stringValue(this.CLASS_NAME, nameof(issuerIdentity), issuerIdentity);
+		Guards.number(this.CLASS_NAME, nameof(credentialIndex), credentialIndex);
+
+		try {
+			const idParts = DocumentHelper.parseId(issuerIdentity);
+
+			const identityConnector = this.getConnectorByUri(idParts.id);
+
+			return identityConnector.unrevokeVerifiableCredentials(controller, issuerIdentity, [
+				credentialIndex
+			]);
+		} catch (error) {
+			throw new GeneralError(
+				this.CLASS_NAME,
+				"verifiableCredentialUnrevokeFailed",
+				{ issuerIdentity, credentialIndex },
+				error
+			);
+		}
 	}
 
 	/**
 	 * Create a verifiable presentation from the supplied verifiable credentials.
-	 * @param controller The controller of the identity who can make changes.
-	 * @param presentationMethodId The method to associate with the presentation.
+	 * @param verificationMethodId The method to associate with the presentation.
 	 * @param presentationId The id of the presentation.
 	 * @param contexts The contexts for the data stored in the verifiable credential.
 	 * @param types The types for the data stored in the verifiable credential.
 	 * @param verifiableCredentials The credentials to use for creating the presentation in jwt format.
 	 * @param expiresInMinutes The time in minutes for the presentation to expire.
+	 * @param controller The controller of the identity who can make changes.
 	 * @returns The created verifiable presentation and its token.
 	 * @throws NotFoundError if the id can not be resolved.
 	 */
 	public async verifiablePresentationCreate(
-		controller: string,
-		presentationMethodId: string,
+		verificationMethodId: string,
 		presentationId: string | undefined,
 		contexts: IJsonLdContextDefinitionRoot | undefined,
 		types: string | string[] | undefined,
 		verifiableCredentials: (string | IDidVerifiableCredential)[],
-		expiresInMinutes?: number
+		expiresInMinutes?: number,
+		controller?: string
 	): Promise<{
 		verifiablePresentation: IDidVerifiablePresentation;
 		jwt: string;
 	}> {
-		throw new NotImplementedError(this.CLASS_NAME, "identityCreate");
+		Guards.stringValue(this.CLASS_NAME, nameof(controller), controller);
+		Guards.stringValue(this.CLASS_NAME, nameof(verificationMethodId), verificationMethodId);
+
+		try {
+			const idParts = DocumentHelper.parseId(verificationMethodId);
+
+			const identityConnector = this.getConnectorByUri(idParts.id);
+
+			return identityConnector.createVerifiablePresentation(
+				controller,
+				verificationMethodId,
+				presentationId,
+				contexts,
+				types,
+				verifiableCredentials,
+				expiresInMinutes
+			);
+		} catch (error) {
+			throw new GeneralError(
+				this.CLASS_NAME,
+				"verifiablePresentationCreateFailed",
+				{ verificationMethodId },
+				error
+			);
+		}
 	}
 
 	/**
@@ -368,22 +438,63 @@ export class IdentityService implements IIdentityComponent {
 		verifiablePresentation?: IDidVerifiablePresentation;
 		issuers?: IDidDocument[];
 	}> {
-		throw new NotImplementedError(this.CLASS_NAME, "identityCreate");
+		Guards.stringValue(this.CLASS_NAME, nameof(presentationJwt), presentationJwt);
+
+		const jwtDecoded = await Jwt.decode(presentationJwt);
+
+		const jwtHeader = jwtDecoded.header;
+		const jwtPayload = jwtDecoded.payload;
+		const jwtSignature = jwtDecoded.signature;
+
+		if (
+			Is.undefined(jwtHeader) ||
+			Is.undefined(jwtPayload) ||
+			Is.undefined(jwtPayload.iss) ||
+			Is.undefined(jwtSignature)
+		) {
+			throw new GeneralError(this.CLASS_NAME, "jwtDecodeFailed");
+		}
+
+		try {
+			const identityConnector = this.getConnectorByUri(jwtPayload.iss);
+
+			const service = await identityConnector.checkVerifiablePresentation(presentationJwt);
+
+			return service;
+		} catch (error) {
+			throw new GeneralError(
+				this.CLASS_NAME,
+				"verifiablePresentationVerifyFailed",
+				undefined,
+				error
+			);
+		}
 	}
 
 	/**
 	 * Create a proof for arbitrary data with the specified verification method.
-	 * @param controller The controller of the identity who can make changes.
 	 * @param verificationMethodId The verification method id to use.
 	 * @param bytes The data bytes to sign.
+	 * @param controller The controller of the identity who can make changes.
 	 * @returns The proof.
 	 */
 	public async proofCreate(
-		controller: string,
 		verificationMethodId: string,
-		bytes: Uint8Array
+		bytes: Uint8Array,
+		controller?: string
 	): Promise<IDidProof> {
-		throw new NotImplementedError(this.CLASS_NAME, "identityCreate");
+		Guards.stringValue(this.CLASS_NAME, nameof(controller), controller);
+		Guards.stringValue(this.CLASS_NAME, nameof(verificationMethodId), verificationMethodId);
+
+		try {
+			const idParts = DocumentHelper.parseId(verificationMethodId);
+
+			const identityConnector = this.getConnectorByUri(idParts.id);
+
+			return identityConnector.createProof(controller, verificationMethodId, bytes);
+		} catch (error) {
+			throw new GeneralError(this.CLASS_NAME, "proofCreateFailed", { verificationMethodId }, error);
+		}
 	}
 
 	/**
@@ -393,7 +504,18 @@ export class IdentityService implements IIdentityComponent {
 	 * @returns True if the proof is verified.
 	 */
 	public async proofVerify(bytes: Uint8Array, proof: IDidProof): Promise<boolean> {
-		throw new NotImplementedError(this.CLASS_NAME, "identityCreate");
+		Guards.object(this.CLASS_NAME, nameof(proof), proof);
+		Guards.stringValue(this.CLASS_NAME, nameof(proof.verificationMethod), proof.verificationMethod);
+
+		try {
+			const idParts = DocumentHelper.parseId(proof.verificationMethod);
+
+			const identityConnector = this.getConnectorByUri(idParts.id);
+
+			return identityConnector.verifyProof(bytes, proof);
+		} catch (error) {
+			throw new GeneralError(this.CLASS_NAME, "proofVerifyFailed", undefined, error);
+		}
 	}
 
 	/**

@@ -67,13 +67,13 @@ export function generateRestRoutesIdentityProfile(
 						request: {
 							body: {
 								publicProfile: {
-									"@context": "http://schema.org/",
+									"@context": "https://schema.org",
 									"@type": "Person",
 									jobTitle: "Professor",
 									name: "Jane Doe"
 								},
 								privateProfile: {
-									"@context": "http://schema.org/",
+									"@context": "https://schema.org",
 									"@type": "Person",
 									telephone: "(425) 123-4567",
 									url: "http://www.janedoe.com"
@@ -128,7 +128,7 @@ export function generateRestRoutesIdentityProfile(
 								identity:
 									"did:iota:tst:0xc57d94b088f4c6d2cb32ded014813d0c786aa00134c8ee22f84b1e2545602a70",
 								publicProfile: {
-									"@context": "http://schema.org/",
+									"@context": "https://schema.org",
 									"@type": "Person",
 									jobTitle: "Professor",
 									name: "Jane Doe"
@@ -184,7 +184,7 @@ export function generateRestRoutesIdentityProfile(
 								[HeaderTypes.ContentType]: MimeTypes.JsonLd
 							},
 							body: {
-								"@context": "http://schema.org/",
+								"@context": "https://schema.org",
 								"@type": "Person",
 								jobTitle: "Professor",
 								name: "Jane Doe"
@@ -217,13 +217,13 @@ export function generateRestRoutesIdentityProfile(
 						request: {
 							body: {
 								publicProfile: {
-									"@context": "http://schema.org/",
+									"@context": "https://schema.org",
 									"@type": "Person",
 									jobTitle: "Professor",
 									name: "Jane Doe"
 								},
 								privateProfile: {
-									"@context": "http://schema.org/",
+									"@context": "https://schema.org",
 									"@type": "Person",
 									telephone: "(425) 123-4567",
 									url: "http://www.janedoe.com"
@@ -304,7 +304,7 @@ export function generateRestRoutesIdentityProfile(
 										identity:
 											"did:iota:tst:0xc57d94b088f4c6d2cb32ded014813d0c786aa00134c8ee22f84b1e2545602a70",
 										publicProfile: {
-											"@context": "http://schema.org/",
+											"@context": "https://schema.org",
 											"@type": "Person",
 											jobTitle: "Professor",
 											name: "Jane Doe"

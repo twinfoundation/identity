@@ -276,8 +276,8 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 		Guards.stringValue(this.CLASS_NAME, nameof(verificationMethodId), verificationMethodId);
 
 		try {
-			const idParts = DocumentHelper.parse(verificationMethodId);
-			if (Is.empty(idParts.hash)) {
+			const idParts = DocumentHelper.parseId(verificationMethodId);
+			if (Is.empty(idParts.fragment)) {
 				throw new NotFoundError(this.CLASS_NAME, "missingDid", verificationMethodId);
 			}
 
@@ -337,14 +337,22 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 		controller: string,
 		documentId: string,
 		serviceId: string,
-		serviceType: string,
-		serviceEndpoint: string
+		serviceType: string | string[],
+		serviceEndpoint: string | string[]
 	): Promise<IDidService> {
 		Guards.stringValue(this.CLASS_NAME, nameof(controller), controller);
 		Guards.stringValue(this.CLASS_NAME, nameof(documentId), documentId);
 		Guards.stringValue(this.CLASS_NAME, nameof(serviceId), serviceId);
-		Guards.stringValue(this.CLASS_NAME, nameof(serviceType), serviceType);
-		Guards.stringValue(this.CLASS_NAME, nameof(serviceEndpoint), serviceEndpoint);
+		if (Is.array(serviceType)) {
+			Guards.arrayValue<string>(this.CLASS_NAME, nameof(serviceType), serviceType);
+		} else {
+			Guards.stringValue(this.CLASS_NAME, nameof(serviceType), serviceType);
+		}
+		if (Is.array(serviceEndpoint)) {
+			Guards.arrayValue<string>(this.CLASS_NAME, nameof(serviceEndpoint), serviceEndpoint);
+		} else {
+			Guards.stringValue(this.CLASS_NAME, nameof(serviceEndpoint), serviceEndpoint);
+		}
 
 		try {
 			const didIdentityDocument = await this._didDocumentEntityStorage.get(documentId);
@@ -395,8 +403,8 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 		Guards.stringValue(this.CLASS_NAME, nameof(serviceId), serviceId);
 
 		try {
-			const idParts = DocumentHelper.parse(serviceId);
-			if (Is.empty(idParts.hash)) {
+			const idParts = DocumentHelper.parseId(serviceId);
+			if (Is.empty(idParts.fragment)) {
 				throw new NotFoundError(this.CLASS_NAME, "missingDid", serviceId);
 			}
 
@@ -433,7 +441,7 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 	 * @param controller The controller of the identity who can make changes.
 	 * @param verificationMethodId The verification method id to use.
 	 * @param id The id of the credential.
-	 * @param credential The credential to store in the verifiable credential.
+	 * @param subject The credential subject to store in the verifiable credential.
 	 * @param revocationIndex The bitmap revocation index of the credential, if undefined will not have revocation status.
 	 * @returns The created verifiable credential and its token.
 	 * @throws NotFoundError if the id can not be resolved.
@@ -442,7 +450,7 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 		controller: string,
 		verificationMethodId: string,
 		id: string | undefined,
-		credential: IJsonLdNodeObject,
+		subject: IJsonLdNodeObject,
 		revocationIndex?: number
 	): Promise<{
 		verifiableCredential: IDidVerifiableCredential;
@@ -450,14 +458,14 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 	}> {
 		Guards.stringValue(this.CLASS_NAME, nameof(controller), controller);
 		Guards.stringValue(this.CLASS_NAME, nameof(verificationMethodId), verificationMethodId);
-		Guards.object<IJsonLdNodeObject>(this.CLASS_NAME, nameof(credential), credential);
+		Guards.object<IJsonLdNodeObject>(this.CLASS_NAME, nameof(subject), subject);
 		if (!Is.undefined(revocationIndex)) {
 			Guards.number(this.CLASS_NAME, nameof(revocationIndex), revocationIndex);
 		}
 
 		try {
-			const idParts = DocumentHelper.parse(verificationMethodId);
-			if (Is.empty(idParts.hash)) {
+			const idParts = DocumentHelper.parseId(verificationMethodId);
+			if (Is.empty(idParts.fragment)) {
 				throw new NotFoundError(this.CLASS_NAME, "missingDid", verificationMethodId);
 			}
 
@@ -492,15 +500,14 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 
 			const revocationService = issuerDidDocument.service?.find(s => s.id.endsWith("#revocation"));
 
-			const credentialClone = ObjectHelper.clone(credential);
+			const subjectClone = ObjectHelper.clone(subject);
 
 			const finalTypes: string[] = [DidTypes.VerifiableCredential];
-			const credContext = ObjectHelper.extractProperty<IJsonLdContextDefinitionRoot>(
-				credentialClone,
-				["@context"]
-			);
-			const credId = ObjectHelper.extractProperty<string>(credentialClone, ["@id", "id"], false);
-			const credType = ObjectHelper.extractProperty<string>(credentialClone, ["@type", "type"]);
+			const credContext = ObjectHelper.extractProperty<IJsonLdContextDefinitionRoot>(subjectClone, [
+				"@context"
+			]);
+			const credId = ObjectHelper.extractProperty<string>(subjectClone, ["@id", "id"], false);
+			const credType = ObjectHelper.extractProperty<string>(subjectClone, ["@type", "type"]);
 			if (Is.stringValue(credType)) {
 				finalTypes.push(credType);
 			}
@@ -511,7 +518,7 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 				],
 				id,
 				type: finalTypes,
-				credentialSubject: credentialClone,
+				credentialSubject: subjectClone,
 				issuer: issuerDidDocument.id,
 				issuanceDate: new Date().toISOString(),
 				credentialStatus:
@@ -561,7 +568,7 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 				jwtPayload,
 				async (alg, key, payload) => {
 					const sig = await this._vaultConnector.sign(
-						EntityStorageIdentityConnector.buildVaultKey(idParts.id, idParts.hash ?? ""),
+						EntityStorageIdentityConnector.buildVaultKey(idParts.id, idParts.fragment ?? ""),
 						payload
 					);
 					return sig;
@@ -816,7 +823,7 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 	/**
 	 * Create a verifiable presentation from the supplied verifiable credentials.
 	 * @param controller The controller of the identity who can make changes.
-	 * @param presentationMethodId The method to associate with the presentation.
+	 * @param verificationMethodId The method to associate with the presentation.
 	 * @param presentationId The id of the presentation.
 	 * @param contexts The contexts for the data stored in the verifiable credential.
 	 * @param types The types for the data stored in the verifiable credential.
@@ -827,7 +834,7 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 	 */
 	public async createVerifiablePresentation(
 		controller: string,
-		presentationMethodId: string,
+		verificationMethodId: string,
 		presentationId: string | undefined,
 		contexts: IJsonLdContextDefinitionRoot | undefined,
 		types: string | string[] | undefined,
@@ -838,7 +845,7 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 		jwt: string;
 	}> {
 		Guards.stringValue(this.CLASS_NAME, nameof(controller), controller);
-		Guards.stringValue(this.CLASS_NAME, nameof(presentationMethodId), presentationMethodId);
+		Guards.stringValue(this.CLASS_NAME, nameof(verificationMethodId), verificationMethodId);
 		if (Is.array(types)) {
 			Guards.arrayValue(this.CLASS_NAME, nameof(types), types);
 		} else if (Is.string(types)) {
@@ -850,9 +857,9 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 		}
 
 		try {
-			const idParts = DocumentHelper.parse(presentationMethodId);
-			if (Is.empty(idParts.hash)) {
-				throw new NotFoundError(this.CLASS_NAME, "missingDid", presentationMethodId);
+			const idParts = DocumentHelper.parseId(verificationMethodId);
+			if (Is.empty(idParts.fragment)) {
+				throw new NotFoundError(this.CLASS_NAME, "missingDid", verificationMethodId);
 			}
 
 			const holderIdentityDocument = await this._didDocumentEntityStorage.get(idParts.id);
@@ -868,19 +875,19 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 			const methods = this.getAllMethods(holderDidDocument);
 			const methodAndArray = methods.find(m => {
 				if (Is.string(m.method)) {
-					return m.method === presentationMethodId;
+					return m.method === verificationMethodId;
 				}
-				return m.method.id === presentationMethodId;
+				return m.method.id === verificationMethodId;
 			});
 
 			if (!methodAndArray) {
-				throw new GeneralError(this.CLASS_NAME, "methodMissing", { method: presentationMethodId });
+				throw new GeneralError(this.CLASS_NAME, "methodMissing", { method: verificationMethodId });
 			}
 
 			const didMethod = methodAndArray.method;
 			if (!Is.stringValue(didMethod.publicKeyJwk?.x)) {
 				throw new GeneralError(this.CLASS_NAME, "publicKeyJwkMissing", {
-					method: presentationMethodId
+					method: verificationMethodId
 				});
 			}
 
@@ -929,7 +936,7 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 				jwtPayload,
 				async (alg, key, payload) => {
 					const sig = await this._vaultConnector.sign(
-						EntityStorageIdentityConnector.buildVaultKey(idParts.id, idParts.hash ?? ""),
+						EntityStorageIdentityConnector.buildVaultKey(idParts.id, idParts.fragment ?? ""),
 						payload
 					);
 					return sig;
@@ -1067,8 +1074,8 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 		Guards.uint8Array(this.CLASS_NAME, nameof(bytes), bytes);
 
 		try {
-			const idParts = DocumentHelper.parse(verificationMethodId);
-			if (Is.empty(idParts.hash)) {
+			const idParts = DocumentHelper.parseId(verificationMethodId);
+			if (Is.empty(idParts.fragment)) {
 				throw new NotFoundError(this.CLASS_NAME, "missingDid", verificationMethodId);
 			}
 
@@ -1102,7 +1109,7 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 			}
 
 			const signature = await this._vaultConnector.sign(
-				EntityStorageIdentityConnector.buildVaultKey(didDocument.id, idParts.hash ?? ""),
+				EntityStorageIdentityConnector.buildVaultKey(didDocument.id, idParts.fragment ?? ""),
 				bytes
 			);
 
@@ -1141,8 +1148,8 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 			if (proof.cryptosuite !== DidCryptoSuites.EdDSAJcs2022) {
 				throw new GeneralError(this.CLASS_NAME, "cryptoSuite", { cryptosuite: proof.cryptosuite });
 			}
-			const idParts = DocumentHelper.parse(proof.verificationMethod);
-			if (Is.empty(idParts.hash)) {
+			const idParts = DocumentHelper.parseId(proof.verificationMethod);
+			if (Is.empty(idParts.fragment)) {
 				throw new NotFoundError(this.CLASS_NAME, "missingDid", proof.verificationMethod);
 			}
 
@@ -1179,7 +1186,7 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 			}
 
 			return this._vaultConnector.verify(
-				EntityStorageIdentityConnector.buildVaultKey(didIdentityDocument.id, idParts.hash),
+				EntityStorageIdentityConnector.buildVaultKey(didIdentityDocument.id, idParts.fragment),
 				bytes,
 				Converter.base58ToBytes(proof.proofValue)
 			);

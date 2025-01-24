@@ -12,6 +12,6 @@ export interface IIdentityResolveRequest {
 		/**
 		 * The identity to resolve.
 		 */
-		id: string;
+		identity: string;
 	};
 }

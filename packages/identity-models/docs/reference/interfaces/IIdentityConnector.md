@@ -142,15 +142,15 @@ The id of the service.
 
 ##### serviceType
 
-`string`
-
 The type of the service.
+
+`string` | `string`[]
 
 ##### serviceEndpoint
 
-`string`
-
 The endpoint for the service.
+
+`string` | `string`[]
 
 #### Returns
 
@@ -198,7 +198,7 @@ NotFoundError if the id can not be resolved.
 
 ### createVerifiableCredential()
 
-> **createVerifiableCredential**(`controller`, `verificationMethodId`, `id`, `credential`, `revocationIndex`?): `Promise`\<\{ `verifiableCredential`: `IDidVerifiableCredential`; `jwt`: `string`; \}\>
+> **createVerifiableCredential**(`controller`, `verificationMethodId`, `id`, `subject`, `revocationIndex`?): `Promise`\<\{ `verifiableCredential`: `IDidVerifiableCredential`; `jwt`: `string`; \}\>
 
 Create a verifiable credential for a verification method.
 
@@ -222,11 +222,11 @@ The id of the credential.
 
 `undefined` | `string`
 
-##### credential
+##### subject
 
 `IJsonLdNodeObject`
 
-The credential to store in the verifiable credential.
+The credential subject to store in the verifiable credential.
 
 ##### revocationIndex?
 
@@ -338,7 +338,7 @@ Nothing.
 
 ### createVerifiablePresentation()
 
-> **createVerifiablePresentation**(`controller`, `presentationMethodId`, `presentationId`, `contexts`, `types`, `verifiableCredentials`, `expiresInMinutes`?): `Promise`\<\{ `verifiablePresentation`: `IDidVerifiablePresentation`; `jwt`: `string`; \}\>
+> **createVerifiablePresentation**(`controller`, `verificationMethodId`, `presentationId`, `contexts`, `types`, `verifiableCredentials`, `expiresInMinutes`?): `Promise`\<\{ `verifiablePresentation`: `IDidVerifiablePresentation`; `jwt`: `string`; \}\>
 
 Create a verifiable presentation from the supplied verifiable credentials.
 
@@ -350,7 +350,7 @@ Create a verifiable presentation from the supplied verifiable credentials.
 
 The controller of the identity who can make changes.
 
-##### presentationMethodId
+##### verificationMethodId
 
 `string`
 

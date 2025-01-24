@@ -101,7 +101,7 @@ describe("EntityStorageIdentityProfileConnector", () => {
 		await service.create(
 			identityResult.id,
 			{
-				"@context": "http://schema.org/",
+				"@context": "https://schema.org",
 				"@type": "Person",
 				name: "Jane Doe",
 				jobTitle: "Professor",
@@ -110,19 +110,19 @@ describe("EntityStorageIdentityProfileConnector", () => {
 			},
 			{
 				"@context": {
-					name: "http://schema.org/name",
-					description: "http://schema.org/description",
+					name: "https://schema.org/name",
+					description: "https://schema.org/description",
 					image: {
-						"@id": "http://schema.org/image",
+						"@id": "https://schema.org/image",
 						"@type": "@id"
 					},
-					geo: "http://schema.org/geo",
+					geo: "https://schema.org/geo",
 					latitude: {
-						"@id": "http://schema.org/latitude",
+						"@id": "https://schema.org/latitude",
 						"@type": "xsd:float"
 					},
 					longitude: {
-						"@id": "http://schema.org/longitude",
+						"@id": "https://schema.org/longitude",
 						"@type": "xsd:float"
 					},
 					xsd: "http://www.w3.org/2001/XMLSchema#"
@@ -140,7 +140,7 @@ describe("EntityStorageIdentityProfileConnector", () => {
 		const identity = await service.get(identityResult.id);
 
 		expect(identity.publicProfile).toEqual({
-			"@context": "http://schema.org/",
+			"@context": "https://schema.org",
 			"@type": "Person",
 			name: "Jane Doe",
 			jobTitle: "Professor",
@@ -149,19 +149,19 @@ describe("EntityStorageIdentityProfileConnector", () => {
 		});
 		expect(identity.privateProfile).toEqual({
 			"@context": {
-				name: "http://schema.org/name",
-				description: "http://schema.org/description",
+				name: "https://schema.org/name",
+				description: "https://schema.org/description",
 				image: {
-					"@id": "http://schema.org/image",
+					"@id": "https://schema.org/image",
 					"@type": "@id"
 				},
-				geo: "http://schema.org/geo",
+				geo: "https://schema.org/geo",
 				latitude: {
-					"@id": "http://schema.org/latitude",
+					"@id": "https://schema.org/latitude",
 					"@type": "xsd:float"
 				},
 				longitude: {
-					"@id": "http://schema.org/longitude",
+					"@id": "https://schema.org/longitude",
 					"@type": "xsd:float"
 				},
 				xsd: "http://www.w3.org/2001/XMLSchema#"
@@ -187,7 +187,7 @@ describe("EntityStorageIdentityProfileConnector", () => {
 		}>();
 
 		await service.create(identityResult.id, {
-			"@context": "http://schema.org/",
+			"@context": "https://schema.org",
 			"@type": "Person",
 			name: "Jane Doe"
 		});
@@ -240,7 +240,7 @@ describe("EntityStorageIdentityProfileConnector", () => {
 		const identityResult = await identityService.createDocument(TEST_CONTROLLER);
 
 		await service.create(identityResult.id, {
-			"@context": "http://schema.org/",
+			"@context": "https://schema.org",
 			"@type": "Person",
 			name: "Jane Doe",
 			jobTitle: "Professor",
@@ -250,7 +250,7 @@ describe("EntityStorageIdentityProfileConnector", () => {
 
 		const profile = identityProfileEntityStorage.getStore();
 		expect(profile?.[0].publicProfile).toEqual({
-			"@context": "http://schema.org/",
+			"@context": "https://schema.org",
 			"@type": "Person",
 			name: "Jane Doe",
 			jobTitle: "Professor",
@@ -259,7 +259,7 @@ describe("EntityStorageIdentityProfileConnector", () => {
 		});
 
 		await service.update(identityResult.id, {
-			"@context": "http://schema.org/",
+			"@context": "https://schema.org",
 			"@type": "Person",
 			name: "Jane Doe2",
 			jobTitle: "Professor2",
@@ -270,7 +270,7 @@ describe("EntityStorageIdentityProfileConnector", () => {
 		const profile2 = identityProfileEntityStorage.getStore();
 		expect(profile2?.[0].identity).toEqual(identityResult.id);
 		expect(profile2?.[0].publicProfile).toEqual({
-			"@context": "http://schema.org/",
+			"@context": "https://schema.org",
 			"@type": "Person",
 			name: "Jane Doe2",
 			jobTitle: "Professor2",
@@ -303,7 +303,7 @@ describe("EntityStorageIdentityProfileConnector", () => {
 		for (let i = 0; i < 3; i++) {
 			const identity = await identityService.createDocument(TEST_CONTROLLER);
 			await service.create(identity.id, {
-				"@context": "http://schema.org/",
+				"@context": "https://schema.org",
 				"@type": "Person",
 				name: `Test Node Identity ${i}`,
 				role: "node"
@@ -313,7 +313,7 @@ describe("EntityStorageIdentityProfileConnector", () => {
 		for (let i = 0; i < 7; i++) {
 			const identity = await identityService.createDocument(TEST_CONTROLLER);
 			await service.create(identity.id, {
-				"@context": "http://schema.org/",
+				"@context": "https://schema.org",
 				"@type": "Person",
 				name: `Test User Identity ${i}`,
 				role: "user"

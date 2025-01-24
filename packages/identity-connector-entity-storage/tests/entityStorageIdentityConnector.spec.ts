@@ -384,7 +384,7 @@ describe("EntityStorageIdentityConnector", () => {
 			name: "GuardError",
 			message: "guard.objectUndefined",
 			properties: {
-				property: "credential",
+				property: "subject",
 				value: "undefined"
 			}
 		});
@@ -411,7 +411,7 @@ describe("EntityStorageIdentityConnector", () => {
 			testDocumentVerificationMethodId,
 			"https://example.com/credentials/3732",
 			{
-				"@context": "http://schema.org/",
+				"@context": "https://schema.org",
 				"@type": "Person",
 				id: holderDocument.id,
 				name: "Jane Doe"
@@ -421,7 +421,7 @@ describe("EntityStorageIdentityConnector", () => {
 
 		expect(result.verifiableCredential["@context"]).toEqual([
 			DidContexts.ContextVCv2,
-			"http://schema.org/"
+			"https://schema.org"
 		]);
 		expect(result.verifiableCredential.id).toEqual("https://example.com/credentials/3732");
 		expect(result.verifiableCredential.type).toContain(DidTypes.VerifiableCredential);
@@ -470,7 +470,7 @@ describe("EntityStorageIdentityConnector", () => {
 		expect(result.revoked).toBeFalsy();
 		expect(result.verifiableCredential?.["@context"]).toEqual([
 			DidContexts.ContextVCv2,
-			"http://schema.org/"
+			"https://schema.org"
 		]);
 		expect(result.verifiableCredential?.id).toEqual("https://example.com/credentials/3732");
 		expect(result.verifiableCredential?.type).toContain(DidTypes.VerifiableCredential);
@@ -643,7 +643,7 @@ describe("EntityStorageIdentityConnector", () => {
 			name: "GuardError",
 			message: "guard.string",
 			properties: {
-				property: "presentationMethodId",
+				property: "verificationMethodId",
 				value: "undefined"
 			}
 		});
@@ -654,7 +654,7 @@ describe("EntityStorageIdentityConnector", () => {
 		await expect(
 			identityConnector.createVerifiablePresentation(
 				TEST_IDENTITY_ID,
-				"presentationMethodId",
+				"verificationMethodId",
 				undefined as unknown as string,
 				["vp"],
 				undefined as unknown as string[],
@@ -705,7 +705,7 @@ describe("EntityStorageIdentityConnector", () => {
 			TEST_IDENTITY_ID,
 			testDocumentVerificationMethodId,
 			"presentationId",
-			"http://schema.org/",
+			"https://schema.org",
 			["Person"],
 			[testVcJwt],
 			14400
@@ -713,7 +713,7 @@ describe("EntityStorageIdentityConnector", () => {
 
 		expect(result.verifiablePresentation["@context"]).toEqual([
 			DidContexts.ContextVCv2,
-			"http://schema.org/"
+			"https://schema.org"
 		]);
 		expect(result.verifiablePresentation.type).toEqual([DidTypes.VerifiablePresentation, "Person"]);
 		expect(result.verifiablePresentation.verifiableCredential).toBeDefined();
@@ -746,7 +746,7 @@ describe("EntityStorageIdentityConnector", () => {
 		expect(result.revoked).toBeFalsy();
 		expect(result.verifiablePresentation?.["@context"]).toEqual([
 			DidContexts.ContextVCv2,
-			"http://schema.org/"
+			"https://schema.org"
 		]);
 		expect(result.verifiablePresentation?.type).toEqual([
 			DidTypes.VerifiablePresentation,

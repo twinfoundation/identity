@@ -91,7 +91,7 @@ describe("IdentityResolverService", () => {
 	test("Can create an identity", async () => {
 		const service = new IdentityService();
 
-		const identity = await service.identityCreate(TEST_CONTROLLER);
+		const identity = await service.identityCreate(undefined, TEST_CONTROLLER);
 
 		expect(identity).toEqual({
 			id: "did:entity-storage:0x0101010101010101010101010101010101010101010101010101010101010101",

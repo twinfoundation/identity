@@ -137,7 +137,7 @@ export async function actionCommandVerificationMethodRemove(opts: {
 
 	CLIDisplay.value(
 		I18n.formatMessage("commands.common.labels.explore"),
-		`${StringHelper.trimTrailingSlashes(explorerEndpoint)}/addr/${IotaIdentityUtils.didToAddress(DocumentHelper.parse(id).id)}?tab=DID`
+		`${StringHelper.trimTrailingSlashes(explorerEndpoint)}/addr/${IotaIdentityUtils.didToAddress(DocumentHelper.parseId(id).id)}?tab=DID`
 	);
 
 	CLIDisplay.break();

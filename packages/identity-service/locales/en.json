@@ -10,7 +10,14 @@
 			"verificationMethodRemoveFailed": "Removing the verification method failed \"{verificationMethodId}\"",
 			"serviceCreateFailed": "Creating the service failed for identity \"{identity}\", service \"{serviceId}\"",
 			"serviceRemoveFailed": "Removing the service failed \"{serviceId}\"",
-			"verifiableCredentialCreateFailed": "Creating the verifiable credential failed for method \"{verificationMethodId}\""
+			"verifiableCredentialCreateFailed": "Creating the verifiable credential failed for method \"{verificationMethodId}\"",
+			"verifiableCredentialVerifyFailed": "Verifying the verifiable credential failed",
+			"verifiableCredentialRevokeFailed": "Revoking the verifiable credential failed for document \"{issuerIdentity}\" with index \"{credentialIndex}\"",
+			"verifiableCredentialUnrevokeFailed": "Unrevoking the verifiable credential failed for document \"{issuerIdentity}\" with index \"{credentialIndex}\"",
+			"verifiablePresentationCreateFailed": "Creating the verifiable presentation failed for method \"{verificationMethodId}\"",
+			"verifiablePresentationVerifyFailed": "Verifying the verifiable presentation failed",
+			"proofCreateFailed": "Creating the proof failed for method \"{verificationMethodId}\"",
+			"proofVerifyFailed": "Verifying the proof failed"
 		},
 		"identityResolverService": {
 			"noConnectors": "There are no connectors registered with the identity resolver factory",

@@ -273,8 +273,8 @@ export class IotaIdentityConnector implements IIdentityConnector {
 		Guards.stringValue(this.CLASS_NAME, nameof(verificationMethodId), verificationMethodId);
 
 		try {
-			const idParts = DocumentHelper.parse(verificationMethodId);
-			if (Is.empty(idParts.hash)) {
+			const idParts = DocumentHelper.parseId(verificationMethodId);
+			if (Is.empty(idParts.fragment)) {
 				throw new NotFoundError(this.CLASS_NAME, "missingDid", verificationMethodId);
 			}
 
@@ -322,14 +322,22 @@ export class IotaIdentityConnector implements IIdentityConnector {
 		controller: string,
 		documentId: string,
 		serviceId: string,
-		serviceType: string,
-		serviceEndpoint: string
+		serviceType: string | string[],
+		serviceEndpoint: string | string[]
 	): Promise<IDidService> {
 		Guards.stringValue(this.CLASS_NAME, nameof(controller), controller);
 		Guards.stringValue(this.CLASS_NAME, nameof(documentId), documentId);
 		Guards.stringValue(this.CLASS_NAME, nameof(serviceId), serviceId);
-		Guards.stringValue(this.CLASS_NAME, nameof(serviceType), serviceType);
-		Guards.stringValue(this.CLASS_NAME, nameof(serviceEndpoint), serviceEndpoint);
+		if (Is.array(serviceType)) {
+			Guards.arrayValue<string>(this.CLASS_NAME, nameof(serviceType), serviceType);
+		} else {
+			Guards.stringValue(this.CLASS_NAME, nameof(serviceType), serviceType);
+		}
+		if (Is.array(serviceEndpoint)) {
+			Guards.arrayValue<string>(this.CLASS_NAME, nameof(serviceEndpoint), serviceEndpoint);
+		} else {
+			Guards.stringValue(this.CLASS_NAME, nameof(serviceEndpoint), serviceEndpoint);
+		}
 
 		try {
 			const identityClient = new IotaIdentityClient(new Client(this._config.clientOptions));
@@ -380,8 +388,8 @@ export class IotaIdentityConnector implements IIdentityConnector {
 		Guards.stringValue(this.CLASS_NAME, nameof(serviceId), serviceId);
 
 		try {
-			const idParts = DocumentHelper.parse(serviceId);
-			if (Is.empty(idParts.hash)) {
+			const idParts = DocumentHelper.parseId(serviceId);
+			if (Is.empty(idParts.fragment)) {
 				throw new NotFoundError(this.CLASS_NAME, "missingDid", serviceId);
 			}
 
@@ -417,7 +425,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 	 * @param controller The controller of the identity who can make changes.
 	 * @param verificationMethodId The verification method id to use.
 	 * @param id The id of the credential.
-	 * @param credential The credential to store in the verifiable credential.
+	 * @param subject The credential subject to store in the verifiable credential.
 	 * @param revocationIndex The bitmap revocation index of the credential, if undefined will not have revocation status.
 	 * @returns The created verifiable credential and its token.
 	 * @throws NotFoundError if the id can not be resolved.
@@ -426,7 +434,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 		controller: string,
 		verificationMethodId: string,
 		id: string | undefined,
-		credential: IJsonLdNodeObject,
+		subject: IJsonLdNodeObject,
 		revocationIndex?: number
 	): Promise<{
 		verifiableCredential: IDidVerifiableCredential;
@@ -434,14 +442,14 @@ export class IotaIdentityConnector implements IIdentityConnector {
 	}> {
 		Guards.stringValue(this.CLASS_NAME, nameof(controller), controller);
 		Guards.stringValue(this.CLASS_NAME, nameof(verificationMethodId), verificationMethodId);
-		Guards.object<IJsonLdObject>(this.CLASS_NAME, nameof(credential), credential);
+		Guards.object<IJsonLdObject>(this.CLASS_NAME, nameof(subject), subject);
 		if (!Is.undefined(revocationIndex)) {
 			Guards.number(this.CLASS_NAME, nameof(revocationIndex), revocationIndex);
 		}
 
 		try {
-			const idParts = DocumentHelper.parse(verificationMethodId);
-			if (Is.empty(idParts.hash)) {
+			const idParts = DocumentHelper.parseId(verificationMethodId);
+			if (Is.empty(idParts.fragment)) {
 				throw new NotFoundError(this.CLASS_NAME, "missingDid", verificationMethodId);
 			}
 
@@ -465,14 +473,13 @@ export class IotaIdentityConnector implements IIdentityConnector {
 				});
 			}
 
-			const credentialClone = ObjectHelper.clone(credential);
+			const subjectClone = ObjectHelper.clone(subject);
 
 			const finalTypes = [];
-			const credContext = ObjectHelper.extractProperty<IJsonLdContextDefinitionRoot>(
-				credentialClone,
-				["@context"]
-			);
-			const credType = ObjectHelper.extractProperty<string>(credentialClone, ["@type", "type"]);
+			const credContext = ObjectHelper.extractProperty<IJsonLdContextDefinitionRoot>(subjectClone, [
+				"@context"
+			]);
+			const credType = ObjectHelper.extractProperty<string>(subjectClone, ["@type", "type"]);
 			if (Is.stringValue(credType)) {
 				finalTypes.push(credType);
 			}
@@ -485,7 +492,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 				id,
 				type: finalTypes,
 				issuer: idParts.id,
-				credentialSubject: credentialClone as unknown as Subject,
+				credentialSubject: subjectClone as unknown as Subject,
 				credentialStatus: Is.undefined(revocationIndex)
 					? undefined
 					: {
@@ -496,7 +503,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 			});
 
 			const verificationMethodKey = await this._vaultConnector.getKey(
-				this.buildKey(controller, idParts.hash)
+				this.buildKey(controller, idParts.fragment)
 			);
 			if (Is.undefined(verificationMethodKey)) {
 				throw new GeneralError(this.CLASS_NAME, "verificationKeyMissing", {
@@ -682,7 +689,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 	/**
 	 * Create a verifiable presentation from the supplied verifiable credentials.
 	 * @param controller The controller of the identity who can make changes.
-	 * @param presentationMethodId The method to associate with the presentation.
+	 * @param verificationMethodId The method to associate with the presentation.
 	 * @param presentationId The id of the presentation.
 	 * @param contexts The contexts for the data stored in the verifiable credential.
 	 * @param types The types for the data stored in the verifiable credential.
@@ -693,7 +700,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 	 */
 	public async createVerifiablePresentation(
 		controller: string,
-		presentationMethodId: string,
+		verificationMethodId: string,
 		presentationId: string | undefined,
 		contexts: IJsonLdContextDefinitionRoot | undefined,
 		types: string | string[] | undefined,
@@ -704,7 +711,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 		jwt: string;
 	}> {
 		Guards.stringValue(this.CLASS_NAME, nameof(controller), controller);
-		Guards.stringValue(this.CLASS_NAME, nameof(presentationMethodId), presentationMethodId);
+		Guards.stringValue(this.CLASS_NAME, nameof(verificationMethodId), verificationMethodId);
 		if (Is.array(types)) {
 			Guards.arrayValue(this.CLASS_NAME, nameof(types), types);
 		} else if (Is.string(types)) {
@@ -715,9 +722,9 @@ export class IotaIdentityConnector implements IIdentityConnector {
 			Guards.integer(this.CLASS_NAME, nameof(expiresInMinutes), expiresInMinutes);
 		}
 		try {
-			const idParts = DocumentHelper.parse(presentationMethodId);
-			if (Is.empty(idParts.hash)) {
-				throw new NotFoundError(this.CLASS_NAME, "missingDid", presentationMethodId);
+			const idParts = DocumentHelper.parseId(verificationMethodId);
+			if (Is.empty(idParts.fragment)) {
+				throw new NotFoundError(this.CLASS_NAME, "missingDid", verificationMethodId);
 			}
 
 			const identityClient = new IotaIdentityClient(new Client(this._config.clientOptions));
@@ -728,15 +735,15 @@ export class IotaIdentityConnector implements IIdentityConnector {
 			}
 
 			const methods = issuerDocument.methods();
-			const method = methods.find(m => m.id().toString() === presentationMethodId);
+			const method = methods.find(m => m.id().toString() === verificationMethodId);
 			if (!method) {
-				throw new GeneralError(this.CLASS_NAME, "methodMissing", { method: presentationMethodId });
+				throw new GeneralError(this.CLASS_NAME, "methodMissing", { method: verificationMethodId });
 			}
 
 			const didMethod = method.toJSON() as IDidDocumentVerificationMethod;
 			if (Is.undefined(didMethod.publicKeyJwk)) {
 				throw new GeneralError(this.CLASS_NAME, "publicKeyJwkMissing", {
-					method: presentationMethodId
+					method: verificationMethodId
 				});
 			}
 
@@ -768,11 +775,11 @@ export class IotaIdentityConnector implements IIdentityConnector {
 			});
 
 			const verificationMethodKey = await this._vaultConnector.getKey(
-				this.buildKey(controller, idParts.hash)
+				this.buildKey(controller, idParts.fragment)
 			);
 			if (Is.undefined(verificationMethodKey)) {
 				throw new GeneralError(this.CLASS_NAME, "verificationKeyMissing", {
-					method: presentationMethodId
+					method: verificationMethodId
 				});
 			}
 
@@ -939,12 +946,11 @@ export class IotaIdentityConnector implements IIdentityConnector {
 	): Promise<IDidProof> {
 		Guards.stringValue(this.CLASS_NAME, nameof(controller), controller);
 		Guards.stringValue(this.CLASS_NAME, nameof(verificationMethodId), verificationMethodId);
-
 		Guards.uint8Array(this.CLASS_NAME, nameof(bytes), bytes);
 
 		try {
-			const idParts = DocumentHelper.parse(verificationMethodId);
-			if (Is.empty(idParts.hash)) {
+			const idParts = DocumentHelper.parseId(verificationMethodId);
+			if (Is.empty(idParts.fragment)) {
 				throw new NotFoundError(this.CLASS_NAME, "missingDid", verificationMethodId);
 			}
 
@@ -972,7 +978,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 			const jwkMemStore = new JwkMemStore();
 
 			const verificationMethodKey = await this._vaultConnector.getKey(
-				this.buildKey(controller, idParts.hash)
+				this.buildKey(controller, idParts.fragment)
 			);
 			if (Is.undefined(verificationMethodKey)) {
 				throw new GeneralError(this.CLASS_NAME, "publicKeyJwkMissing");
@@ -1030,8 +1036,8 @@ export class IotaIdentityConnector implements IIdentityConnector {
 			if (proof.cryptosuite !== DidCryptoSuites.EdDSAJcs2022) {
 				throw new GeneralError(this.CLASS_NAME, "cryptoSuite", { cryptosuite: proof.cryptosuite });
 			}
-			const idParts = DocumentHelper.parse(proof.verificationMethod);
-			if (Is.empty(idParts.hash)) {
+			const idParts = DocumentHelper.parseId(proof.verificationMethod);
+			if (Is.empty(idParts.fragment)) {
 				throw new NotFoundError(this.CLASS_NAME, "missingDid", proof.verificationMethod);
 			}
 

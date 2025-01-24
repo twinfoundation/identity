@@ -39,7 +39,7 @@ export function generateRestRoutesIdentityResolver(
 		summary: "Resolve an identity",
 		tag: tagsIdentityResolver[0].name,
 		method: "GET",
-		path: `${baseRouteName}/:id`,
+		path: `${baseRouteName}/:identity`,
 		handler: async (httpRequestContext, request) =>
 			identityResolve(httpRequestContext, componentName, request),
 		requestType: {
@@ -49,7 +49,8 @@ export function generateRestRoutesIdentityResolver(
 					id: "identityResolveRequestExample",
 					request: {
 						pathParams: {
-							id: "did:iota:tst:0xe3088ba9aa8c28e1d139708a14e8c0fdff11ee8223baac4aa5bcf3321e4bfc6a"
+							identity:
+								"did:iota:tst:0xe3088ba9aa8c28e1d139708a14e8c0fdff11ee8223baac4aa5bcf3321e4bfc6a"
 						}
 					}
 				}
@@ -101,10 +102,15 @@ export async function identityResolve(
 		nameof(request.pathParams),
 		request.pathParams
 	);
+	Guards.stringValue(
+		ROUTES_SOURCE,
+		nameof(request.pathParams.identity),
+		request.pathParams.identity
+	);
 
 	const component = ComponentFactory.get<IIdentityResolverComponent>(componentName);
 
-	const result = await component.identityResolve(request.pathParams.id);
+	const result = await component.identityResolve(request.pathParams.identity);
 
 	return {
 		body: result
