@@ -83,7 +83,7 @@ export function buildCommandProofVerify(): Command {
  * @param opts.value The proof value.
  * @param opts.connector The connector to perform the operations with.
  * @param opts.node The node URL.
- * @param opts.network The network to use for rebased connector.
+ * @param opts.network The network to use for connector.
  */
 export async function actionCommandProofVerify(
 	opts: {
@@ -102,7 +102,7 @@ export async function actionCommandProofVerify(
 	const value: string = CLIParam.stringValue("value", opts.value);
 	const nodeEndpoint: string = CLIParam.url("node", opts.node);
 	const network: string | undefined =
-		opts.connector === IdentityConnectorTypes.IotaRebased
+		opts.connector === IdentityConnectorTypes.Iota
 			? CLIParam.stringValue("network", opts.network)
 			: undefined;
 

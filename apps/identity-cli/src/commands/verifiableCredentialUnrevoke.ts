@@ -67,7 +67,7 @@ export function buildCommandVerifiableCredentialUnrevoke(): Command {
  * @param opts.revocationIndex The revocation index for the credential.
  * @param opts.connector The connector to perform the operations with.
  * @param opts.node The node URL.
- * @param opts.network The network to use for rebased connector.
+ * @param opts.network The network to use for connector.
  */
 export async function actionCommandVerifiableCredentialUnrevoke(opts: {
 	seed: string;
@@ -82,7 +82,7 @@ export async function actionCommandVerifiableCredentialUnrevoke(opts: {
 	const revocationIndex: number = CLIParam.integer("revocation-index", opts.revocationIndex);
 	const nodeEndpoint: string = CLIParam.url("node", opts.node);
 	const network: string | undefined =
-		opts.connector === IdentityConnectorTypes.IotaRebased
+		opts.connector === IdentityConnectorTypes.Iota
 			? CLIParam.stringValue("network", opts.network)
 			: undefined;
 

@@ -112,7 +112,7 @@ export async function actionCommandVerifiableCredentialCreate(
 	const revocationIndex: number | undefined = Coerce.number(opts.revocationIndex);
 	const nodeEndpoint: string = CLIParam.url("node", opts.node);
 	const network: string | undefined =
-		opts.connector === IdentityConnectorTypes.IotaRebased
+		opts.connector === IdentityConnectorTypes.Iota
 			? CLIParam.stringValue("network", opts.network)
 			: undefined;
 

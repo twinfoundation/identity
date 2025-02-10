@@ -79,7 +79,7 @@ export async function actionCommandVerifiableCredentialVerify(
 	const jwt: string = CLIParam.stringValue("jwt", opts.jwt);
 	const nodeEndpoint: string = CLIParam.url("node", opts.node);
 	const network: string | undefined =
-		opts.connector === IdentityConnectorTypes.IotaRebased
+		opts.connector === IdentityConnectorTypes.Iota
 			? CLIParam.stringValue("network", opts.network)
 			: undefined;
 

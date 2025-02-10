@@ -3,7 +3,7 @@
 import { MemoryEntityStorageConnector } from "@twin.org/entity-storage-connector-memory";
 import { EntityStorageConnectorFactory } from "@twin.org/entity-storage-models";
 import { IotaIdentityConnector } from "@twin.org/identity-connector-iota";
-import { IotaRebasedIdentityConnector } from "@twin.org/identity-connector-iota-rebased";
+import { IotaStardustIdentityConnector } from "@twin.org/identity-connector-iota-stardust";
 import type { IIdentityConnector } from "@twin.org/identity-models";
 import { nameof } from "@twin.org/nameof";
 import {
@@ -56,8 +56,8 @@ export function setupIdentityConnector(
 ): IIdentityConnector {
 	connector ??= IdentityConnectorTypes.Iota;
 
-	if (connector === IdentityConnectorTypes.IotaRebased) {
-		return new IotaRebasedIdentityConnector({
+	if (connector === IdentityConnectorTypes.Iota) {
+		return new IotaIdentityConnector({
 			config: {
 				clientOptions: {
 					url: options.nodeEndpoint
@@ -68,7 +68,7 @@ export function setupIdentityConnector(
 			}
 		});
 	}
-	return new IotaIdentityConnector({
+	return new IotaStardustIdentityConnector({
 		config: {
 			clientOptions: {
 				nodes: [options.nodeEndpoint],

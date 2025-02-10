@@ -8,7 +8,7 @@ import {
 	type CliOutputOptions
 } from "@twin.org/cli-core";
 import { Converter, I18n, Is, StringHelper } from "@twin.org/core";
-import { IotaIdentityUtils } from "@twin.org/identity-connector-iota";
+import { IotaStardustIdentityUtils } from "@twin.org/identity-connector-iota-stardust";
 import { VaultConnectorFactory } from "@twin.org/vault-models";
 import { setupWalletConnector } from "@twin.org/wallet-cli";
 import { WalletConnectorFactory } from "@twin.org/wallet-models";
@@ -79,7 +79,7 @@ export function buildCommandIdentityCreate(): Command {
  * @param opts.seed The private key for the controller.
  * @param opts.connector The connector to perform the operations with.
  * @param opts.node The node URL.
- * @param opts.network The network to use for rebased connector.
+ * @param opts.network The network to use for connector.
  * @param opts.explorer The explorer URL.
  */
 export async function actionCommandIdentityCreate(
@@ -95,7 +95,7 @@ export async function actionCommandIdentityCreate(
 	const seed: Uint8Array = CLIParam.hexBase64("seed", opts.seed);
 	const nodeEndpoint: string = CLIParam.url("node", opts.node);
 	const network: string | undefined =
-		opts.connector === IdentityConnectorTypes.IotaRebased
+		opts.connector === IdentityConnectorTypes.Iota
 			? CLIParam.stringValue("network", opts.network)
 			: undefined;
 	const explorerEndpoint: string = CLIParam.url("explorer", opts.explorer);
@@ -154,7 +154,7 @@ export async function actionCommandIdentityCreate(
 
 	CLIDisplay.value(
 		I18n.formatMessage("commands.common.labels.explore"),
-		`${StringHelper.trimTrailingSlashes(explorerEndpoint)}/addr/${IotaIdentityUtils.didToAddress(document.id)}?tab=DID`
+		`${StringHelper.trimTrailingSlashes(explorerEndpoint)}/addr/${IotaStardustIdentityUtils.didToAddress(document.id)}?tab=DID`
 	);
 	CLIDisplay.break();
 

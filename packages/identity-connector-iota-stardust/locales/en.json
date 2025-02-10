@@ -1,0 +1,38 @@
+{
+	"error": {
+		"iotaStardustIdentityResolverConnector": {
+			"documentNotFound": "The document could not be found",
+			"resolveDocumentFailed": "Resolving the document failed"
+		},
+		"iotaStardustIdentityConnector": {
+			"createDocumentFailed": "Creating the document failed",
+			"missingDid": "The full id including DID is required",
+			"addVerificationMethodFailed": "Adding the verification method failed",
+			"removeVerificationMethodFailed": "Removing the verification method failed",
+			"addServiceFailed": "Adding the service failed",
+			"removeServiceFailed": "Removing the service failed",
+			"documentNotFound": "The document could not be found",
+			"stateControllerMissing": "The state controller address is missing from the metadata",
+			"verificationMethodNotFound": "The verification method could not be found",
+			"serviceNotFound": "The service could not be found",
+			"publicKeyJwkMissing": "The verification method contains no publicKeyJwk in method \"{method}\"",
+			"verificationKeyMissing": "The verification key is missing from the vault for method \"{method}\"",
+			"createVerifiableCredentialFailed": "Creating the verifiable credential failed",
+			"checkingVerifiableCredentialFailed": "Checking the verifiable credential failed",
+			"createVerifiablePresentationFailed": "Creating the verifiable presentation failed",
+			"checkingVerifiablePresentationFailed": "Checking the verifiable presentation failed",
+			"expectingJwtCredential": "Expecting JWT credential in the presentation",
+			"keyIndexOutOfRange": "The supplied keyIndex is not in the range of the key list",
+			"createProofFailed": "Creating the signature for the data failed",
+			"methodMissing": "The verification method specified does not exist \"{method}\"",
+			"verifyProofFailed": "Verifying the signature for the data failed",
+			"revokeVerifiableCredentialsFailed": "Revoking verifiable credentials failed",
+			"unrevokeVerifiableCredentialsFailed": "Unrevoking verifiable credentials failed",
+			"inclusionFailed": "The transaction generated for the identity was not included in a reasonable amount of time",
+			"insufficientFunds": "There were insufficient funds to complete the operation",
+			"walletConnectorMissing": "The wallet connector must be available to perform this operation",
+			"proofType": "The proof type must be DataIntegrityProof, it is currently {proofType}",
+			"cryptosuite": "The proof cryptosuite must be eddsa-jcs-2022, it is currently {cryptosuite}"
+		}
+	}
+}

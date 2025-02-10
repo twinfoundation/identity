@@ -9,9 +9,9 @@ import {
 } from "@twin.org/cli-core";
 import { I18n, Is, StringHelper } from "@twin.org/core";
 import {
-	IotaIdentityResolverConnector,
-	IotaIdentityUtils
-} from "@twin.org/identity-connector-iota";
+	IotaStardustIdentityResolverConnector,
+	IotaStardustIdentityUtils
+} from "@twin.org/identity-connector-iota-stardust";
 import { setupWalletConnector } from "@twin.org/wallet-cli";
 import { WalletConnectorFactory } from "@twin.org/wallet-models";
 import { Command, Option } from "commander";
@@ -76,7 +76,7 @@ export function buildCommandIdentityResolve(): Command {
  * @param opts.did The identity to resolve.
  * @param opts.connector The connector to perform the operations with.
  * @param opts.node The node URL.
- * @param opts.network The network to use for rebased connector.
+ * @param opts.network The network to use for connector.
  * @param opts.explorer The explorer URL.
  */
 export async function actionCommandIdentityResolve(
@@ -91,7 +91,7 @@ export async function actionCommandIdentityResolve(
 	const did: string = CLIParam.stringValue("did", opts.did);
 	const nodeEndpoint: string = CLIParam.url("node", opts.node);
 	const network: string | undefined =
-		opts.connector === IdentityConnectorTypes.IotaRebased
+		opts.connector === IdentityConnectorTypes.Iota
 			? CLIParam.stringValue("network", opts.network)
 			: undefined;
 	const explorerEndpoint: string = CLIParam.url("explorer", opts.explorer);
@@ -109,7 +109,7 @@ export async function actionCommandIdentityResolve(
 	const walletConnector = setupWalletConnector({ nodeEndpoint, network }, opts.connector);
 	WalletConnectorFactory.register("wallet", () => walletConnector);
 
-	const iotaIdentityResolverConnector = new IotaIdentityResolverConnector({
+	const iotaIdentityResolverConnector = new IotaStardustIdentityResolverConnector({
 		config: {
 			clientOptions: {
 				nodes: [nodeEndpoint],
@@ -140,7 +140,7 @@ export async function actionCommandIdentityResolve(
 
 	CLIDisplay.value(
 		I18n.formatMessage("commands.common.labels.explore"),
-		`${StringHelper.trimTrailingSlashes(explorerEndpoint)}/addr/${IotaIdentityUtils.didToAddress(document.id)}?tab=DID`
+		`${StringHelper.trimTrailingSlashes(explorerEndpoint)}/addr/${IotaStardustIdentityUtils.didToAddress(document.id)}?tab=DID`
 	);
 	CLIDisplay.break();
 

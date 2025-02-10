@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0.
 import { CLIDisplay, CLIOptions, CLIParam } from "@twin.org/cli-core";
 import { Converter, I18n, Is, StringHelper } from "@twin.org/core";
-import { IotaIdentityUtils } from "@twin.org/identity-connector-iota";
+import { IotaStardustIdentityUtils } from "@twin.org/identity-connector-iota-stardust";
 import { DocumentHelper } from "@twin.org/identity-models";
 import { VaultConnectorFactory } from "@twin.org/vault-models";
 import { setupWalletConnector } from "@twin.org/wallet-cli";
@@ -74,7 +74,7 @@ export function buildCommandServiceRemove(): Command {
  * @param opts.id The id of the service to remove.
  * @param opts.connector The connector to perform the operations with.
  * @param opts.node The node URL.
- * @param opts.network The network to use for rebased connector.
+ * @param opts.network The network to use for connector.
  * @param opts.explorer The explorer URL.
  */
 export async function actionCommandServiceRemove(opts: {
@@ -89,7 +89,7 @@ export async function actionCommandServiceRemove(opts: {
 	const id: string = CLIParam.stringValue("id", opts.id);
 	const nodeEndpoint: string = CLIParam.url("node", opts.node);
 	const network: string | undefined =
-		opts.connector === IdentityConnectorTypes.IotaRebased
+		opts.connector === IdentityConnectorTypes.Iota
 			? CLIParam.stringValue("network", opts.network)
 			: undefined;
 	const explorerEndpoint: string = CLIParam.url("explorer", opts.explorer);
@@ -132,7 +132,7 @@ export async function actionCommandServiceRemove(opts: {
 
 	CLIDisplay.value(
 		I18n.formatMessage("commands.common.labels.explore"),
-		`${StringHelper.trimTrailingSlashes(explorerEndpoint)}/addr/${IotaIdentityUtils.didToAddress(DocumentHelper.parseId(id).id)}?tab=DID`
+		`${StringHelper.trimTrailingSlashes(explorerEndpoint)}/addr/${IotaStardustIdentityUtils.didToAddress(DocumentHelper.parseId(id).id)}?tab=DID`
 	);
 
 	CLIDisplay.break();

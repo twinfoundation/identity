@@ -1,9 +1,6 @@
 // Copyright 2024 IOTA Stiftung.
 // SPDX-License-Identifier: Apache-2.0.
-import { IotaDID, IotaIdentityClient } from "@iota/identity-wasm/node/index.js";
-import { Client } from "@iota/sdk-wasm/node/lib/index.js";
-import { GeneralError, Guards, Is, NotFoundError } from "@twin.org/core";
-import { type IIotaConfig, Iota } from "@twin.org/dlt-iota";
+import { Guards, NotImplementedError } from "@twin.org/core";
 import type { IIdentityResolverConnector } from "@twin.org/identity-models";
 import { nameof } from "@twin.org/nameof";
 import type { IDidDocument } from "@twin.org/standards-w3c-did";
@@ -25,13 +22,7 @@ export class IotaIdentityResolverConnector implements IIdentityResolverConnector
 	public readonly CLASS_NAME: string = nameof<IotaIdentityResolverConnector>();
 
 	/**
-	 * The configuration to use for tangle operations.
-	 * @internal
-	 */
-	private readonly _config: IIotaConfig;
-
-	/**
-	 * Create a new instance of IotaIdentityConnector.
+	 * Create a new instance of IotaIdentityResolverConnector.
 	 * @param options The options for the identity connector.
 	 */
 	constructor(options: IIotaIdentityResolverConnectorConstructorOptions) {
@@ -41,14 +32,6 @@ export class IotaIdentityResolverConnector implements IIdentityResolverConnector
 			nameof(options.config),
 			options.config
 		);
-		Guards.object<IIotaIdentityResolverConnectorConfig["clientOptions"]>(
-			this.CLASS_NAME,
-			nameof(options.config.clientOptions),
-			options.config.clientOptions
-		);
-
-		this._config = options.config;
-		Iota.populateConfig(this._config);
 	}
 
 	/**
@@ -58,23 +41,6 @@ export class IotaIdentityResolverConnector implements IIdentityResolverConnector
 	 * @throws NotFoundError if the id can not be resolved.
 	 */
 	public async resolveDocument(documentId: string): Promise<IDidDocument> {
-		Guards.stringValue(this.CLASS_NAME, nameof(documentId), documentId);
-
-		try {
-			const identityClient = new IotaIdentityClient(new Client(this._config.clientOptions));
-
-			const document = await identityClient.resolveDid(IotaDID.parse(documentId));
-			if (Is.undefined(document)) {
-				throw new NotFoundError(this.CLASS_NAME, "documentNotFound", documentId);
-			}
-			return document.toJSON() as IDidDocument;
-		} catch (error) {
-			throw new GeneralError(
-				this.CLASS_NAME,
-				"resolveDocumentFailed",
-				undefined,
-				Iota.extractPayloadError(error)
-			);
-		}
+		throw new NotImplementedError(this.CLASS_NAME, "resolveDocument");
 	}
 }

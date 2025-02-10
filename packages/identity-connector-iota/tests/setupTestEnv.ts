@@ -1,7 +1,6 @@
 // Copyright 2024 IOTA Stiftung.
 // SPDX-License-Identifier: Apache-2.0.
 import path from "node:path";
-import type { IClientOptions } from "@iota/sdk-wasm/node/lib/index.js";
 import { Guards, Is } from "@twin.org/core";
 import { Bip39 } from "@twin.org/crypto";
 import { MemoryEntityStorageConnector } from "@twin.org/entity-storage-connector-memory";
@@ -24,9 +23,10 @@ dotenv.config({ path: [path.join(__dirname, ".env"), path.join(__dirname, ".env.
 
 Guards.stringValue("TestEnv", "TEST_NODE_ENDPOINT", process.env.TEST_NODE_ENDPOINT);
 Guards.stringValue("TestEnv", "TEST_FAUCET_ENDPOINT", process.env.TEST_FAUCET_ENDPOINT);
-Guards.stringValue("TestEnv", "TEST_BECH32_HRP", process.env.TEST_BECH32_HRP);
 Guards.stringValue("TestEnv", "TEST_COIN_TYPE", process.env.TEST_COIN_TYPE);
 Guards.stringValue("TestEnv", "TEST_EXPLORER_URL", process.env.TEST_EXPLORER_URL);
+Guards.stringValue("TestEnv", "TEST_NETWORK", process.env.TEST_NETWORK);
+
 if (!Is.stringValue(process.env.TEST_MNEMONIC)) {
 	// eslint-disable-next-line no-restricted-syntax
 	throw new Error(
@@ -57,19 +57,20 @@ EntityStorageConnectorFactory.register("vault-secret", () => secretEntityStorage
 const TEST_VAULT_CONNECTOR = new EntityStorageVaultConnector();
 VaultConnectorFactory.register("vault", () => TEST_VAULT_CONNECTOR);
 
-export const TEST_CLIENT_OPTIONS: IClientOptions = {
-	nodes: [process.env.TEST_NODE_ENDPOINT],
-	localPow: true
+export const TEST_CLIENT_OPTIONS = {
+	url: process.env.TEST_NODE_ENDPOINT
 };
 
+export const TEST_NETWORK = process.env.TEST_NETWORK;
 export const TEST_SEED = Bip39.mnemonicToSeed(process.env.TEST_MNEMONIC);
 export const TEST_COIN_TYPE = Number.parseInt(process.env.TEST_COIN_TYPE, 10);
-export const TEST_BECH32_HRP = process.env.TEST_BECH32_HRP;
 
 export const TEST_FAUCET_CONNECTOR = new IotaFaucetConnector({
 	config: {
 		clientOptions: TEST_CLIENT_OPTIONS,
-		endpoint: process.env.TEST_FAUCET_ENDPOINT
+		endpoint: process.env.TEST_FAUCET_ENDPOINT,
+		vaultMnemonicId: TEST_MNEMONIC_NAME,
+		network: TEST_NETWORK
 	}
 });
 FaucetConnectorFactory.register("faucet", () => TEST_FAUCET_CONNECTOR);
@@ -79,7 +80,7 @@ export const TEST_WALLET_CONNECTOR = new IotaWalletConnector({
 		clientOptions: TEST_CLIENT_OPTIONS,
 		vaultMnemonicId: TEST_MNEMONIC_NAME,
 		coinType: TEST_COIN_TYPE,
-		bech32Hrp: TEST_BECH32_HRP
+		network: TEST_NETWORK
 	}
 });
 WalletConnectorFactory.register("wallet", () => TEST_WALLET_CONNECTOR);
@@ -90,7 +91,7 @@ await TEST_VAULT_CONNECTOR.setSecret(
 );
 
 const addresses = await TEST_WALLET_CONNECTOR.getAddresses(TEST_IDENTITY_ID, 0, 0, 1);
-export const TEST_IDENTITY_ADDRESS_BECH32 = addresses[0];
+export const TEST_ADDRESS = addresses[0];
 
 /**
  * Setup the test environment.
@@ -98,11 +99,7 @@ export const TEST_IDENTITY_ADDRESS_BECH32 = addresses[0];
 export async function setupTestEnv(): Promise<void> {
 	console.debug(
 		"Identity Address",
-		`${process.env.TEST_EXPLORER_URL}addr/${TEST_IDENTITY_ADDRESS_BECH32}`
+		`${process.env.TEST_EXPLORER_URL}address/${TEST_ADDRESS}?network=${TEST_NETWORK}`
 	);
-	await TEST_WALLET_CONNECTOR.ensureBalance(
-		TEST_IDENTITY_ID,
-		TEST_IDENTITY_ADDRESS_BECH32,
-		1000000000n
-	);
+	await TEST_WALLET_CONNECTOR.ensureBalance(TEST_IDENTITY_ID, TEST_ADDRESS, 1000000000n);
 }

@@ -11,7 +11,7 @@ on:
           - 'packages/identity-models'
           - 'packages/identity-connector-entity-storage'
           - 'packages/identity-connector-iota'
-          - 'packages/identity-connector-iota-rebased'
+          - 'packages/identity-connector-iota-stardust'
           - 'packages/identity-service'
           - 'packages/identity-rest-client'
           - 'apps/identity-cli'

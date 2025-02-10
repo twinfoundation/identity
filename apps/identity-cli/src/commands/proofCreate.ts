@@ -78,7 +78,7 @@ export function buildCommandProofCreate(): Command {
  * @param opts.data The data to create the proof for.
  * @param opts.connector The connector to perform the operations with.
  * @param opts.node The node URL.
- * @param opts.network The network to use for rebased connector.
+ * @param opts.network The network to use for connector.
  */
 export async function actionCommandProofCreate(
 	opts: {
@@ -95,7 +95,7 @@ export async function actionCommandProofCreate(
 	const data: Uint8Array = CLIParam.hexBase64("data", opts.data);
 	const nodeEndpoint: string = CLIParam.url("node", opts.node);
 	const network: string | undefined =
-		opts.connector === IdentityConnectorTypes.IotaRebased
+		opts.connector === IdentityConnectorTypes.Iota
 			? CLIParam.stringValue("network", opts.network)
 			: undefined;
 
