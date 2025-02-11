@@ -37,7 +37,7 @@ export class IdentityResolverClient extends BaseRestClient implements IIdentityR
 		Urn.guard(this.CLASS_NAME, nameof(documentId), documentId);
 
 		const response = await this.fetch<IIdentityResolveRequest, IIdentityResolveResponse>(
-			"/:id",
+			"/:identity",
 			"GET",
 			{
 				pathParams: {
