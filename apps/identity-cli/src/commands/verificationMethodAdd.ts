@@ -9,6 +9,7 @@ import {
 } from "@twin.org/cli-core";
 import { Converter, I18n, Is, StringHelper } from "@twin.org/core";
 import { IotaStardustIdentityUtils } from "@twin.org/identity-connector-iota-stardust";
+import { DocumentHelper } from "@twin.org/identity-models";
 import { DidVerificationMethodType } from "@twin.org/standards-w3c-did";
 import { VaultConnectorFactory } from "@twin.org/vault-models";
 
@@ -175,7 +176,9 @@ export async function actionCommandVerificationMethodAdd(
 
 	CLIDisplay.spinnerStop();
 
-	const keyPair = await vaultConnector.getKey(`${localIdentity}/${verificationMethod.id}`);
+	const keyParts = DocumentHelper.parseId(verificationMethod.id);
+
+	const keyPair = await vaultConnector.getKey(`${localIdentity}/${keyParts.fragment}`);
 	const privateKey = Converter.bytesToBase64(keyPair.privateKey);
 	const publicKey = Is.uint8Array(keyPair.publicKey)
 		? Converter.bytesToBase64(keyPair.publicKey)

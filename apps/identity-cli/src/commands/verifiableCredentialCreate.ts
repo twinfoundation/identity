@@ -10,6 +10,7 @@ import {
 } from "@twin.org/cli-core";
 import { Coerce, GeneralError, I18n, Is } from "@twin.org/core";
 import type { IJsonLdNodeObject } from "@twin.org/data-json-ld";
+import { DocumentHelper } from "@twin.org/identity-models";
 import { VaultConnectorFactory, VaultKeyType } from "@twin.org/vault-models";
 import { setupWalletConnector } from "@twin.org/wallet-cli";
 import { WalletConnectorFactory } from "@twin.org/wallet-models";
@@ -142,9 +143,11 @@ export async function actionCommandVerifiableCredentialCreate(
 
 	const localIdentity = "local";
 
+	const vmParts = DocumentHelper.parseId(id);
+
 	const vaultConnector = VaultConnectorFactory.get("vault");
 	await vaultConnector.addKey(
-		`${localIdentity}/${id}`,
+		`${localIdentity}/${vmParts.fragment}`,
 		VaultKeyType.Ed25519,
 		privateKey,
 		new Uint8Array()
