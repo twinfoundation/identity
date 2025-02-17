@@ -9,6 +9,8 @@ import { nameof } from "@twin.org/nameof";
 import {
 	DidContexts,
 	DidTypes,
+	type IDidCredentialStatus,
+	type IDidVerifiableCredential,
 	type DidVerificationMethodType,
 	type IDidProof,
 	type IDidService
@@ -430,15 +432,23 @@ describe("EntityStorageIdentityConnector", () => {
 		const subject = Is.array(result.verifiableCredential.credentialSubject)
 			? result.verifiableCredential.credentialSubject[0]
 			: result.verifiableCredential.credentialSubject;
-		expect((subject.id as string).startsWith("did:entity-storage")).toBeTruthy();
-		expect(subject.name).toEqual("Jane Doe");
-		expect(result.verifiableCredential.issuer?.startsWith("did:entity-storage")).toBeTruthy();
+		expect((subject?.id as string).startsWith("did:entity-storage")).toBeTruthy();
+		expect(subject?.name).toEqual("Jane Doe");
+		expect(
+			(result.verifiableCredential.issuer as string)?.startsWith("did:entity-storage")
+		).toBeTruthy();
 		expect(result.verifiableCredential.issuanceDate).toBeDefined();
 		expect(
-			result.verifiableCredential.credentialStatus?.id?.startsWith("did:entity-storage")
+			(result.verifiableCredential?.credentialStatus as IDidCredentialStatus)?.id?.startsWith(
+				"did:entity-storage"
+			)
 		).toBeTruthy();
-		expect(result.verifiableCredential.credentialStatus?.type).toEqual("BitstringStatusList");
-		expect(result.verifiableCredential.credentialStatus?.revocationBitmapIndex).toEqual("5");
+		expect((result.verifiableCredential?.credentialStatus as IDidCredentialStatus)?.type).toEqual(
+			"BitstringStatusList"
+		);
+		expect(
+			(result.verifiableCredential?.credentialStatus as IDidCredentialStatus)?.revocationBitmapIndex
+		).toEqual("5");
 		expect(result.jwt.split(".").length).toEqual(3);
 
 		testVcJwt = result.jwt;
@@ -480,13 +490,21 @@ describe("EntityStorageIdentityConnector", () => {
 			: result.verifiableCredential?.credentialSubject;
 		expect((subject?.id as string).startsWith("did:entity-storage")).toBeTruthy();
 		expect(subject?.name).toEqual("Jane Doe");
-		expect(result.verifiableCredential?.issuer?.startsWith("did:entity-storage")).toBeTruthy();
+		expect(
+			(result.verifiableCredential?.issuer as string)?.startsWith("did:entity-storage")
+		).toBeTruthy();
 		expect(result.verifiableCredential?.issuanceDate).toBeDefined();
 		expect(
-			result.verifiableCredential?.credentialStatus?.id?.startsWith("did:entity-storage")
+			(result.verifiableCredential?.credentialStatus as IDidCredentialStatus)?.id?.startsWith(
+				"did:entity-storage"
+			)
 		).toBeTruthy();
-		expect(result.verifiableCredential?.credentialStatus?.type).toEqual("BitstringStatusList");
-		expect(result.verifiableCredential?.credentialStatus?.revocationBitmapIndex).toEqual("5");
+		expect((result.verifiableCredential?.credentialStatus as IDidCredentialStatus)?.type).toEqual(
+			"BitstringStatusList"
+		);
+		expect(
+			(result.verifiableCredential?.credentialStatus as IDidCredentialStatus)?.revocationBitmapIndex
+		).toEqual("5");
 	});
 
 	test("can fail to revoke a verifiable credential with no documentId", async () => {
@@ -717,7 +735,9 @@ describe("EntityStorageIdentityConnector", () => {
 		]);
 		expect(result.verifiablePresentation.type).toEqual([DidTypes.VerifiablePresentation, "Person"]);
 		expect(result.verifiablePresentation.verifiableCredential).toBeDefined();
-		expect(result.verifiablePresentation.verifiableCredential[0]).toEqual(testVcJwt);
+		expect(
+			(result.verifiablePresentation.verifiableCredential as IDidVerifiableCredential[])[0]
+		).toEqual(testVcJwt);
 		expect(result.verifiablePresentation.holder?.startsWith("did:entity-storage")).toBeTruthy();
 		expect(result.jwt.split(".").length).toEqual(3);
 		testVpJwt = result.jwt;

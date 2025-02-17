@@ -143,6 +143,7 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 			const compressed = await Compression.compress(bitString.getBits(), CompressionType.Gzip);
 
 			const didDocument: IDidDocument = {
+				"@context": DidContexts.Context,
 				id: did,
 				service: [
 					{
@@ -669,10 +670,24 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 				}
 			}
 
-			const revoked = await this.checkRevocation(
-				issuerDidDocument,
-				verifiableCredential.credentialStatus?.revocationBitmapIndex
-			);
+			const credentialStatus = verifiableCredential.credentialStatus;
+			let revoked = false;
+			if (Is.object(credentialStatus)) {
+				revoked = await this.checkRevocation(
+					issuerDidDocument,
+					credentialStatus.revocationBitmapIndex
+				);
+			} else if (Is.arrayValue(credentialStatus)) {
+				for (let i = 0; i < credentialStatus.length; i++) {
+					revoked = await this.checkRevocation(
+						issuerDidDocument,
+						credentialStatus[i].revocationBitmapIndex
+					);
+					if (revoked) {
+						break;
+					}
+				}
+			}
 
 			return {
 				revoked,
@@ -1019,14 +1034,36 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 								issuerDidDocument,
 								this._vaultConnector
 							);
-							issuers.push(issuerDidDocument);
+							issuers.push({
+								"@context": DidContexts.Context,
+								...issuerDidDocument
+							});
 
 							const vc = jwt.payload.vc as IDidVerifiableCredential;
 							if (Is.object<IDidVerifiableCredential>(vc)) {
-								revoked = await this.checkRevocation(
-									issuerDidDocument,
-									vc.credentialStatus?.revocationBitmapIndex
-								);
+								const credentialStatus = vc.credentialStatus;
+								if (Is.object(credentialStatus)) {
+									revoked = await this.checkRevocation(
+										{
+											"@context": DidContexts.Context,
+											...issuerDidDocument
+										},
+										credentialStatus.revocationBitmapIndex
+									);
+								} else if (Is.arrayValue(credentialStatus)) {
+									for (let i = 0; i < credentialStatus.length; i++) {
+										revoked = await this.checkRevocation(
+											{
+												"@context": DidContexts.Context,
+												...issuerDidDocument
+											},
+											credentialStatus[i].revocationBitmapIndex
+										);
+										if (revoked) {
+											break;
+										}
+									}
+								}
 							}
 						}
 					} else {

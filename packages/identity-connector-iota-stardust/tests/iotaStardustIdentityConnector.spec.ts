@@ -7,6 +7,7 @@ import { EntityStorageConnectorFactory } from "@twin.org/entity-storage-models";
 import {
 	DidContexts,
 	DidTypes,
+	type IDidCredentialStatus,
 	type DidVerificationMethodType,
 	type IDidDocumentVerificationMethod,
 	type IDidProof,
@@ -519,15 +520,21 @@ describe("IotaStardustIdentityConnector", () => {
 			? result.verifiableCredential.credentialSubject[0]
 			: result.verifiableCredential?.credentialSubject;
 
-		expect((subject.id as string).startsWith("did:iota")).toBeTruthy();
+		expect((subject?.id as string).startsWith("did:iota")).toBeTruthy();
 		expect(subject?.name).toEqual("Jane Doe");
-		expect(result.verifiableCredential.issuer?.startsWith("did:iota")).toBeTruthy();
+		expect((result.verifiableCredential.issuer as string)?.startsWith("did:iota")).toBeTruthy();
 		expect(result.verifiableCredential.issuanceDate).toBeDefined();
-		expect(result.verifiableCredential.credentialStatus?.id?.startsWith("did:iota")).toBeTruthy();
-		expect(result.verifiableCredential.credentialStatus?.type).toEqual("RevocationBitmap2022");
-		expect(result.verifiableCredential.credentialStatus?.revocationBitmapIndex).toEqual(
-			TEST_REVOCATION_INDEX.toString()
+		expect(
+			(result.verifiableCredential.credentialStatus as IDidCredentialStatus)?.id?.startsWith(
+				"did:iota"
+			)
+		).toBeTruthy();
+		expect((result.verifiableCredential.credentialStatus as IDidCredentialStatus)?.type).toEqual(
+			"RevocationBitmap2022"
 		);
+		expect(
+			(result.verifiableCredential.credentialStatus as IDidCredentialStatus)?.revocationBitmapIndex
+		).toEqual(TEST_REVOCATION_INDEX.toString());
 		expect(result.jwt.split(".").length).toEqual(3);
 		testVcJwt = result.jwt;
 	});
@@ -574,13 +581,19 @@ describe("IotaStardustIdentityConnector", () => {
 			: result.verifiableCredential?.credentialSubject;
 		expect((subject?.id as string).startsWith("did:iota")).toBeTruthy();
 		expect(subject?.name).toEqual("Jane Doe");
-		expect(result.verifiableCredential?.issuer?.startsWith("did:iota")).toBeTruthy();
+		expect((result.verifiableCredential?.issuer as string)?.startsWith("did:iota")).toBeTruthy();
 		expect(result.verifiableCredential?.issuanceDate).toBeDefined();
-		expect(result.verifiableCredential?.credentialStatus?.id?.startsWith("did:iota")).toBeTruthy();
-		expect(result.verifiableCredential?.credentialStatus?.type).toEqual("RevocationBitmap2022");
-		expect(result.verifiableCredential?.credentialStatus?.revocationBitmapIndex).toEqual(
-			TEST_REVOCATION_INDEX.toString()
+		expect(
+			(result.verifiableCredential?.credentialStatus as IDidCredentialStatus)?.id?.startsWith(
+				"did:iota"
+			)
+		).toBeTruthy();
+		expect((result.verifiableCredential?.credentialStatus as IDidCredentialStatus)?.type).toEqual(
+			"RevocationBitmap2022"
 		);
+		expect(
+			(result.verifiableCredential?.credentialStatus as IDidCredentialStatus)?.revocationBitmapIndex
+		).toEqual(TEST_REVOCATION_INDEX.toString());
 	});
 
 	test("can fail to revoke a verifiable credential with no documentId", async () => {
@@ -818,7 +831,7 @@ describe("IotaStardustIdentityConnector", () => {
 		]);
 		expect(result.verifiablePresentation.type).toEqual([DidTypes.VerifiablePresentation, "Person"]);
 		expect(result.verifiablePresentation.verifiableCredential).toBeDefined();
-		expect(result.verifiablePresentation.verifiableCredential[0]).toEqual(testVcJwt);
+		expect((result.verifiablePresentation.verifiableCredential as string[])[0]).toEqual(testVcJwt);
 		expect(result.verifiablePresentation.holder?.startsWith("did:iota")).toBeTruthy();
 		expect(result.jwt.split(".").length).toEqual(3);
 		testVpJwt = result.jwt;

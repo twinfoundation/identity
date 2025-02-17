@@ -15,6 +15,7 @@ import {
 	IdentityResolverConnectorFactory
 } from "@twin.org/identity-models";
 import { nameof } from "@twin.org/nameof";
+import { DidContexts } from "@twin.org/standards-w3c-did";
 import {
 	EntityStorageVaultConnector,
 	type VaultKey,
@@ -94,6 +95,7 @@ describe("IdentityResolverService", () => {
 		const identity = await service.identityCreate(undefined, TEST_CONTROLLER);
 
 		expect(identity).toEqual({
+			"@context": DidContexts.Context,
 			id: "did:entity-storage:0x0101010101010101010101010101010101010101010101010101010101010101",
 			service: [
 				{
@@ -114,6 +116,7 @@ describe("IdentityResolverService", () => {
 		);
 
 		expect(identity).toEqual({
+			"@context": DidContexts.Context,
 			id: "did:entity-storage:0x0101010101010101010101010101010101010101010101010101010101010101",
 			service: [
 				{
