@@ -11,4 +11,10 @@ export interface IIotaIdentityConnectorConfig extends IIotaConfig {
 	 * @default 0
 	 */
 	walletAddressIndex?: number;
+
+	/**
+	 * The package ID for the identity contract on the network.
+	 */
+	// TODO:
+	identityPkgId?: string;
 }
