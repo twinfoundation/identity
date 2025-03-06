@@ -3,6 +3,10 @@
 		"commands": {
 			"verifiable-credential-create": {
 				"subjectJsonFileNotFound": "The subject JSON file was not found."
+			},
+			"proof-create": {
+				"documentJsonFileNotFound": "The document JSON file was not found.",
+				"proofJsonFileNotFound": "The proof JSON file was not found."
 			}
 		}
 	},
@@ -268,15 +272,16 @@
 					"param": "--private-key '<'private-key'>'",
 					"description": "The private key for the verification method id, in either hex or base64 form, or start with ! to read environment variable."
 				},
-				"data": {
-					"param": "--data '<'data'>'",
-					"description": "The base64 or hex encoded data to create the proof for, or start with ! to read environment variable."
+				"document-filename": {
+					"param": "--document-filename '<'document-filename'>'",
+					"description": "The filename of a JSON-LD document to create the proof for."
 				}
 			},
 			"progress": {
 				"creatingProof": "Creating Proof"
 			},
 			"labels": {
+				"documentFilename": "Document Filename",
 				"verificationMethodId": "Verification Method Id"
 			}
 		},
@@ -284,30 +289,21 @@
 			"summary": "Verify a proof for some data using a verification method.",
 			"description": "Verify a proof for some data using a verification method.",
 			"options": {
-				"id": {
-					"param": "--id '<'id'>'",
-					"description": "The full verification method id including did, or start with ! to read environment variable."
+				"document-filename": {
+					"param": "--document-filename '<'document-filename'>'",
+					"description": "The filename of a JSON-LD document to create the proof for."
 				},
-				"data": {
-					"param": "--data '<'data'>'",
-					"description": "The base64 or hex encoded data to verify the proof for, or start with ! to read environment variable."
-				},
-				"cryptosuite": {
-					"param": "--cryptosuite '<'cryptosuite'>'",
-					"description": "The cryptosuite of the proof, or start with ! to read environment variable."
-				},
-				"value": {
-					"param": "--value '<'value'>'",
-					"description": "The base64 or hex encoded data to use for verifying the proof, or start with ! to read environment variable."
+				"proof-filename": {
+					"param": "--proof-filename '<'proof-filename'>'",
+					"description": "The filename of the proof JSON."
 				}
 			},
 			"progress": {
 				"verifyingProof": "Verifying Proof"
 			},
 			"labels": {
-				"verificationMethodId": "Verification Method Id",
-				"cryptosuite": "Proof Cryptosuite",
-				"value": "Proof Value",
+				"documentFilename": "Document Filename",
+				"proofFilename": "Proof Filename",
 				"isVerified": "Is Verified"
 			}
 		},

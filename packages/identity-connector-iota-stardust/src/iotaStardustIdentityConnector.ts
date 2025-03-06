@@ -31,7 +31,6 @@ import {
 	SubjectHolderRelationship,
 	Timestamp,
 	VerificationMethod,
-	verifyEd25519,
 	type ICredential,
 	type IJwkParams,
 	type Subject
@@ -52,22 +51,22 @@ import type {
 	IJsonLdNodeObject,
 	IJsonLdObject
 } from "@twin.org/data-json-ld";
-import { type IIotaStardustConfig, IotaStardust } from "@twin.org/dlt-iota-stardust";
+import { IotaStardust, type IIotaStardustConfig } from "@twin.org/dlt-iota-stardust";
 import { DocumentHelper, type IIdentityConnector } from "@twin.org/identity-models";
 import { nameof } from "@twin.org/nameof";
 import {
-	DidContexts,
-	DidCryptoSuites,
-	DidTypes,
 	DidVerificationMethodType,
+	ProofHelper,
+	ProofTypes,
 	type IDidDocument,
 	type IDidDocumentVerificationMethod,
-	type IDidProof,
 	type IDidService,
 	type IDidVerifiableCredential,
-	type IDidVerifiablePresentation
+	type IDidVerifiablePresentation,
+	type IProof
 } from "@twin.org/standards-w3c-did";
 import { VaultConnectorFactory, VaultKeyType, type IVaultConnector } from "@twin.org/vault-models";
+import { Jwk as JwkHelper } from "@twin.org/web";
 import type { IIotaStardustIdentityConnectorConfig } from "./models/IIotaStardustIdentityConnectorConfig";
 import type { IIotaStardustIdentityConnectorConstructorOptions } from "./models/IIotaStardustIdentityConnectorConstructorOptions";
 
@@ -936,17 +935,25 @@ export class IotaStardustIdentityConnector implements IIdentityConnector {
 	 * Create a proof for arbitrary data with the specified verification method.
 	 * @param controller The controller of the identity who can make changes.
 	 * @param verificationMethodId The verification method id to use.
-	 * @param bytes The data bytes to sign.
+	 * @param proofType The type of proof to create.
+	 * @param unsecureDocument The unsecure document to create the proof for.
 	 * @returns The proof.
 	 */
 	public async createProof(
 		controller: string,
 		verificationMethodId: string,
-		bytes: Uint8Array
-	): Promise<IDidProof> {
+		proofType: ProofTypes,
+		unsecureDocument: IJsonLdNodeObject
+	): Promise<IProof> {
 		Guards.stringValue(this.CLASS_NAME, nameof(controller), controller);
 		Guards.stringValue(this.CLASS_NAME, nameof(verificationMethodId), verificationMethodId);
-		Guards.uint8Array(this.CLASS_NAME, nameof(bytes), bytes);
+		Guards.arrayOneOf<ProofTypes>(
+			this.CLASS_NAME,
+			nameof(proofType),
+			proofType,
+			Object.values(ProofTypes)
+		);
+		Guards.object<IJsonLdNodeObject>(this.CLASS_NAME, nameof(unsecureDocument), unsecureDocument);
 
 		try {
 			const idParts = DocumentHelper.parseId(verificationMethodId);
@@ -975,8 +982,6 @@ export class IotaStardustIdentityConnector implements IIdentityConnector {
 				});
 			}
 
-			const jwkMemStore = new JwkMemStore();
-
 			const verificationMethodKey = await this._vaultConnector.getKey(
 				this.buildKey(controller, idParts.fragment)
 			);
@@ -984,27 +989,16 @@ export class IotaStardustIdentityConnector implements IIdentityConnector {
 				throw new GeneralError(this.CLASS_NAME, "publicKeyJwkMissing");
 			}
 
-			const jwkParams = new Jwk({
-				alg: didMethod.publicKeyJwk.alg,
-				kty: didMethod.publicKeyJwk.kty as JwkType,
-				crv: didMethod.publicKeyJwk.crv,
-				x: didMethod.publicKeyJwk.x,
-				d: Converter.bytesToBase64Url(verificationMethodKey.privateKey)
-			} as IJwkParams);
+			const jwk = await JwkHelper.fromEd25519Private(verificationMethodKey.privateKey);
 
-			const keyId = await jwkMemStore.insert(jwkParams);
+			const signedProof = await ProofHelper.createProof(
+				proofType,
+				unsecureDocument,
+				ProofHelper.createUnsignedProof(proofType, verificationMethodId),
+				jwk
+			);
 
-			const signature = await jwkMemStore.sign(keyId, bytes, jwkParams);
-
-			return {
-				"@context": DidContexts.ContextVCDataIntegrity,
-				type: DidTypes.DataIntegrityProof,
-				cryptosuite: DidCryptoSuites.EdDSAJcs2022,
-				created: new Date(Date.now()).toISOString(),
-				verificationMethod: verificationMethodId,
-				proofPurpose: "assertionMethod",
-				proofValue: Converter.bytesToBase58(signature)
-			};
+			return signedProof;
 		} catch (error) {
 			throw new GeneralError(
 				this.CLASS_NAME,
@@ -1017,38 +1011,29 @@ export class IotaStardustIdentityConnector implements IIdentityConnector {
 
 	/**
 	 * Verify proof for arbitrary data with the specified verification method.
-	 * @param bytes The data bytes to verify.
+	 * @param document The document to verify.
 	 * @param proof The proof to verify.
 	 * @returns True if the proof is verified.
 	 */
-	public async verifyProof(bytes: Uint8Array, proof: IDidProof): Promise<boolean> {
-		Guards.uint8Array(this.CLASS_NAME, nameof(bytes), bytes);
-		Guards.object(this.CLASS_NAME, nameof(proof), proof);
-		Guards.stringValue(this.CLASS_NAME, nameof(proof.type), proof.type);
-		Guards.stringValue(this.CLASS_NAME, nameof(proof.cryptosuite), proof.cryptosuite);
+	public async verifyProof(document: IJsonLdNodeObject, proof: IProof): Promise<boolean> {
+		Guards.object<IJsonLdNodeObject>(this.CLASS_NAME, nameof(document), document);
+		Guards.object<IProof>(this.CLASS_NAME, nameof(proof), proof);
 		Guards.stringValue(this.CLASS_NAME, nameof(proof.verificationMethod), proof.verificationMethod);
-		Guards.stringBase58(this.CLASS_NAME, nameof(proof.proofValue), proof.proofValue);
 
 		try {
-			if (proof.type !== DidTypes.DataIntegrityProof) {
-				throw new GeneralError(this.CLASS_NAME, "proofType", { proofType: proof.type });
-			}
-			if (proof.cryptosuite !== DidCryptoSuites.EdDSAJcs2022) {
-				throw new GeneralError(this.CLASS_NAME, "cryptoSuite", { cryptosuite: proof.cryptosuite });
-			}
 			const idParts = DocumentHelper.parseId(proof.verificationMethod);
 			if (Is.empty(idParts.fragment)) {
 				throw new NotFoundError(this.CLASS_NAME, "missingDid", proof.verificationMethod);
 			}
 
 			const identityClient = new IotaIdentityClient(new Client(this._config.clientOptions));
-			const document = await identityClient.resolveDid(IotaDID.parse(idParts.id));
+			const resolvedDocument = await identityClient.resolveDid(IotaDID.parse(idParts.id));
 
 			if (Is.undefined(document)) {
 				throw new NotFoundError(this.CLASS_NAME, "documentNotFound", idParts.id);
 			}
 
-			const methods = document.methods();
+			const methods = resolvedDocument.methods();
 			const method = methods.find(m => m.id().toString() === proof.verificationMethod);
 
 			if (!method) {
@@ -1057,10 +1042,14 @@ export class IotaStardustIdentityConnector implements IIdentityConnector {
 				});
 			}
 
-			const jwk = method.data().tryPublicKeyJwk();
-			verifyEd25519(JwsAlgorithm.EdDSA, bytes, Converter.base58ToBytes(proof.proofValue), jwk);
+			const didMethod = method.toJSON() as IDidDocumentVerificationMethod;
+			if (Is.undefined(didMethod.publicKeyJwk)) {
+				throw new GeneralError(this.CLASS_NAME, "publicKeyJwkMissing", {
+					method: proof.verificationMethod
+				});
+			}
 
-			return true;
+			return ProofHelper.verifyProof(document, proof, didMethod.publicKeyJwk);
 		} catch (error) {
 			throw new GeneralError(
 				this.CLASS_NAME,

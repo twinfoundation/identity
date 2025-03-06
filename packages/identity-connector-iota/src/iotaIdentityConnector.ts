@@ -21,10 +21,11 @@ import type {
 	DidVerificationMethodType,
 	IDidDocument,
 	IDidDocumentVerificationMethod,
-	IDidProof,
+	IProof,
 	IDidService,
 	IDidVerifiableCredential,
-	IDidVerifiablePresentation
+	IDidVerifiablePresentation,
+	ProofTypes
 } from "@twin.org/standards-w3c-did";
 import { VaultConnectorFactory, type IVaultConnector } from "@twin.org/vault-models";
 import type { IIotaIdentityConnectorConfig } from "./models/IIotaIdentityConnectorConfig";
@@ -329,24 +330,26 @@ export class IotaIdentityConnector implements IIdentityConnector {
 	 * Create a proof for arbitrary data with the specified verification method.
 	 * @param controller The controller of the identity who can make changes.
 	 * @param verificationMethodId The verification method id to use.
-	 * @param bytes The data bytes to sign.
+	 * @param proofType The type of proof to create.
+	 * @param unsecureDocument The unsecure document to create the proof for.
 	 * @returns The proof.
 	 */
 	public async createProof(
 		controller: string,
 		verificationMethodId: string,
-		bytes: Uint8Array
-	): Promise<IDidProof> {
+		proofType: ProofTypes,
+		unsecureDocument: IJsonLdNodeObject
+	): Promise<IProof> {
 		throw new NotImplementedError(this.CLASS_NAME, "createProof");
 	}
 
 	/**
 	 * Verify proof for arbitrary data with the specified verification method.
-	 * @param bytes The data bytes to verify.
+	 * @param document The document to verify.
 	 * @param proof The proof to verify.
 	 * @returns True if the proof is verified.
 	 */
-	public async verifyProof(bytes: Uint8Array, proof: IDidProof): Promise<boolean> {
+	public async verifyProof(document: IJsonLdNodeObject, proof: IProof): Promise<boolean> {
 		throw new NotImplementedError(this.CLASS_NAME, "verifyProof");
 	}
 

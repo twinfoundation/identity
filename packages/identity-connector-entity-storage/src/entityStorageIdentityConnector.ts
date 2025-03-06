@@ -28,18 +28,24 @@ import { DocumentHelper, type IIdentityConnector } from "@twin.org/identity-mode
 import { nameof } from "@twin.org/nameof";
 import {
 	DidContexts,
-	DidCryptoSuites,
 	DidTypes,
 	DidVerificationMethodType,
+	ProofHelper,
+	ProofTypes,
 	type IDidDocument,
 	type IDidDocumentVerificationMethod,
-	type IDidProof,
 	type IDidService,
 	type IDidVerifiableCredential,
-	type IDidVerifiablePresentation
+	type IDidVerifiablePresentation,
+	type IProof
 } from "@twin.org/standards-w3c-did";
-import { type IVaultConnector, VaultConnectorFactory, VaultKeyType } from "@twin.org/vault-models";
-import { Jwt, type IJwk, type IJwtHeader, type IJwtPayload } from "@twin.org/web";
+import {
+	VaultConnectorFactory,
+	VaultConnectorHelper,
+	VaultKeyType,
+	type IVaultConnector
+} from "@twin.org/vault-models";
+import { Jwk, Jwt, type IJwk, type IJwtHeader, type IJwtPayload } from "@twin.org/web";
 import type { IdentityDocument } from "./entities/identityDocument";
 import type { EntityStorageIdentityResolverConnector } from "./entityStorageIdentityResolverConnector";
 import type { IEntityStorageIdentityConnectorConstructorOptions } from "./models/IEntityStorageIdentityConnectorConstructorOptions";
@@ -564,16 +570,13 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 				vc: jwtVc
 			};
 
-			const signature = await Jwt.encodeWithSigner(
-				jwtHeader,
-				jwtPayload,
-				async (alg, key, payload) => {
-					const sig = await this._vaultConnector.sign(
-						EntityStorageIdentityConnector.buildVaultKey(idParts.id, idParts.fragment ?? ""),
-						payload
-					);
-					return sig;
-				}
+			const signature = await Jwt.encodeWithSigner(jwtHeader, jwtPayload, async (header, payload) =>
+				VaultConnectorHelper.jwtSigner(
+					this._vaultConnector,
+					EntityStorageIdentityConnector.buildVaultKey(idParts.id, idParts.fragment ?? ""),
+					header,
+					payload
+				)
 			);
 
 			return {
@@ -640,16 +643,7 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 				throw new GeneralError(this.CLASS_NAME, "publicKeyJwkMissing", { method: jwtHeader.kid });
 			}
 
-			const verified = Jwt.verifySignature(
-				jwtHeader,
-				jwtPayload,
-				jwtSignature,
-				Converter.base64UrlToBytes(didMethod.publicKeyJwk.x)
-			);
-
-			if (!verified) {
-				throw new GeneralError(this.CLASS_NAME, "jwkSignatureFailed");
-			}
+			await Jwt.verifySignature(credentialJwt, await Jwk.toCryptoKey(didMethod.publicKeyJwk));
 
 			const verifiableCredential = jwtPayload.vc as IDidVerifiableCredential;
 			if (Is.object(verifiableCredential)) {
@@ -946,16 +940,13 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 				jwtPayload.exp = Math.floor(Date.now() / 1000) + expiresInSeconds;
 			}
 
-			const signature = await Jwt.encodeWithSigner(
-				jwtHeader,
-				jwtPayload,
-				async (alg, key, payload) => {
-					const sig = await this._vaultConnector.sign(
-						EntityStorageIdentityConnector.buildVaultKey(idParts.id, idParts.fragment ?? ""),
-						payload
-					);
-					return sig;
-				}
+			const signature = await Jwt.encodeWithSigner(jwtHeader, jwtPayload, async (header, payload) =>
+				VaultConnectorHelper.jwtSigner(
+					this._vaultConnector,
+					EntityStorageIdentityConnector.buildVaultKey(idParts.id, idParts.fragment ?? ""),
+					header,
+					payload
+				)
 			);
 
 			return {
@@ -1098,17 +1089,25 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 	 * Create a proof for arbitrary data with the specified verification method.
 	 * @param controller The controller of the identity who can make changes.
 	 * @param verificationMethodId The verification method id to use.
-	 * @param bytes The data bytes to sign.
+	 * @param proofType The type of proof to create.
+	 * @param unsecureDocument The unsecure document to create the proof for.
 	 * @returns The proof.
 	 */
 	public async createProof(
 		controller: string,
 		verificationMethodId: string,
-		bytes: Uint8Array
-	): Promise<IDidProof> {
+		proofType: ProofTypes,
+		unsecureDocument: IJsonLdNodeObject
+	): Promise<IProof> {
 		Guards.stringValue(this.CLASS_NAME, nameof(controller), controller);
 		Guards.stringValue(this.CLASS_NAME, nameof(verificationMethodId), verificationMethodId);
-		Guards.uint8Array(this.CLASS_NAME, nameof(bytes), bytes);
+		Guards.arrayOneOf<ProofTypes>(
+			this.CLASS_NAME,
+			nameof(proofType),
+			proofType,
+			Object.values(ProofTypes)
+		);
+		Guards.object<IJsonLdNodeObject>(this.CLASS_NAME, nameof(unsecureDocument), unsecureDocument);
 
 		try {
 			const idParts = DocumentHelper.parseId(verificationMethodId);
@@ -1145,20 +1144,20 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 				});
 			}
 
-			const signature = await this._vaultConnector.sign(
-				EntityStorageIdentityConnector.buildVaultKey(didDocument.id, idParts.fragment ?? ""),
-				bytes
+			const vaultKey = EntityStorageIdentityConnector.buildVaultKey(
+				didDocument.id,
+				idParts.fragment ?? ""
+			);
+			const key = await this._vaultConnector.getKey(vaultKey);
+
+			const signedProof = await ProofHelper.createProof(
+				proofType,
+				unsecureDocument,
+				ProofHelper.createUnsignedProof(proofType, verificationMethodId),
+				await Jwk.fromEd25519Private(key.privateKey)
 			);
 
-			return {
-				"@context": DidContexts.ContextVCDataIntegrity,
-				type: DidTypes.DataIntegrityProof,
-				cryptosuite: DidCryptoSuites.EdDSAJcs2022,
-				created: new Date(Date.now()).toISOString(),
-				verificationMethod: verificationMethodId,
-				proofPurpose: "assertionMethod",
-				proofValue: Converter.bytesToBase58(signature)
-			};
+			return signedProof;
 		} catch (error) {
 			throw new GeneralError(this.CLASS_NAME, "createProofFailed", undefined, error);
 		}
@@ -1166,25 +1165,16 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 
 	/**
 	 * Verify proof for arbitrary data with the specified verification method.
-	 * @param bytes The data bytes to verify.
+	 * @param document The document to verify.
 	 * @param proof The proof to verify.
 	 * @returns True if the proof is verified.
 	 */
-	public async verifyProof(bytes: Uint8Array, proof: IDidProof): Promise<boolean> {
-		Guards.uint8Array(this.CLASS_NAME, nameof(bytes), bytes);
-		Guards.object(this.CLASS_NAME, nameof(proof), proof);
-		Guards.stringValue(this.CLASS_NAME, nameof(proof.type), proof.type);
-		Guards.stringValue(this.CLASS_NAME, nameof(proof.cryptosuite), proof.cryptosuite);
+	public async verifyProof(document: IJsonLdNodeObject, proof: IProof): Promise<boolean> {
+		Guards.object<IJsonLdNodeObject>(this.CLASS_NAME, nameof(document), document);
+		Guards.object<IProof>(this.CLASS_NAME, nameof(proof), proof);
 		Guards.stringValue(this.CLASS_NAME, nameof(proof.verificationMethod), proof.verificationMethod);
-		Guards.stringBase58(this.CLASS_NAME, nameof(proof.proofValue), proof.proofValue);
 
 		try {
-			if (proof.type !== DidTypes.DataIntegrityProof) {
-				throw new GeneralError(this.CLASS_NAME, "proofType", { proofType: proof.type });
-			}
-			if (proof.cryptosuite !== DidCryptoSuites.EdDSAJcs2022) {
-				throw new GeneralError(this.CLASS_NAME, "cryptoSuite", { cryptosuite: proof.cryptosuite });
-			}
 			const idParts = DocumentHelper.parseId(proof.verificationMethod);
 			if (Is.empty(idParts.fragment)) {
 				throw new NotFoundError(this.CLASS_NAME, "missingDid", proof.verificationMethod);
@@ -1218,15 +1208,11 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 			const didMethod = methodAndArray.method;
 			if (!Is.stringValue(didMethod.publicKeyJwk?.x)) {
 				throw new GeneralError(this.CLASS_NAME, "publicKeyJwkMissing", {
-					method: proof.verificationMethodId
+					method: proof.verificationMethod
 				});
 			}
 
-			return this._vaultConnector.verify(
-				EntityStorageIdentityConnector.buildVaultKey(didIdentityDocument.id, idParts.fragment),
-				bytes,
-				Converter.base58ToBytes(proof.proofValue)
-			);
+			return ProofHelper.verifyProof(document, proof, didMethod.publicKeyJwk);
 		} catch (error) {
 			throw new GeneralError(this.CLASS_NAME, "verifyProofFailed", undefined, error);
 		}

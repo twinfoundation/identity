@@ -11,9 +11,10 @@ import {
 import { nameof } from "@twin.org/nameof";
 import {
 	DidVerificationMethodType,
+	ProofTypes,
 	type IDidDocument,
 	type IDidDocumentVerificationMethod,
-	type IDidProof,
+	type IProof,
 	type IDidService,
 	type IDidVerifiableCredential,
 	type IDidVerifiablePresentation
@@ -472,39 +473,54 @@ export class IdentityService implements IIdentityComponent {
 	}
 
 	/**
-	 * Create a proof for arbitrary data with the specified verification method.
+	 * Create a proof for a document with the specified verification method.
 	 * @param verificationMethodId The verification method id to use.
-	 * @param bytes The data bytes to sign.
+	 * @param proofType The type of proof to create.
+	 * @param unsecureDocument The unsecure document to create the proof for.
 	 * @param controller The controller of the identity who can make changes.
 	 * @returns The proof.
 	 */
 	public async proofCreate(
 		verificationMethodId: string,
-		bytes: Uint8Array,
+		proofType: ProofTypes,
+		unsecureDocument: IJsonLdNodeObject,
 		controller?: string
-	): Promise<IDidProof> {
+	): Promise<IProof> {
 		Guards.stringValue(this.CLASS_NAME, nameof(controller), controller);
 		Guards.stringValue(this.CLASS_NAME, nameof(verificationMethodId), verificationMethodId);
+		Guards.arrayOneOf<ProofTypes>(
+			this.CLASS_NAME,
+			nameof(proofType),
+			proofType,
+			Object.values(ProofTypes)
+		);
+		Guards.object<IJsonLdNodeObject>(this.CLASS_NAME, nameof(unsecureDocument), unsecureDocument);
 
 		try {
 			const idParts = DocumentHelper.parseId(verificationMethodId);
 
 			const identityConnector = this.getConnectorByUri(idParts.id);
 
-			return identityConnector.createProof(controller, verificationMethodId, bytes);
+			return identityConnector.createProof(
+				controller,
+				verificationMethodId,
+				proofType,
+				unsecureDocument
+			);
 		} catch (error) {
 			throw new GeneralError(this.CLASS_NAME, "proofCreateFailed", { verificationMethodId }, error);
 		}
 	}
 
 	/**
-	 * Verify proof for arbitrary data with the specified verification method.
-	 * @param bytes The data bytes to verify.
+	 * Verify proof for a document with the specified verification method.
+	 * @param document The document to verify.
 	 * @param proof The proof to verify.
 	 * @returns True if the proof is verified.
 	 */
-	public async proofVerify(bytes: Uint8Array, proof: IDidProof): Promise<boolean> {
-		Guards.object(this.CLASS_NAME, nameof(proof), proof);
+	public async proofVerify(document: IJsonLdNodeObject, proof: IProof): Promise<boolean> {
+		Guards.object<IJsonLdNodeObject>(this.CLASS_NAME, nameof(document), document);
+		Guards.object<IProof>(this.CLASS_NAME, nameof(proof), proof);
 		Guards.stringValue(this.CLASS_NAME, nameof(proof.verificationMethod), proof.verificationMethod);
 
 		try {
@@ -512,7 +528,7 @@ export class IdentityService implements IIdentityComponent {
 
 			const identityConnector = this.getConnectorByUri(idParts.id);
 
-			return identityConnector.verifyProof(bytes, proof);
+			return identityConnector.verifyProof(document, proof);
 		} catch (error) {
 			throw new GeneralError(this.CLASS_NAME, "proofVerifyFailed", undefined, error);
 		}

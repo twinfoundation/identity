@@ -1,6 +1,7 @@
 // Copyright 2024 IOTA Stiftung.
 // SPDX-License-Identifier: Apache-2.0.
-import type { IDidProof } from "@twin.org/standards-w3c-did";
+import type { IJsonLdNodeObject } from "@twin.org/data-json-ld";
+import type { IProof } from "@twin.org/standards-w3c-did";
 
 /**
  * Request to verify a proof.
@@ -11,13 +12,13 @@ export interface IIdentityProofVerifyRequest {
 	 */
 	body: {
 		/**
-		 * The data bytes base64 encoded.
+		 * The document to verify the proof for.
 		 */
-		bytes: string;
+		document: IJsonLdNodeObject;
 
 		/**
 		 * The proof to verify.
 		 */
-		proof: IDidProof;
+		proof: IProof;
 	};
 }

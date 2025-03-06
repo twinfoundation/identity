@@ -42,4 +42,4 @@ export * from "./models/IIdentityProfileConnector";
 export * from "./models/IIdentityResolverComponent";
 export * from "./models/IIdentityResolverConnector";
 export * from "./utils/documentHelper";
-export * from "./utils/jwtHelper";
+export * from "./utils/verificationHelper";
