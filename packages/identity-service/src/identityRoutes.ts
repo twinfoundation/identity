@@ -6,32 +6,32 @@ import type {
 	IRestRoute,
 	ITag
 } from "@twin.org/api-models";
-import { Coerce, ComponentFactory, Converter, Guards } from "@twin.org/core";
+import { Coerce, ComponentFactory, Guards } from "@twin.org/core";
 import {
 	DocumentHelper,
-	type IIdentityVerifiableCredentialCreateRequest,
-	type IIdentityVerifiableCredentialCreateResponse,
 	type IIdentityComponent,
 	type IIdentityCreateRequest,
 	type IIdentityCreateResponse,
+	type IIdentityProofCreateRequest,
+	type IIdentityProofCreateResponse,
+	type IIdentityProofVerifyRequest,
+	type IIdentityProofVerifyResponse,
 	type IIdentityServiceCreateRequest,
 	type IIdentityServiceCreateResponse,
 	type IIdentityServiceRemoveRequest,
-	type IIdentityVerificationMethodCreateRequest,
-	type IIdentityVerificationMethodCreateResponse,
-	type IIdentityVerificationMethodRemoveRequest,
-	type IIdentityVerifiableCredentialVerifyRequest,
-	type IIdentityVerifiableCredentialVerifyResponse,
+	type IIdentityVerifiableCredentialCreateRequest,
+	type IIdentityVerifiableCredentialCreateResponse,
 	type IIdentityVerifiableCredentialRevokeRequest,
 	type IIdentityVerifiableCredentialUnrevokeRequest,
+	type IIdentityVerifiableCredentialVerifyRequest,
+	type IIdentityVerifiableCredentialVerifyResponse,
 	type IIdentityVerifiablePresentationCreateRequest,
 	type IIdentityVerifiablePresentationCreateResponse,
 	type IIdentityVerifiablePresentationVerifyRequest,
 	type IIdentityVerifiablePresentationVerifyResponse,
-	type IIdentityProofCreateRequest,
-	type IIdentityProofCreateResponse,
-	type IIdentityProofVerifyRequest,
-	type IIdentityProofVerifyResponse
+	type IIdentityVerificationMethodCreateRequest,
+	type IIdentityVerificationMethodCreateResponse,
+	type IIdentityVerificationMethodRemoveRequest
 } from "@twin.org/identity-models";
 import { nameof } from "@twin.org/nameof";
 import { DidContexts } from "@twin.org/standards-w3c-did";
@@ -628,7 +628,23 @@ export function generateRestRoutesIdentity(
 							verificationMethodId: "my-verification-id"
 						},
 						body: {
-							bytes: "aGVsbG8gd29ybGQ="
+							proofType: "DataIntegrityProof",
+							document: {
+								"@context": [
+									"https://www.w3.org/ns/credentials/v2",
+									"https://www.w3.org/ns/credentials/examples/v2"
+								],
+								id: "urn:uuid:58172aac-d8ba-11ed-83dd-0b3aef56cc33",
+								type: ["VerifiableCredential", "AlumniCredential"],
+								name: "Alumni Credential",
+								description: "A minimum viable example of an Alumni Credential.",
+								issuer: "https://vc.example/issuers/5678",
+								validFrom: "2023-01-01T00:00:00Z",
+								credentialSubject: {
+									id: "did:example:abcdefgh",
+									alumniOf: "The School of Examples"
+								}
+							}
 						}
 					}
 				}
@@ -642,15 +658,18 @@ export function generateRestRoutesIdentity(
 						id: "identityProofCreateResponseExample",
 						response: {
 							body: {
-								"@context": "https://w3id.org/security/data-integrity/v2",
+								"@context": [
+									"https://www.w3.org/ns/credentials/v2",
+									"https://www.w3.org/ns/credentials/examples/v2"
+								],
 								type: "DataIntegrityProof",
 								cryptosuite: "eddsa-jcs-2022",
-								created: "2025-01-24T11:32:13.106Z",
+								created: "2024-01-31T16:00:45.490Z",
 								verificationMethod:
-									"did:entity-storage:0xda2df3ebc91ee0d5229d6532ffd0f4426952a94f34988b0ca906694dfd366a6a#my-verification-id",
+									"did:entity-storage:0x0101010101010101010101010101010101010101010101010101010101010101#my-verification-id",
 								proofPurpose: "assertionMethod",
 								proofValue:
-									"2fVLgANruCBoRPBCJavi54mZtkQdyMz6T2N4XVyB96asawiriKrVWoktcSQ7dMGrBTiemBBDpcLE2HfiTBCGuBmq"
+									"z2zGoejwpX6HH2T11BZaniEVZrqRKDpwbQSvPcL7eL9M7hV5P9zQQZxs85n6qyDzkkXCL8aFUWfwQD5bxVGqDK1fa"
 							}
 						}
 					}
@@ -677,9 +696,24 @@ export function generateRestRoutesIdentity(
 					id: "identityProofVerifyRequestExample",
 					request: {
 						body: {
-							bytes: "aGVsbG8gd29ybGQ=",
+							document: {
+								"@context": [
+									"https://www.w3.org/ns/credentials/v2",
+									"https://www.w3.org/ns/credentials/examples/v2"
+								],
+								id: "urn:uuid:58172aac-d8ba-11ed-83dd-0b3aef56cc33",
+								type: ["VerifiableCredential", "AlumniCredential"],
+								name: "Alumni Credential",
+								description: "A minimum viable example of an Alumni Credential.",
+								issuer: "https://vc.example/issuers/5678",
+								validFrom: "2023-01-01T00:00:00Z",
+								credentialSubject: {
+									id: "did:example:abcdefgh",
+									alumniOf: "The School of Examples"
+								}
+							},
 							proof: {
-								"@context": "https://w3id.org/security/data-integrity/v2",
+								"@context": "https://www.w3.org/ns/credentials/v2",
 								type: "DataIntegrityProof",
 								cryptosuite: "eddsa-jcs-2022",
 								created: "2025-01-24T11:32:13.106Z",
@@ -1249,13 +1283,13 @@ export async function identityProofCreate(
 		nameof(request.body),
 		request.body
 	);
-	Guards.stringBase64(ROUTES_SOURCE, nameof(request.body.bytes), request.body.bytes);
 
 	const component = ComponentFactory.get<IIdentityComponent>(componentName);
 
 	const result = await component.proofCreate(
 		request.pathParams.identity,
-		Converter.base64ToBytes(request.body.bytes),
+		request.body.proofType,
+		request.body.document,
 		httpRequestContext.userIdentity
 	);
 
@@ -1282,14 +1316,10 @@ export async function identityProofVerify(
 		nameof(request.body),
 		request.body
 	);
-	Guards.stringBase64(ROUTES_SOURCE, nameof(request.body.bytes), request.body.bytes);
 
 	const component = ComponentFactory.get<IIdentityComponent>(componentName);
 
-	const result = await component.proofVerify(
-		Converter.base64ToBytes(request.body.bytes),
-		request.body.proof
-	);
+	const result = await component.proofVerify(request.body.document, request.body.proof);
 
 	return {
 		body: {

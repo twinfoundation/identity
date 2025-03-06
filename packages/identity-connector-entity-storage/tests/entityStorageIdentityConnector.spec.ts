@@ -1,7 +1,7 @@
 // Copyright 2024 IOTA Stiftung.
 // SPDX-License-Identifier: Apache-2.0.
-import { Converter, Is, ObjectHelper } from "@twin.org/core";
-import { Ed25519 } from "@twin.org/crypto";
+import { Is, ObjectHelper, RandomHelper } from "@twin.org/core";
+import { Bip39 } from "@twin.org/crypto";
 import type { IJsonLdNodeObject } from "@twin.org/data-json-ld";
 import { MemoryEntityStorageConnector } from "@twin.org/entity-storage-connector-memory";
 import { EntityStorageConnectorFactory } from "@twin.org/entity-storage-models";
@@ -9,11 +9,12 @@ import { nameof } from "@twin.org/nameof";
 import {
 	DidContexts,
 	DidTypes,
-	type IDidCredentialStatus,
-	type IDidVerifiableCredential,
 	type DidVerificationMethodType,
-	type IDidProof,
-	type IDidService
+	type IDidCredentialStatus,
+	type IDidService,
+	type IDidVerifiableCredential,
+	type IProof,
+	ProofTypes
 } from "@twin.org/standards-w3c-did";
 import {
 	EntityStorageVaultConnector,
@@ -32,7 +33,6 @@ let testDocumentKey: VaultKey;
 let testDocumentVerificationMethodKey: VaultKey;
 let testDocumentVerificationMethodId: string;
 let testServiceId: string;
-let testProof: IDidProof;
 let testVcJwt: string;
 let testVpJwt: string;
 
@@ -65,6 +65,20 @@ describe("EntityStorageIdentityConnector", () => {
 		EntityStorageConnectorFactory.register("vault-secret", () => vaultSecretEntityStorageConnector);
 
 		VaultConnectorFactory.register("vault", () => new EntityStorageVaultConnector());
+
+		Date.now = vi.fn(() => new Date("2024-01-31T16:00:45.490Z").getTime());
+
+		let randomCounter = 1;
+		RandomHelper.generate = vi
+			.fn()
+			.mockImplementation(length => new Uint8Array(length).fill(randomCounter++));
+
+		Bip39.randomMnemonic = vi
+			.fn()
+			.mockImplementation(
+				() =>
+					"elder blur tip exact organ pipe other same minute grace conduct father brother prosper tide icon pony suggest joy provide dignity domain nominee liquid"
+			);
 	});
 
 	test("can create a document", async () => {
@@ -785,7 +799,8 @@ describe("EntityStorageIdentityConnector", () => {
 			identityConnector.createProof(
 				TEST_IDENTITY_ID,
 				undefined as unknown as string,
-				undefined as unknown as Uint8Array
+				ProofTypes.DataIntegrityProof,
+				undefined as unknown as IJsonLdNodeObject
 			)
 		).rejects.toMatchObject({
 			name: "GuardError",
@@ -797,15 +812,20 @@ describe("EntityStorageIdentityConnector", () => {
 		});
 	});
 
-	test("can fail to create a proof with no bytes", async () => {
+	test("can fail to create a proof with no document", async () => {
 		const identityConnector = new EntityStorageIdentityConnector();
 		await expect(
-			identityConnector.createProof(TEST_IDENTITY_ID, "foo", undefined as unknown as Uint8Array)
+			identityConnector.createProof(
+				TEST_IDENTITY_ID,
+				"foo",
+				ProofTypes.DataIntegrityProof,
+				undefined as unknown as IJsonLdNodeObject
+			)
 		).rejects.toMatchObject({
 			name: "GuardError",
-			message: "guard.uint8Array",
+			message: "guard.objectUndefined",
 			properties: {
-				property: "bytes",
+				property: "unsecureDocument",
 				value: "undefined"
 			}
 		});
@@ -818,35 +838,58 @@ describe("EntityStorageIdentityConnector", () => {
 
 		const identityConnector = new EntityStorageIdentityConnector();
 
-		const bytes = new Uint8Array([0, 1, 2, 3, 4]);
+		const unsecuredDocument: IDidVerifiableCredential & IJsonLdNodeObject = {
+			"@context": [
+				"https://www.w3.org/ns/credentials/v2",
+				"https://www.w3.org/ns/credentials/examples/v2"
+			],
+			id: "urn:uuid:58172aac-d8ba-11ed-83dd-0b3aef56cc33",
+			type: ["VerifiableCredential", "AlumniCredential"],
+			name: "Alumni Credential",
+			description: "A minimum viable example of an Alumni Credential.",
+			issuer: "https://vc.example/issuers/5678",
+			validFrom: "2023-01-01T00:00:00Z",
+			credentialSubject: {
+				id: "did:example:abcdefgh",
+				alumniOf: "The School of Examples"
+			}
+		};
+
 		const proof = await identityConnector.createProof(
 			TEST_IDENTITY_ID,
 			testDocumentVerificationMethodId,
-			bytes
+			ProofTypes.DataIntegrityProof,
+			unsecuredDocument
 		);
-		expect(proof.type).toEqual(DidTypes.DataIntegrityProof);
 
-		testProof = proof;
-
-		const sig = Ed25519.sign(
-			Converter.base64UrlToBytes(testDocumentVerificationMethodKey.privateKey),
-			bytes
-		);
-		expect(proof.proofValue).toEqual(Converter.bytesToBase58(sig));
+		expect(proof).toEqual({
+			"@context": [
+				"https://www.w3.org/ns/credentials/v2",
+				"https://www.w3.org/ns/credentials/examples/v2"
+			],
+			type: "DataIntegrityProof",
+			cryptosuite: "eddsa-jcs-2022",
+			created: "2024-01-31T16:00:45.490Z",
+			verificationMethod:
+				"did:entity-storage:0x0101010101010101010101010101010101010101010101010101010101010101#my-verification-id",
+			proofPurpose: "assertionMethod",
+			proofValue:
+				"z2zGoejwpX6HH2T11BZaniEVZrqRKDpwbQSvPcL7eL9M7hV5P9zQQZxs85n6qyDzkkXCL8aFUWfwQD5bxVGqDK1fa"
+		});
 	});
 
-	test("can fail to verify a proof with no bytes", async () => {
+	test("can fail to verify a proof with no document", async () => {
 		const identityConnector = new EntityStorageIdentityConnector();
 		await expect(
 			identityConnector.verifyProof(
-				undefined as unknown as Uint8Array,
-				undefined as unknown as IDidProof
+				undefined as unknown as IJsonLdNodeObject,
+				undefined as unknown as IProof
 			)
 		).rejects.toMatchObject({
 			name: "GuardError",
-			message: "guard.uint8Array",
+			message: "guard.objectUndefined",
 			properties: {
-				property: "bytes",
+				property: "document",
 				value: "undefined"
 			}
 		});
@@ -855,7 +898,7 @@ describe("EntityStorageIdentityConnector", () => {
 	test("can fail to verify a proof with no proof", async () => {
 		const identityConnector = new EntityStorageIdentityConnector();
 		await expect(
-			identityConnector.verifyProof(Converter.utf8ToBytes("foo"), undefined as unknown as IDidProof)
+			identityConnector.verifyProof({}, undefined as unknown as IProof)
 		).rejects.toMatchObject({
 			name: "GuardError",
 			message: "guard.objectUndefined",
@@ -873,10 +916,39 @@ describe("EntityStorageIdentityConnector", () => {
 
 		const identityConnector = new EntityStorageIdentityConnector();
 
-		const verified = await identityConnector.verifyProof(
-			new Uint8Array([0, 1, 2, 3, 4]),
-			testProof
-		);
+		const unsecuredDocument: IDidVerifiableCredential & IJsonLdNodeObject = {
+			"@context": [
+				"https://www.w3.org/ns/credentials/v2",
+				"https://www.w3.org/ns/credentials/examples/v2"
+			],
+			id: "urn:uuid:58172aac-d8ba-11ed-83dd-0b3aef56cc33",
+			type: ["VerifiableCredential", "AlumniCredential"],
+			name: "Alumni Credential",
+			description: "A minimum viable example of an Alumni Credential.",
+			issuer: "https://vc.example/issuers/5678",
+			validFrom: "2023-01-01T00:00:00Z",
+			credentialSubject: {
+				id: "did:example:abcdefgh",
+				alumniOf: "The School of Examples"
+			}
+		};
+
+		const signedProof: IProof = {
+			"@context": [
+				"https://www.w3.org/ns/credentials/v2",
+				"https://www.w3.org/ns/credentials/examples/v2"
+			],
+			type: "DataIntegrityProof",
+			cryptosuite: "eddsa-jcs-2022",
+			created: "2024-01-31T16:00:45.490Z",
+			verificationMethod:
+				"did:entity-storage:0x0101010101010101010101010101010101010101010101010101010101010101#my-verification-id",
+			proofPurpose: "assertionMethod",
+			proofValue:
+				"z2zGoejwpX6HH2T11BZaniEVZrqRKDpwbQSvPcL7eL9M7hV5P9zQQZxs85n6qyDzkkXCL8aFUWfwQD5bxVGqDK1fa"
+		};
+
+		const verified = await identityConnector.verifyProof(unsecuredDocument, signedProof);
 		expect(verified).toBeTruthy();
 	});
 });

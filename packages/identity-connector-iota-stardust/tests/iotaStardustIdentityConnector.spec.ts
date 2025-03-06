@@ -1,17 +1,19 @@
 // Copyright 2024 IOTA Stiftung.
 // SPDX-License-Identifier: Apache-2.0.
-import { Converter, Is } from "@twin.org/core";
+import { Is } from "@twin.org/core";
 import type { IJsonLdNodeObject } from "@twin.org/data-json-ld";
 import type { MemoryEntityStorageConnector } from "@twin.org/entity-storage-connector-memory";
 import { EntityStorageConnectorFactory } from "@twin.org/entity-storage-models";
 import {
 	DidContexts,
 	DidTypes,
-	type IDidCredentialStatus,
+	ProofTypes,
 	type DidVerificationMethodType,
+	type IDidCredentialStatus,
 	type IDidDocumentVerificationMethod,
-	type IDidProof,
-	type IDidService
+	type IDidService,
+	type IDidVerifiableCredential,
+	type IProof
 } from "@twin.org/standards-w3c-did";
 import type { VaultSecret } from "@twin.org/vault-connector-entity-storage";
 import {
@@ -32,7 +34,7 @@ let testServiceId: string;
 let holderDocumentVerificationMethodId: string;
 let testVcJwt: string;
 let testVpJwt: string;
-let testProof: IDidProof;
+let testProof: IProof;
 
 describe("IotaStardustIdentityConnector", () => {
 	beforeAll(async () => {
@@ -892,7 +894,8 @@ describe("IotaStardustIdentityConnector", () => {
 			identityConnector.createProof(
 				TEST_IDENTITY_ID,
 				undefined as unknown as string,
-				undefined as unknown as Uint8Array
+				ProofTypes.DataIntegrityProof,
+				undefined as unknown as IJsonLdNodeObject
 			)
 		).rejects.toMatchObject({
 			name: "GuardError",
@@ -904,7 +907,7 @@ describe("IotaStardustIdentityConnector", () => {
 		});
 	});
 
-	test("can fail to create a proof with no bytes", async () => {
+	test("can fail to create a proof with no document", async () => {
 		const identityConnector = new IotaStardustIdentityConnector({
 			config: {
 				clientOptions: TEST_CLIENT_OPTIONS,
@@ -912,12 +915,17 @@ describe("IotaStardustIdentityConnector", () => {
 			}
 		});
 		await expect(
-			identityConnector.createProof(TEST_IDENTITY_ID, "foo", undefined as unknown as Uint8Array)
+			identityConnector.createProof(
+				TEST_IDENTITY_ID,
+				"foo",
+				ProofTypes.DataIntegrityProof,
+				undefined as unknown as IJsonLdNodeObject
+			)
 		).rejects.toMatchObject({
 			name: "GuardError",
-			message: "guard.uint8Array",
+			message: "guard.objectUndefined",
 			properties: {
-				property: "bytes",
+				property: "unsecureDocument",
 				value: "undefined"
 			}
 		});
@@ -930,15 +938,39 @@ describe("IotaStardustIdentityConnector", () => {
 				vaultMnemonicId: TEST_MNEMONIC_NAME
 			}
 		});
-		const proof = await identityConnector.createProof(
+		const unsecuredDocument: IDidVerifiableCredential & IJsonLdNodeObject = {
+			"@context": [
+				"https://www.w3.org/ns/credentials/v2",
+				"https://www.w3.org/ns/credentials/examples/v2"
+			],
+			id: "urn:uuid:58172aac-d8ba-11ed-83dd-0b3aef56cc33",
+			type: ["VerifiableCredential", "AlumniCredential"],
+			name: "Alumni Credential",
+			description: "A minimum viable example of an Alumni Credential.",
+			issuer: "https://vc.example/issuers/5678",
+			validFrom: "2023-01-01T00:00:00Z",
+			credentialSubject: {
+				id: "did:example:abcdefgh",
+				alumniOf: "The School of Examples"
+			}
+		};
+
+		testProof = await identityConnector.createProof(
 			TEST_IDENTITY_ID,
 			testDocumentVerificationMethodId,
-			new Uint8Array([0, 1, 2, 3, 4])
+			ProofTypes.DataIntegrityProof,
+			unsecuredDocument
 		);
-		expect(proof.type).toEqual(DidTypes.DataIntegrityProof);
-		expect(proof.proofValue).toBeDefined();
 
-		testProof = proof;
+		expect(testProof).toMatchObject({
+			"@context": [
+				"https://www.w3.org/ns/credentials/v2",
+				"https://www.w3.org/ns/credentials/examples/v2"
+			],
+			type: "DataIntegrityProof",
+			cryptosuite: "eddsa-jcs-2022",
+			proofPurpose: "assertionMethod"
+		});
 	});
 
 	test("can fail to verify a proof with no bytes", async () => {
@@ -950,14 +982,14 @@ describe("IotaStardustIdentityConnector", () => {
 		});
 		await expect(
 			identityConnector.verifyProof(
-				undefined as unknown as Uint8Array,
-				undefined as unknown as IDidProof
+				undefined as unknown as IJsonLdNodeObject,
+				undefined as unknown as IProof
 			)
 		).rejects.toMatchObject({
 			name: "GuardError",
-			message: "guard.uint8Array",
+			message: "guard.objectUndefined",
 			properties: {
-				property: "bytes",
+				property: "document",
 				value: "undefined"
 			}
 		});
@@ -971,7 +1003,7 @@ describe("IotaStardustIdentityConnector", () => {
 			}
 		});
 		await expect(
-			identityConnector.verifyProof(Converter.utf8ToBytes("foo"), undefined as unknown as IDidProof)
+			identityConnector.verifyProof({}, undefined as unknown as IProof)
 		).rejects.toMatchObject({
 			name: "GuardError",
 			message: "guard.objectUndefined",
@@ -989,10 +1021,24 @@ describe("IotaStardustIdentityConnector", () => {
 				vaultMnemonicId: TEST_MNEMONIC_NAME
 			}
 		});
-		const verified = await identityConnector.verifyProof(
-			new Uint8Array([0, 1, 2, 3, 4]),
-			testProof
-		);
+		const unsecuredDocument: IDidVerifiableCredential & IJsonLdNodeObject = {
+			"@context": [
+				"https://www.w3.org/ns/credentials/v2",
+				"https://www.w3.org/ns/credentials/examples/v2"
+			],
+			id: "urn:uuid:58172aac-d8ba-11ed-83dd-0b3aef56cc33",
+			type: ["VerifiableCredential", "AlumniCredential"],
+			name: "Alumni Credential",
+			description: "A minimum viable example of an Alumni Credential.",
+			issuer: "https://vc.example/issuers/5678",
+			validFrom: "2023-01-01T00:00:00Z",
+			credentialSubject: {
+				id: "did:example:abcdefgh",
+				alumniOf: "The School of Examples"
+			}
+		};
+
+		const verified = await identityConnector.verifyProof(unsecuredDocument, testProof);
 		expect(verified).toBeTruthy();
 	});
 });

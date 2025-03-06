@@ -1,5 +1,6 @@
 // Copyright 2024 IOTA Stiftung.
 // SPDX-License-Identifier: Apache-2.0.
+import path from "node:path";
 import {
 	CLIDisplay,
 	CLIOptions,
@@ -7,8 +8,10 @@ import {
 	CLIUtils,
 	type CliOutputOptions
 } from "@twin.org/cli-core";
-import { I18n, Is } from "@twin.org/core";
+import { GeneralError, I18n, Is } from "@twin.org/core";
+import type { IJsonLdNodeObject } from "@twin.org/data-json-ld";
 import { DocumentHelper } from "@twin.org/identity-models";
+import { ProofTypes } from "@twin.org/standards-w3c-did";
 import { VaultConnectorFactory, VaultKeyType } from "@twin.org/vault-models";
 import { setupWalletConnector } from "@twin.org/wallet-cli";
 import { WalletConnectorFactory } from "@twin.org/wallet-models";
@@ -35,8 +38,8 @@ export function buildCommandProofCreate(): Command {
 			I18n.formatMessage("commands.proof-create.options.private-key.description")
 		)
 		.requiredOption(
-			I18n.formatMessage("commands.proof-create.options.data.param"),
-			I18n.formatMessage("commands.proof-create.options.data.description")
+			I18n.formatMessage("commands.proof-create.options.document-filename.param"),
+			I18n.formatMessage("commands.proof-create.options.document-filename.description")
 		);
 
 	CLIOptions.output(command, {
@@ -85,7 +88,7 @@ export async function actionCommandProofCreate(
 	opts: {
 		id: string;
 		privateKey: string;
-		data: string;
+		documentFilename: string;
 		connector?: IdentityConnectorTypes;
 		node: string;
 		network?: string;
@@ -93,7 +96,9 @@ export async function actionCommandProofCreate(
 ): Promise<void> {
 	const id: string = CLIParam.stringValue("id", opts.id);
 	const privateKey: Uint8Array = CLIParam.hexBase64("private-key", opts.privateKey);
-	const data: Uint8Array = CLIParam.hexBase64("data", opts.data);
+	const documentFilename: string = path.resolve(
+		CLIParam.stringValue("document-filename", opts.documentFilename)
+	);
 	const nodeEndpoint: string = CLIParam.url("node", opts.node);
 	const network: string | undefined =
 		opts.connector === IdentityConnectorTypes.Iota
@@ -101,6 +106,10 @@ export async function actionCommandProofCreate(
 			: undefined;
 
 	CLIDisplay.value(I18n.formatMessage("commands.proof-create.labels.verificationMethodId"), id);
+	CLIDisplay.value(
+		I18n.formatMessage("commands.proof-create.labels.documentFilename"),
+		documentFilename
+	);
 
 	CLIDisplay.value(I18n.formatMessage("commands.common.labels.node"), nodeEndpoint);
 	if (Is.stringValue(network)) {
@@ -132,7 +141,16 @@ export async function actionCommandProofCreate(
 
 	CLIDisplay.spinnerStart();
 
-	const proof = await identityConnector.createProof(localIdentity, id, data);
+	const document = await CLIUtils.readJsonFile<IJsonLdNodeObject>(documentFilename);
+	if (Is.undefined(document)) {
+		throw new GeneralError("commands", "commands.proof-create.documentJsonFileNotFound");
+	}
+	const proof = await identityConnector.createProof(
+		localIdentity,
+		id,
+		ProofTypes.DataIntegrityProof,
+		document
+	);
 
 	CLIDisplay.spinnerStop();
 
@@ -143,18 +161,10 @@ export async function actionCommandProofCreate(
 	}
 
 	if (Is.stringValue(opts?.json)) {
-		await CLIUtils.writeJsonFile(
-			opts.json,
-			{ cryptosuite: proof.cryptosuite, value: proof.proofValue },
-			opts.mergeJson
-		);
+		await CLIUtils.writeJsonFile(opts.json, proof, opts.mergeJson);
 	}
 	if (Is.stringValue(opts?.env)) {
-		await CLIUtils.writeEnvFile(
-			opts.env,
-			[`DID_CRYPTOSUITE="${proof.cryptosuite}"`, `DID_PROOF_VALUE="${proof.proofValue}"`],
-			opts.mergeEnv
-		);
+		await CLIUtils.writeEnvFile(opts.env, [`DID_PROOF='${JSON.stringify(proof)}'`], opts.mergeEnv);
 	}
 
 	CLIDisplay.done();

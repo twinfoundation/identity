@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0.
 import { BaseRestClient } from "@twin.org/api-core";
 import type { IBaseRestClientConfig, INoContentResponse } from "@twin.org/api-models";
-import { Converter, Guards, Is } from "@twin.org/core";
+import { Guards, Is } from "@twin.org/core";
 import type { IJsonLdContextDefinitionRoot, IJsonLdNodeObject } from "@twin.org/data-json-ld";
 import {
 	DocumentHelper,
@@ -35,10 +35,11 @@ import {
 	DidVerificationMethodType,
 	type IDidDocument,
 	type IDidDocumentVerificationMethod,
-	type IDidProof,
 	type IDidService,
 	type IDidVerifiableCredential,
-	type IDidVerifiablePresentation
+	type IDidVerifiablePresentation,
+	type IProof,
+	ProofTypes
 } from "@twin.org/standards-w3c-did";
 
 /**
@@ -403,14 +404,25 @@ export class IdentityClient extends BaseRestClient implements IIdentityComponent
 	}
 
 	/**
-	 * Create a proof for arbitrary data with the specified verification method.
+	 * Create a proof for a document with the specified verification method.
 	 * @param verificationMethodId The verification method id to use.
-	 * @param bytes The data bytes to sign.
+	 * @param proofType The type of proof to create.
+	 * @param unsecureDocument The unsecure document to create the proof for.
 	 * @returns The proof.
 	 */
-	public async proofCreate(verificationMethodId: string, bytes: Uint8Array): Promise<IDidProof> {
+	public async proofCreate(
+		verificationMethodId: string,
+		proofType: ProofTypes,
+		unsecureDocument: IJsonLdNodeObject
+	): Promise<IProof> {
 		Guards.stringValue(this.CLASS_NAME, nameof(verificationMethodId), verificationMethodId);
-		Guards.uint8Array(this.CLASS_NAME, nameof(bytes), bytes);
+		Guards.arrayOneOf<ProofTypes>(
+			this.CLASS_NAME,
+			nameof(proofType),
+			proofType,
+			Object.values(ProofTypes)
+		);
+		Guards.object<IJsonLdNodeObject>(this.CLASS_NAME, nameof(unsecureDocument), unsecureDocument);
 
 		const idParts = DocumentHelper.parseId(verificationMethodId);
 
@@ -423,7 +435,8 @@ export class IdentityClient extends BaseRestClient implements IIdentityComponent
 					verificationMethodId: idParts.fragment ?? ""
 				},
 				body: {
-					bytes: Converter.bytesToBase64(bytes)
+					document: unsecureDocument,
+					proofType
 				}
 			}
 		);
@@ -432,21 +445,22 @@ export class IdentityClient extends BaseRestClient implements IIdentityComponent
 	}
 
 	/**
-	 * Verify proof for arbitrary data with the specified verification method.
-	 * @param bytes The data bytes to verify.
+	 * Verify proof for a document with the specified verification method.
+	 * @param document The document to verify.
 	 * @param proof The proof to verify.
 	 * @returns True if the proof is verified.
 	 */
-	public async proofVerify(bytes: Uint8Array, proof: IDidProof): Promise<boolean> {
-		Guards.uint8Array(this.CLASS_NAME, nameof(bytes), bytes);
-		Guards.object(this.CLASS_NAME, nameof(proof), proof);
+	public async proofVerify(document: IJsonLdNodeObject, proof: IProof): Promise<boolean> {
+		Guards.object<IJsonLdNodeObject>(this.CLASS_NAME, nameof(document), document);
+		Guards.object<IProof>(this.CLASS_NAME, nameof(proof), proof);
+		Guards.stringValue(this.CLASS_NAME, nameof(proof.verificationMethod), proof.verificationMethod);
 
 		const response = await this.fetch<IIdentityProofVerifyRequest, IIdentityProofVerifyResponse>(
 			"/proof/verify",
 			"POST",
 			{
 				body: {
-					bytes: Converter.bytesToBase64(bytes),
+					document,
 					proof
 				}
 			}

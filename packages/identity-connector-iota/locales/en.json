@@ -2,7 +2,11 @@
 	"error": {
 		"iotaIdentityResolverConnector": {
 			"documentNotFound": "The document could not be found",
-			"resolveDocumentFailed": "Resolving the document failed"
+			"resolveDocumentFailed": "Resolving the document failed \"{documentId}\""
+		},
+		"iotaUniversalResolverConnector": {
+			"documentNotFound": "The document could not be found",
+			"resolveDocumentFailed": "Resolving the document failed \"{documentId}\""
 		},
 		"iotaIdentityConnector": {
 			"createDocumentFailed": "Creating the document failed",

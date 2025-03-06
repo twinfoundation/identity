@@ -1,8 +1,13 @@
 {
 	"error": {
-		"jwtHelper": {
+		"verificationHelper": {
 			"jwtDecodeFailed": "Decoding the JWT failed",
-			"jwtPayloadMissingParam": "The JWT is missing the required parameter \"{param}\""
+			"proofTypeNotSupported": "The proof type \"{proofType}\" is not supported",
+			"proofMissingVerificationMethod": "The proof is missing the verification method"
+		},
+		"documentHelper": {
+			"verificationMethodNotFound": "The verification method \"{methodName}\" of type \"{methodType}\" could not be found",
+			"verificationMethodJwkNotFound": "The verification method \"{methodName}\" of type \"{methodType}\" is missing the JWK"
 		}
 	},
 	"verifiableCredentialStates": {

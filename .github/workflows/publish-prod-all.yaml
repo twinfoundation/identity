@@ -11,6 +11,14 @@ jobs:
     env:
       TEST_MNEMONIC: ${{ secrets.TEST_MNEMONIC }}
 
+    services:
+      iota-universal-resolver:
+        image: iotaledger/uni-resolver-driver-iota:v0.2.0-alpha
+        ports:
+          - 8080:8080
+        env:
+          NETWORK: testnet
+
     if: github.ref == 'refs/heads/main'
 
     strategy:

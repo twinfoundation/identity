@@ -1,6 +1,6 @@
 {
 	"name": "@twin.org/identity-connector-iota-stardust",
-	"version": "0.0.1-next.28",
+	"version": "0.0.1-next.29",
 	"description": "Identity connector implementation using IOTA Stardust",
 	"repository": {
 		"type": "git",
@@ -35,11 +35,12 @@
 		"@twin.org/data-json-ld": "next",
 		"@twin.org/dlt-iota-stardust": "next",
 		"@twin.org/entity": "next",
-		"@twin.org/identity-models": "0.0.1-next.28",
+		"@twin.org/identity-models": "0.0.1-next.29",
 		"@twin.org/nameof": "next",
 		"@twin.org/standards-w3c-did": "next",
 		"@twin.org/vault-models": "next",
 		"@twin.org/wallet-models": "next",
+		"@twin.org/web": "next",
 		"@iota/identity-wasm": "1.5.0",
 		"@iota/sdk-wasm": "1.1.3"
 	},
