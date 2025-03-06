@@ -23,3 +23,15 @@ The wallet address index to use for funding and controlling the identity.
 #### Inherited from
 
 [`IIotaIdentityConnectorConfig`](IIotaIdentityConnectorConfig.md).[`walletAddressIndex`](IIotaIdentityConnectorConfig.md#walletaddressindex)
+
+***
+
+### identityPkgId?
+
+> `optional` **identityPkgId**: `string`
+
+The package ID for the identity contract on the network.
+
+#### Inherited from
+
+[`IIotaIdentityConnectorConfig`](IIotaIdentityConnectorConfig.md).[`identityPkgId`](IIotaIdentityConnectorConfig.md#identitypkgid)

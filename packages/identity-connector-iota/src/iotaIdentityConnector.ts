@@ -147,6 +147,8 @@ export class IotaIdentityConnector implements IIdentityConnector {
 
 			return didDocument;
 		} catch (error) {
+			// eslint-disable-next-line no-console
+			console.log(error);
 			throw new GeneralError(
 				this.CLASS_NAME,
 				"createDocumentFailed",

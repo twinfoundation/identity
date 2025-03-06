@@ -23,3 +23,11 @@ The wallet address index to use for funding and controlling the identity.
 ```ts
 0
 ```
+
+***
+
+### identityPkgId?
+
+> `optional` **identityPkgId**: `string`
+
+The package ID for the identity contract on the network.
