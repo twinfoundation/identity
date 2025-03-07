@@ -19,7 +19,7 @@
 			"stateControllerMissing": "The state controller address is missing from the metadata",
 			"verificationMethodNotFound": "The verification method could not be found",
 			"serviceNotFound": "The service could not be found",
-			"publicKeyJwkMissing": "The verification method contains no publicKeyJwk in method \"{method}\"",
+			"publicKeyJwkMissing": "The verification method contains no publicKeyJwk in JWK \"{jwk}\"",
 			"verificationKeyMissing": "The verification key is missing from the vault for method \"{method}\"",
 			"createVerifiableCredentialFailed": "Creating the verifiable credential failed",
 			"checkingVerifiableCredentialFailed": "Checking the verifiable credential failed",
@@ -36,7 +36,8 @@
 			"insufficientFunds": "There were insufficient funds to complete the operation",
 			"walletConnectorMissing": "The wallet connector must be available to perform this operation",
 			"proofType": "The proof type must be DataIntegrityProof, it is currently {proofType}",
-			"cryptosuite": "The proof cryptosuite must be eddsa-jcs-2022, it is currently {cryptosuite}"
+			"cryptosuite": "The proof cryptosuite must be eddsa-jcs-2022, it is currently {cryptosuite}",
+			"failedToReceiveGasFromFaucet": "Failed to receive gas from the faucet"
 		}
 	}
 }

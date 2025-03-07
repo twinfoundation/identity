@@ -111,5 +111,7 @@ export async function setupTestEnv(): Promise<void> {
 		});
 
 		await TEST_WALLET_CONNECTOR.ensureBalance(TEST_IDENTITY_ID, TEST_ADDRESS, 1000000000n);
+		const val = await TEST_WALLET_CONNECTOR.getBalance(TEST_IDENTITY_ID, TEST_ADDRESS);
+		console.log("Balance", val);
 	} catch {}
 }

@@ -2,30 +2,34 @@
 // SPDX-License-Identifier: Apache-2.0.
 import {
 	IotaDocument,
-	IdentityClient,
 	IdentityClientReadOnly,
-	StorageSigner,
 	JwsAlgorithm,
 	KeyIdMemStore,
 	JwkMemStore,
 	Storage,
-	type IotaDID
+	VerificationMethod,
+	MethodScope,
+	RevocationBitmap,
+	IotaDID,
+	IdentityClient,
+	StorageSigner
 } from "@iota/identity-wasm/node";
 import { IotaClient } from "@iota/iota-sdk/client";
-import { GeneralError, Guards, NotImplementedError } from "@twin.org/core";
+import { getFaucetHost, requestIotaFromFaucetV0 } from "@iota/iota-sdk/faucet";
+import { GeneralError, Guards, Is, NotFoundError, NotImplementedError } from "@twin.org/core";
 import type { IJsonLdContextDefinitionRoot, IJsonLdNodeObject } from "@twin.org/data-json-ld";
 import { Iota } from "@twin.org/dlt-iota";
 import type { IIdentityConnector } from "@twin.org/identity-models";
 import { nameof } from "@twin.org/nameof";
-import type {
+import {
 	DidVerificationMethodType,
-	IDidDocument,
-	IDidDocumentVerificationMethod,
-	IProof,
-	IDidService,
-	IDidVerifiableCredential,
-	IDidVerifiablePresentation,
-	ProofTypes
+	type IDidDocument,
+	type IDidDocumentVerificationMethod,
+	type IProof,
+	type IDidService,
+	type IDidVerifiableCredential,
+	type IDidVerifiablePresentation,
+	type ProofTypes
 } from "@twin.org/standards-w3c-did";
 import { VaultConnectorFactory, type IVaultConnector } from "@twin.org/vault-models";
 import type { IIotaIdentityConnectorConfig } from "./models/IIotaIdentityConnectorConfig";
@@ -44,7 +48,8 @@ export class IotaIdentityConnector implements IIdentityConnector {
 	 * The package id for the identity client.
 	 */
 	private static readonly _IOTA_IDENTITY_PKG_ID: string =
-		"0x222741bbdff74b42df48a7b4733185e9b24becb8ccfbafe8eac864ab4e4cc555"; // testnet
+		// "0x222741bbdff74b42df48a7b4733185e9b24becb8ccfbafe8eac864ab4e4cc555"; // testnet
+		"0x03242ae6b87406bd0eb5d669fbe874ed4003694c0be9c6a9ee7c315e6461a553"; // devnet
 
 	/**
 	 * Runtime name for the class.
@@ -102,53 +107,27 @@ export class IotaIdentityConnector implements IIdentityConnector {
 		Guards.stringValue(this.CLASS_NAME, nameof(controller), controller);
 
 		try {
-			// Create a new client to connect to IOTA network
-			const iotaClient = new IotaClient(this._config.clientOptions);
-			const network = await iotaClient.getChainIdentifier();
-
-			const unpublished = new IotaDocument(network);
-
-			const identityClientReadOnly = await IdentityClientReadOnly.createWithPkgId(
-				iotaClient,
-				IotaIdentityConnector._IOTA_IDENTITY_PKG_ID
-			);
-
 			const storage = new Storage(new JwkMemStore(), new KeyIdMemStore());
+			const identityClient = await this.getFundedClient(storage);
+			const networkHrp = identityClient.network();
+			const document = new IotaDocument(networkHrp);
 
-			const generate = await storage.keyStorage().generate("Ed25519", JwsAlgorithm.EdDSA);
+			const revocationBitmap = new RevocationBitmap();
+			const revocationServiceId = document.id().join("#revocation");
+			document.insertService(revocationBitmap.toService(revocationServiceId));
 
-			const publicKeyJwk = generate.jwk().toPublic();
-
-			if (publicKeyJwk === undefined) {
-				throw new TypeError("failed to derive public JWK from generated JWK");
-			}
-			const keyId = generate.keyId();
-
-			const signer = new StorageSigner(storage, keyId, publicKeyJwk);
-			const identityClient = await IdentityClient.create(identityClientReadOnly, signer);
-
-			// Create and publish the identity
 			const { output: identity } = await identityClient
-				.createIdentity(unpublished)
+				.createIdentity(document)
 				.finish()
 				.execute(identityClient);
 
 			const did: IotaDID = identity.didDocument().id();
 
-			// check if we can resolve it via client
 			const resolved = await identityClient.resolveDid(did);
-			// eslint-disable-next-line no-console
-			console.log({ resolved });
 
-			// Convert to standard DID Document format
-			const didDocument = identity.didDocument().toJSON() as IDidDocument;
-			// eslint-disable-next-line no-console
-			console.log({ didDocument });
-
-			return didDocument;
+			const doc = resolved.toJSON() as { doc: IDidDocument };
+			return doc.doc;
 		} catch (error) {
-			// eslint-disable-next-line no-console
-			console.log(error);
 			throw new GeneralError(
 				this.CLASS_NAME,
 				"createDocumentFailed",
@@ -174,7 +153,85 @@ export class IotaIdentityConnector implements IIdentityConnector {
 		verificationMethodType: DidVerificationMethodType,
 		verificationMethodId?: string
 	): Promise<IDidDocumentVerificationMethod> {
-		throw new NotImplementedError(this.CLASS_NAME, "addVerificationMethod");
+		Guards.stringValue(this.CLASS_NAME, nameof(controller), controller);
+		Guards.stringValue(this.CLASS_NAME, nameof(documentId), documentId);
+		Guards.arrayOneOf<DidVerificationMethodType>(
+			this.CLASS_NAME,
+			nameof(verificationMethodType),
+			verificationMethodType,
+			Object.values(DidVerificationMethodType)
+		);
+		try {
+			const storage = new Storage(new JwkMemStore(), new KeyIdMemStore());
+			const identityClient = await this.getFundedClient(storage);
+			const document = await identityClient.resolveDid(IotaDID.parse(documentId));
+
+			if (Is.undefined(document)) {
+				throw new NotFoundError(this.CLASS_NAME, "documentNotFound", documentId);
+			}
+
+			// Generate a new JWK
+			const generate = await storage.keyStorage().generate("Ed25519", JwsAlgorithm.EdDSA);
+			const publicKeyJwk = generate.jwk().toPublic();
+			if (publicKeyJwk === undefined) {
+				throw new TypeError("failed to derive public JWK from generated JWK");
+			}
+
+			// Insert verification method
+			const keyId = `${generate.keyId()}`;
+			const methodId = `#${verificationMethodId ?? keyId}`;
+			const method = VerificationMethod.newFromJwk(document.id(), publicKeyJwk, methodId);
+			const methods = document.methods();
+			const existingMethod = methods.find(m => m.id().toString() === method.id().toString());
+
+			if (existingMethod) {
+				document.removeMethod(method.id());
+			}
+
+			if (verificationMethodType === "verificationMethod") {
+				document.insertMethod(method, MethodScope.VerificationMethod());
+			} else if (verificationMethodType === "authentication") {
+				document.insertMethod(method, MethodScope.Authentication());
+			} else if (verificationMethodType === "assertionMethod") {
+				document.insertMethod(method, MethodScope.AssertionMethod());
+			} else if (verificationMethodType === "keyAgreement") {
+				document.insertMethod(method, MethodScope.KeyAgreement());
+			} else if (verificationMethodType === "capabilityDelegation") {
+				document.insertMethod(method, MethodScope.CapabilityDelegation());
+			} else if (verificationMethodType === "capabilityInvocation") {
+				document.insertMethod(method, MethodScope.CapabilityInvocation());
+			}
+
+			// await this.updateDocument(controller, document, false);
+
+			const { output: doc } = await identityClient
+				.publishDidDocument(document)
+				.execute(identityClient);
+
+			const resolved = doc.toJSON() as { doc: IDidDocument };
+			if (!resolved.doc[verificationMethodType]) {
+				throw new GeneralError(
+					this.CLASS_NAME,
+					"addVerificationMethodFailed",
+					undefined,
+					`Failed to add ${verificationMethodType} to document`
+				);
+			}
+
+			const methodPublished =
+				resolved.doc[verificationMethodType].find(
+					m => (m as IDidDocumentVerificationMethod).id === method.id().toString()
+				) || method;
+
+			return methodPublished as IDidDocumentVerificationMethod;
+		} catch (error) {
+			throw new GeneralError(
+				this.CLASS_NAME,
+				"addVerificationMethodFailed",
+				undefined,
+				Iota.extractPayloadError(error)
+			);
+		}
 	}
 
 	/**
@@ -363,5 +420,50 @@ export class IotaIdentityConnector implements IIdentityConnector {
 	 */
 	public async resolveDocument(documentId: string): Promise<IDidDocument> {
 		throw new NotImplementedError(this.CLASS_NAME, "resolveDocument");
+	}
+
+	/**
+	 * Get a funded client.
+	 * @param storage The storage to use for the client.
+	 * @returns The funded client.
+	 */
+	private async getFundedClient(storage: Storage): Promise<IdentityClient> {
+		const iotaClient = new IotaClient(this._config.clientOptions);
+
+		const identityClientReadOnly = await IdentityClientReadOnly.create(iotaClient);
+
+		// generate new key
+		const generate = await storage.keyStorage().generate("Ed25519", JwsAlgorithm.EdDSA);
+
+		const publicKeyJwk = generate.jwk().toPublic();
+		if (publicKeyJwk === undefined) {
+			throw new GeneralError(this.CLASS_NAME, "publicKeyJwkMissing", {
+				jwk: generate.jwk().kid()
+			});
+		}
+		const keyId = generate.keyId();
+
+		// create signer from storage
+		const signer = new StorageSigner(storage, keyId, publicKeyJwk);
+		const identityClient = await IdentityClient.create(identityClientReadOnly, signer);
+
+		let balance = await iotaClient.getBalance({
+			owner: identityClient.senderAddress()
+		});
+
+		if (BigInt(balance.totalBalance) < 10000000000n) {
+			await requestIotaFromFaucetV0({
+				host: getFaucetHost(this._config.network),
+				recipient: identityClient.senderAddress()
+			});
+			balance = await iotaClient.getBalance({
+				owner: identityClient.senderAddress()
+			});
+			if (BigInt(balance.totalBalance) < 10000000000n) {
+				throw new GeneralError(this.CLASS_NAME, "failedToReceiveGasFromFaucet");
+			}
+		}
+
+		return identityClient;
 	}
 }
