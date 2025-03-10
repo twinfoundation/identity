@@ -32,6 +32,7 @@ import {
 	type ProofTypes
 } from "@twin.org/standards-w3c-did";
 import { VaultConnectorFactory, type IVaultConnector } from "@twin.org/vault-models";
+import { type IWalletConnector, WalletConnectorFactory } from "@twin.org/wallet-models";
 import type { IIotaIdentityConnectorConfig } from "./models/IIotaIdentityConnectorConfig";
 import type { IIotaIdentityConnectorConstructorOptions } from "./models/IIotaIdentityConnectorConstructorOptions";
 
@@ -63,6 +64,12 @@ export class IotaIdentityConnector implements IIdentityConnector {
 	private readonly _vaultConnector: IVaultConnector;
 
 	/**
+	 * The wallet connector.
+	 * @internal
+	 */
+	private readonly _walletConnector: IWalletConnector;
+
+	/**
 	 * The configuration to use for IOTA operations.
 	 * @internal
 	 */
@@ -73,6 +80,18 @@ export class IotaIdentityConnector implements IIdentityConnector {
 	 * @internal
 	 */
 	private readonly _walletAddressIndex: number;
+
+	/**
+	 * Gas budget for transactions.
+	 * @internal
+	 */
+	private readonly _gasBudget: bigint;
+
+	/**
+	 * The IOTA client.
+	 * @internal
+	 */
+	private _identityClient: IdentityClient;
 
 	/**
 	 * Create a new instance of IotaIdentityConnector.
@@ -94,7 +113,10 @@ export class IotaIdentityConnector implements IIdentityConnector {
 		this._config = options.config;
 		Iota.populateConfig(this._config);
 
+		this._gasBudget = this._config.gasBudget ?? 1000000000n;
+
 		this._vaultConnector = VaultConnectorFactory.get(options.vaultConnectorType ?? "vault");
+		this._walletConnector = WalletConnectorFactory.get(options.walletConnectorType ?? "wallet");
 		this._walletAddressIndex = options.config.walletAddressIndex ?? 0;
 	}
 
@@ -107,8 +129,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 		Guards.stringValue(this.CLASS_NAME, nameof(controller), controller);
 
 		try {
-			const storage = new Storage(new JwkMemStore(), new KeyIdMemStore());
-			const identityClient = await this.getFundedClient(storage);
+			const identityClient = await this.getFundedClient();
 			const networkHrp = identityClient.network();
 			const document = new IotaDocument(networkHrp);
 
@@ -122,6 +143,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 				.execute(identityClient);
 
 			const did: IotaDID = identity.didDocument().id();
+			identity.id();
 
 			const resolved = await identityClient.resolveDid(did);
 
@@ -163,11 +185,18 @@ export class IotaIdentityConnector implements IIdentityConnector {
 		);
 		try {
 			const storage = new Storage(new JwkMemStore(), new KeyIdMemStore());
-			const identityClient = await this.getFundedClient(storage);
+			const identityClient = await this.getFundedClient();
 			const document = await identityClient.resolveDid(IotaDID.parse(documentId));
-
 			if (Is.undefined(document)) {
 				throw new NotFoundError(this.CLASS_NAME, "documentNotFound", documentId);
+			}
+			// eslint-disable-next-line no-console
+			console.log({ document });
+
+			const identity = await identityClient.getIdentity(documentId.split(":")[3]);
+			const identityOnChain = await identity.toFullFledged();
+			if (Is.undefined(identityOnChain)) {
+				throw new NotFoundError(this.CLASS_NAME, "identityNotFound", identityOnChain);
 			}
 
 			// Generate a new JWK
@@ -204,27 +233,17 @@ export class IotaIdentityConnector implements IIdentityConnector {
 
 			// await this.updateDocument(controller, document, false);
 
-			const { output: doc } = await identityClient
-				.publishDidDocument(document)
-				.execute(identityClient);
+			await identityOnChain
+				.updateDidDocument(document.clone())
+				.withGasBudget(this._gasBudget)
+				.execute(identityClient)
+				.then(result => result.output);
 
-			const resolved = doc.toJSON() as { doc: IDidDocument };
-			if (!resolved.doc[verificationMethodType]) {
-				throw new GeneralError(
-					this.CLASS_NAME,
-					"addVerificationMethodFailed",
-					undefined,
-					`Failed to add ${verificationMethodType} to document`
-				);
-			}
-
-			const methodPublished =
-				resolved.doc[verificationMethodType].find(
-					m => (m as IDidDocumentVerificationMethod).id === method.id().toString()
-				) || method;
-
-			return methodPublished as IDidDocumentVerificationMethod;
+			return method.toJSON() as IDidDocumentVerificationMethod;
 		} catch (error) {
+			// eslint-disable-next-line no-console
+			console.log(error);
+
 			throw new GeneralError(
 				this.CLASS_NAME,
 				"addVerificationMethodFailed",
@@ -424,15 +443,35 @@ export class IotaIdentityConnector implements IIdentityConnector {
 
 	/**
 	 * Get a funded client.
-	 * @param storage The storage to use for the client.
 	 * @returns The funded client.
 	 */
-	private async getFundedClient(storage: Storage): Promise<IdentityClient> {
+	private async getFundedClient(): Promise<IdentityClient> {
 		const iotaClient = new IotaClient(this._config.clientOptions);
+		if (this._identityClient) {
+			let balance = await iotaClient.getBalance({
+				owner: this._identityClient.senderAddress()
+			});
+
+			if (BigInt(balance.totalBalance) < 10000000000n) {
+				await requestIotaFromFaucetV0({
+					host: getFaucetHost(this._config.network),
+					recipient: this._identityClient.senderAddress()
+				});
+				balance = await iotaClient.getBalance({
+					owner: this._identityClient.senderAddress()
+				});
+				if (BigInt(balance.totalBalance) < 10000000000n) {
+					throw new GeneralError(this.CLASS_NAME, "failedToReceiveGasFromFaucet");
+				}
+			}
+			return this._identityClient;
+		}
 
 		const identityClientReadOnly = await IdentityClientReadOnly.create(iotaClient);
 
 		// generate new key
+
+		const storage = new Storage(new JwkMemStore(), new KeyIdMemStore());
 		const generate = await storage.keyStorage().generate("Ed25519", JwsAlgorithm.EdDSA);
 
 		const publicKeyJwk = generate.jwk().toPublic();
@@ -464,6 +503,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 			}
 		}
 
+		this._identityClient = identityClient;
 		return identityClient;
 	}
 }

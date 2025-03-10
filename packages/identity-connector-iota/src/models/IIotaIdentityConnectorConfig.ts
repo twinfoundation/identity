@@ -17,4 +17,10 @@ export interface IIotaIdentityConnectorConfig extends IIotaConfig {
 	 */
 	// TODO:
 	identityPkgId?: string;
+
+	/**
+	 * The gas budget for the identity contract on the network.
+	 */
+	// TODO:
+	gasBudget?: bigint;
 }
