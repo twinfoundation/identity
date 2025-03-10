@@ -20,7 +20,7 @@ import { getFaucetHost, requestIotaFromFaucetV0 } from "@iota/iota-sdk/faucet";
 import { GeneralError, Guards, Is, NotFoundError, NotImplementedError } from "@twin.org/core";
 import type { IJsonLdContextDefinitionRoot, IJsonLdNodeObject } from "@twin.org/data-json-ld";
 import { Iota } from "@twin.org/dlt-iota";
-import type { IIdentityConnector } from "@twin.org/identity-models";
+import { DocumentHelper, type IIdentityConnector } from "@twin.org/identity-models";
 import { nameof } from "@twin.org/nameof";
 import {
 	DidVerificationMethodType,
@@ -133,26 +133,50 @@ export class IotaIdentityConnector implements IIdentityConnector {
 			const controllerAddress = await this.getControllerAddress(controller);
 			const identityClient = await this.getFundedClient(controllerAddress);
 
-			// We also need to ensure the identity client's sender address has funds
+			// Ensure the identity client's sender address has funds
 			const senderAddress = identityClient.senderAddress();
+
 			if (senderAddress !== controllerAddress) {
 				// Fund the identity client's sender address if it's different from the controller address
 				const iotaClient = new IotaClient(this._config.clientOptions);
-				let balance = await iotaClient.getBalance({
+				let senderBalance = await iotaClient.getBalance({
 					owner: senderAddress
 				});
+				// eslint-disable-next-line no-console
+				console.log("Initial sender balance", senderBalance);
 
-				if (BigInt(balance.totalBalance) < 10000000000n) {
-					await requestIotaFromFaucetV0({
-						host: getFaucetHost(this._config.network),
-						recipient: senderAddress
-					});
+				const controllerBalance = await iotaClient.getBalance({
+					owner: controllerAddress
+				});
+				// eslint-disable-next-line no-console
+				console.log("Controller balance", controllerBalance);
 
-					balance = await iotaClient.getBalance({
+				if (BigInt(senderBalance.totalBalance) < 10000000000n) {
+					await this._walletConnector.transfer(
+						controller,
+						controllerAddress,
+						senderAddress,
+						10000000000n
+					);
+
+					// TODO: Use the Faucet to fund the sender address and refactor to use the faucet for both addresses
+					if (BigInt(controllerBalance.totalBalance) < 10000000000n) {
+						await requestIotaFromFaucetV0({
+							host: getFaucetHost(this._config.network),
+							recipient: controllerAddress
+						});
+					}
+
+					// Wait longer for the transaction to be processed (5 seconds)
+					await new Promise(resolve => setTimeout(resolve, 5000));
+
+					senderBalance = await iotaClient.getBalance({
 						owner: senderAddress
 					});
+					// eslint-disable-next-line no-console
+					console.log("Transfer successful", senderBalance);
 
-					if (BigInt(balance.totalBalance) < 10000000000n) {
+					if (BigInt(senderBalance.totalBalance) < 10000000000n) {
 						throw new GeneralError(this.CLASS_NAME, "failedToReceiveGasFromFaucet");
 					}
 				}
@@ -221,8 +245,6 @@ export class IotaIdentityConnector implements IIdentityConnector {
 			if (Is.undefined(document)) {
 				throw new NotFoundError(this.CLASS_NAME, "documentNotFound", documentId);
 			}
-			// eslint-disable-next-line no-console
-			console.log({ document });
 
 			const identity = await identityClient.getIdentity(documentId.split(":")[3]);
 			const identityOnChain = await identity.toFullFledged();
@@ -295,7 +317,54 @@ export class IotaIdentityConnector implements IIdentityConnector {
 		controller: string,
 		verificationMethodId: string
 	): Promise<void> {
-		throw new NotImplementedError(this.CLASS_NAME, "removeVerificationMethod");
+		Guards.stringValue(this.CLASS_NAME, nameof(controller), controller);
+		Guards.stringValue(this.CLASS_NAME, nameof(verificationMethodId), verificationMethodId);
+
+		try {
+			const idParts = DocumentHelper.parseId(verificationMethodId);
+			if (Is.empty(idParts.fragment)) {
+				throw new NotFoundError(this.CLASS_NAME, "missingDid", verificationMethodId);
+			}
+
+			const controllerAddress = await this.getControllerAddress(controller);
+			const identityClient = await this.getFundedClient(controllerAddress);
+			const document = await identityClient.resolveDid(IotaDID.parse(idParts.id));
+
+			if (Is.undefined(document)) {
+				throw new NotFoundError(this.CLASS_NAME, "documentNotFound", idParts.id);
+			}
+
+			const methods = document.methods();
+			const method = methods.find(m => m.id().toString() === verificationMethodId);
+			if (!method) {
+				throw new NotFoundError(
+					this.CLASS_NAME,
+					"verificationMethodNotFound",
+					verificationMethodId
+				);
+			}
+
+			document.removeMethod(method.id());
+
+			const identity = await identityClient.getIdentity(idParts.id.split(":")[3]);
+			const identityOnChain = identity.toFullFledged();
+			if (Is.undefined(identityOnChain)) {
+				throw new NotFoundError(this.CLASS_NAME, "identityNotFound", idParts.id);
+			}
+
+			await identityOnChain
+				.updateDidDocument(document.clone())
+				.withGasBudget(this._gasBudget)
+				.execute(identityClient)
+				.then(result => result.output);
+		} catch (error) {
+			throw new GeneralError(
+				this.CLASS_NAME,
+				"removeVerificationMethodFailed",
+				undefined,
+				Iota.extractPayloadError(error)
+			);
+		}
 	}
 
 	/**
