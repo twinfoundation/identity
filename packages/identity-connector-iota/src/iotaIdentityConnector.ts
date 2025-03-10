@@ -148,9 +148,6 @@ export class IotaIdentityConnector implements IIdentityConnector {
 						recipient: senderAddress
 					});
 
-					// Wait a bit for the faucet request to be processed
-					await new Promise(resolve => setTimeout(resolve, 5000));
-
 					balance = await iotaClient.getBalance({
 						owner: senderAddress
 					});
@@ -181,6 +178,8 @@ export class IotaIdentityConnector implements IIdentityConnector {
 			const doc = resolved.toJSON() as { doc: IDidDocument };
 			return doc.doc;
 		} catch (error) {
+			// eslint-disable-next-line no-console
+			console.log("error", error);
 			throw new GeneralError(
 				this.CLASS_NAME,
 				"createDocumentFailed",
@@ -275,7 +274,6 @@ export class IotaIdentityConnector implements IIdentityConnector {
 		} catch (error) {
 			// eslint-disable-next-line no-console
 			console.log(error);
-
 			throw new GeneralError(
 				this.CLASS_NAME,
 				"addVerificationMethodFailed",
@@ -493,6 +491,8 @@ export class IotaIdentityConnector implements IIdentityConnector {
 			const doc = resolvedDocument.toJSON() as { doc: IDidDocument };
 			return doc.doc;
 		} catch (error) {
+			// eslint-disable-next-line no-console
+			console.log("error", error);
 			throw new GeneralError(
 				this.CLASS_NAME,
 				"resolveDocumentFailed",

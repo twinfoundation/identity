@@ -1,5 +1,6 @@
 // Copyright 2024 IOTA Stiftung.
 // SPDX-License-Identifier: Apache-2.0.
+import { Is } from "@twin.org/core";
 import type { IDidService } from "@twin.org/standards-w3c-did";
 import {
 	setupTestEnv,
@@ -46,21 +47,21 @@ describe("IotaIdentityConnector", () => {
 		const testDocument = await identityConnector.createDocument(TEST_IDENTITY_ID);
 		testDocumentId = testDocument.id;
 
-		// 	// Check that the document ID starts with did:iota
+		// Check that the document ID starts with did:iota
 		expect(testDocument.id.startsWith("did:iota")).toBeTruthy();
 
-		// 	// Ensure the document has the expected structure
+		// Ensure the document has the expected structure
 		expect(testDocument.id).toBeDefined();
 		expect(testDocument.service).toBeDefined();
 		expect((testDocument.service?.[0] as IDidService)?.id).toEqual(`${testDocument.id}#revocation`);
 
-		// 	// Safely check verification methods if they exist
+		// Safely check verification methods if they exist
 		if (testDocument.verificationMethod && testDocument.verificationMethod.length > 0) {
 			expect(testDocument.verificationMethod.length).toBeGreaterThan(0);
 		}
 
-		// 	// Add more specific assertions based on your implementation details
-		// 	// For example, check specific verification method types, service endpoints, etc.
+		// Add more specific assertions based on your implementation details
+		// For example, check specific verification method types, service endpoints, etc.
 	});
 
 	test("can add a verification method", async () => {
@@ -92,26 +93,45 @@ describe("IotaIdentityConnector", () => {
 		expect(addedMethod.type).toEqual("JsonWebKey2020");
 	});
 
-	// test("can resolve a document", async () => {
-	// 	// Skip if no document was created in the previous test
-	// 	if (!testDocumentId) {
-	// 		console.warn("Skipping resolve test as no document was created");
-	// 		return;
-	// 	}
+	test("can resolve a document", async () => {
+		// Skip if no document was created in the previous test
+		if (!testDocumentId) {
+			console.warn("Skipping resolve test as no document was created");
+			return;
+		}
 
-	// 	const identityConnector = new IotaIdentityConnector({
-	// 		config: {
-	// 			clientOptions: TEST_CLIENT_OPTIONS,
-	// 			vaultMnemonicId: TEST_MNEMONIC_NAME,
-	// 			network: TEST_NETWORK
-	// 		}
-	// 	});
+		const identityConnector = new IotaIdentityConnector({
+			config: {
+				clientOptions: TEST_CLIENT_OPTIONS,
+				vaultMnemonicId: TEST_MNEMONIC_NAME,
+				network: TEST_NETWORK
+			}
+		});
 
-	// 	const resolvedDocument = await identityConnector.resolveDocument(testDocumentId);
+		const resolvedDocument = await identityConnector.resolveDocument(testDocumentId);
 
-	// 	// Verify the resolved document matches what we created
-	// 	expect(resolvedDocument.id).toEqual(testDocumentId);
+		// Verify the resolved document matches what we created
+		expect(resolvedDocument).toBeDefined();
+		expect(resolvedDocument.id).toEqual(testDocumentId);
 
-	// 	console.debug("Resolved DID Document:", resolvedDocument);
-	// });
+		// Check that the document has the expected structure
+		expect(resolvedDocument.service).toBeDefined();
+		expect((resolvedDocument.service?.[0] as IDidService)?.id).toEqual(
+			`${testDocumentId}#revocation`
+		);
+
+		// Check for verification methods
+		if (resolvedDocument.verificationMethod && resolvedDocument.verificationMethod.length > 0) {
+			// Verify we have at least one verification method
+			expect(resolvedDocument.verificationMethod.length).toBeGreaterThan(0);
+
+			const hasAddedMethod = resolvedDocument.verificationMethod.some(method => {
+				if (Is.string(method)) {
+					return method === `${testDocumentId}#testVerificationMethod`;
+				}
+				return method.id === `${testDocumentId}#testVerificationMethod`;
+			});
+			expect(hasAddedMethod).toBeTruthy();
+		}
+	});
 });
