@@ -16,12 +16,12 @@ export class IdentityProfile {
 	/**
 	 * The public profile data.
 	 */
-	@property({ type: "object" })
+	@property({ type: "object", optional: true })
 	public publicProfile?: unknown;
 
 	/**
 	 * The private profile data.
 	 */
-	@property({ type: "object" })
+	@property({ type: "object", optional: true })
 	public privateProfile?: unknown;
 }
