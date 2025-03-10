@@ -103,6 +103,7 @@ export async function setupTestEnv(): Promise<void> {
 		"Identity Address",
 		`${process.env.TEST_EXPLORER_URL}address/${TEST_ADDRESS}?network=${TEST_NETWORK}`
 	);
+	console.debug(`Network: ${TEST_NETWORK}`);
 
 	try {
 		await requestIotaFromFaucetV0({

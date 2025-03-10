@@ -12,7 +12,8 @@ import {
 	RevocationBitmap,
 	IotaDID,
 	IdentityClient,
-	StorageSigner
+	StorageSigner,
+	Resolver
 } from "@iota/identity-wasm/node";
 import { IotaClient } from "@iota/iota-sdk/client";
 import { getFaucetHost, requestIotaFromFaucetV0 } from "@iota/iota-sdk/faucet";
@@ -91,7 +92,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 	 * The IOTA client.
 	 * @internal
 	 */
-	private _identityClient: IdentityClient;
+	private _identityClient?: IdentityClient;
 
 	/**
 	 * Create a new instance of IotaIdentityConnector.
@@ -109,15 +110,15 @@ export class IotaIdentityConnector implements IIdentityConnector {
 			nameof(options.config.clientOptions),
 			options.config.clientOptions
 		);
+		this._vaultConnector = VaultConnectorFactory.get(options.vaultConnectorType ?? "vault");
+		this._walletConnector = WalletConnectorFactory.get(options.walletConnectorType ?? "wallet");
 
 		this._config = options.config;
-		Iota.populateConfig(this._config);
 
 		this._gasBudget = this._config.gasBudget ?? 1000000000n;
 
-		this._vaultConnector = VaultConnectorFactory.get(options.vaultConnectorType ?? "vault");
-		this._walletConnector = WalletConnectorFactory.get(options.walletConnectorType ?? "wallet");
 		this._walletAddressIndex = options.config.walletAddressIndex ?? 0;
+		Iota.populateConfig(this._config);
 	}
 
 	/**
@@ -129,7 +130,37 @@ export class IotaIdentityConnector implements IIdentityConnector {
 		Guards.stringValue(this.CLASS_NAME, nameof(controller), controller);
 
 		try {
-			const identityClient = await this.getFundedClient();
+			const controllerAddress = await this.getControllerAddress(controller);
+			const identityClient = await this.getFundedClient(controllerAddress);
+
+			// We also need to ensure the identity client's sender address has funds
+			const senderAddress = identityClient.senderAddress();
+			if (senderAddress !== controllerAddress) {
+				// Fund the identity client's sender address if it's different from the controller address
+				const iotaClient = new IotaClient(this._config.clientOptions);
+				let balance = await iotaClient.getBalance({
+					owner: senderAddress
+				});
+
+				if (BigInt(balance.totalBalance) < 10000000000n) {
+					await requestIotaFromFaucetV0({
+						host: getFaucetHost(this._config.network),
+						recipient: senderAddress
+					});
+
+					// Wait a bit for the faucet request to be processed
+					await new Promise(resolve => setTimeout(resolve, 5000));
+
+					balance = await iotaClient.getBalance({
+						owner: senderAddress
+					});
+
+					if (BigInt(balance.totalBalance) < 10000000000n) {
+						throw new GeneralError(this.CLASS_NAME, "failedToReceiveGasFromFaucet");
+					}
+				}
+			}
+
 			const networkHrp = identityClient.network();
 			const document = new IotaDocument(networkHrp);
 
@@ -185,7 +216,8 @@ export class IotaIdentityConnector implements IIdentityConnector {
 		);
 		try {
 			const storage = new Storage(new JwkMemStore(), new KeyIdMemStore());
-			const identityClient = await this.getFundedClient();
+			const controllerAddress = await this.getControllerAddress(controller);
+			const identityClient = await this.getFundedClient(controllerAddress);
 			const document = await identityClient.resolveDid(IotaDID.parse(documentId));
 			if (Is.undefined(document)) {
 				throw new NotFoundError(this.CLASS_NAME, "documentNotFound", documentId);
@@ -438,27 +470,74 @@ export class IotaIdentityConnector implements IIdentityConnector {
 	 * @throws NotFoundError if the id can not be resolved.
 	 */
 	public async resolveDocument(documentId: string): Promise<IDidDocument> {
-		throw new NotImplementedError(this.CLASS_NAME, "resolveDocument");
+		Guards.stringValue(this.CLASS_NAME, nameof(documentId), documentId);
+
+		try {
+			const iotaClient = new IotaClient(this._config.clientOptions);
+
+			// Create a read-only client explicitly using the Package ID
+			const identityClientReadOnly = await IdentityClientReadOnly.createWithPkgId(
+				iotaClient,
+				IotaIdentityConnector._IOTA_IDENTITY_PKG_ID
+			);
+
+			// Create a resolver with the read-only client
+			const resolver = new Resolver<IotaDocument>({
+				client: identityClientReadOnly
+			});
+
+			// Resolve the DID document
+			const resolvedDocument = await resolver.resolve(documentId);
+
+			// Convert to standard DID Document format
+			const doc = resolvedDocument.toJSON() as { doc: IDidDocument };
+			return doc.doc;
+		} catch (error) {
+			throw new GeneralError(
+				this.CLASS_NAME,
+				"resolveDocumentFailed",
+				{ documentId },
+				Iota.extractPayloadError(error)
+			);
+		}
+	}
+
+	/**
+	 * Get the address for a controller.
+	 * @param controller The controller to get the address for.
+	 * @returns The address for the controller.
+	 */
+	private async getControllerAddress(controller: string): Promise<string> {
+		const addresses = await this._walletConnector.getAddresses(
+			controller,
+			0,
+			this._walletAddressIndex,
+			1
+		);
+		return addresses[0];
 	}
 
 	/**
 	 * Get a funded client.
+	 * @param controllerAddress The address of the controller.
 	 * @returns The funded client.
 	 */
-	private async getFundedClient(): Promise<IdentityClient> {
+	private async getFundedClient(controllerAddress?: string): Promise<IdentityClient> {
 		const iotaClient = new IotaClient(this._config.clientOptions);
-		if (this._identityClient) {
+
+		// If we already have an identity client and a controller address, check its balance
+		if (this._identityClient && controllerAddress) {
 			let balance = await iotaClient.getBalance({
-				owner: this._identityClient.senderAddress()
+				owner: controllerAddress
 			});
 
 			if (BigInt(balance.totalBalance) < 10000000000n) {
 				await requestIotaFromFaucetV0({
 					host: getFaucetHost(this._config.network),
-					recipient: this._identityClient.senderAddress()
+					recipient: controllerAddress
 				});
 				balance = await iotaClient.getBalance({
-					owner: this._identityClient.senderAddress()
+					owner: controllerAddress
 				});
 				if (BigInt(balance.totalBalance) < 10000000000n) {
 					throw new GeneralError(this.CLASS_NAME, "failedToReceiveGasFromFaucet");
@@ -467,10 +546,13 @@ export class IotaIdentityConnector implements IIdentityConnector {
 			return this._identityClient;
 		}
 
-		const identityClientReadOnly = await IdentityClientReadOnly.create(iotaClient);
+		// Create a read-only client first, explicitly using the Package ID
+		const identityClientReadOnly = await IdentityClientReadOnly.createWithPkgId(
+			iotaClient,
+			IotaIdentityConnector._IOTA_IDENTITY_PKG_ID
+		);
 
 		// generate new key
-
 		const storage = new Storage(new JwkMemStore(), new KeyIdMemStore());
 		const generate = await storage.keyStorage().generate("Ed25519", JwsAlgorithm.EdDSA);
 
@@ -484,22 +566,33 @@ export class IotaIdentityConnector implements IIdentityConnector {
 
 		// create signer from storage
 		const signer = new StorageSigner(storage, keyId, publicKeyJwk);
+
+		// Create the full identity client using the read-only client and signer
 		const identityClient = await IdentityClient.create(identityClientReadOnly, signer);
 
-		let balance = await iotaClient.getBalance({
-			owner: identityClient.senderAddress()
-		});
+		// If we have a controller address, ensure it has enough balance
+		if (controllerAddress) {
+			let balance = await iotaClient.getBalance({
+				owner: controllerAddress
+			});
 
-		if (BigInt(balance.totalBalance) < 10000000000n) {
-			await requestIotaFromFaucetV0({
-				host: getFaucetHost(this._config.network),
-				recipient: identityClient.senderAddress()
-			});
-			balance = await iotaClient.getBalance({
-				owner: identityClient.senderAddress()
-			});
 			if (BigInt(balance.totalBalance) < 10000000000n) {
-				throw new GeneralError(this.CLASS_NAME, "failedToReceiveGasFromFaucet");
+				await requestIotaFromFaucetV0({
+					host: getFaucetHost(this._config.network),
+					recipient: controllerAddress
+				});
+
+				// Wait a bit for the faucet request to be processed
+				await new Promise(resolve => setTimeout(resolve, 5000));
+
+				balance = await iotaClient.getBalance({
+					owner: controllerAddress
+				});
+				// Balance after faucet request is checked
+
+				if (BigInt(balance.totalBalance) < 10000000000n) {
+					throw new GeneralError(this.CLASS_NAME, "failedToReceiveGasFromFaucet");
+				}
 			}
 		}
 
