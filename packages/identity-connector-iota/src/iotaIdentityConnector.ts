@@ -13,7 +13,8 @@ import {
 	IotaDID,
 	IdentityClient,
 	StorageSigner,
-	Resolver
+	Resolver,
+	Service
 } from "@iota/identity-wasm/node";
 import { IotaClient } from "@iota/iota-sdk/client";
 import { getFaucetHost, requestIotaFromFaucetV0 } from "@iota/iota-sdk/faucet";
@@ -384,7 +385,51 @@ export class IotaIdentityConnector implements IIdentityConnector {
 		serviceType: string | string[],
 		serviceEndpoint: string | string[]
 	): Promise<IDidService> {
-		throw new NotImplementedError(this.CLASS_NAME, "addService");
+		Guards.stringValue(this.CLASS_NAME, nameof(controller), controller);
+		Guards.stringValue(this.CLASS_NAME, nameof(documentId), documentId);
+		Guards.stringValue(this.CLASS_NAME, nameof(serviceId), serviceId);
+		Guards.stringValue(this.CLASS_NAME, nameof(serviceType), serviceType);
+		Guards.stringValue(this.CLASS_NAME, nameof(serviceEndpoint), serviceEndpoint);
+
+		try {
+			const controllerAddress = await this.getControllerAddress(controller);
+			const identityClient = await this.getFundedClient(controllerAddress);
+			const document = await identityClient.resolveDid(IotaDID.parse(documentId));
+			if (Is.undefined(document)) {
+				throw new NotFoundError(this.CLASS_NAME, "documentNotFound", documentId);
+			}
+
+			const identity = await identityClient.getIdentity(documentId.split(":")[3]);
+			const identityOnChain = await identity.toFullFledged();
+			if (Is.undefined(identityOnChain)) {
+				throw new NotFoundError(this.CLASS_NAME, "identityNotFound", identityOnChain);
+			}
+
+			const service = new Service({
+				id: `${document.id()}#${serviceId}`,
+				type: serviceType,
+				serviceEndpoint
+			});
+
+			document.insertService(service);
+
+			await identityOnChain
+				.updateDidDocument(document.clone())
+				.withGasBudget(this._gasBudget)
+				.execute(identityClient)
+				.then(result => result.output);
+
+			return service.toJSON() as unknown as IDidService;
+		} catch (error) {
+			// eslint-disable-next-line no-console
+			console.log(error);
+			throw new GeneralError(
+				this.CLASS_NAME,
+				"addServiceFailed",
+				undefined,
+				Iota.extractPayloadError(error)
+			);
+		}
 	}
 
 	/**

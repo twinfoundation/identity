@@ -265,4 +265,69 @@ describe("IotaIdentityConnector", () => {
 
 		expect(methodStillExists).toBeFalsy();
 	});
+
+	test("can add a service", async () => {
+		const identityConnector = new IotaIdentityConnector({
+			config: {
+				clientOptions: TEST_CLIENT_OPTIONS,
+				vaultMnemonicId: TEST_MNEMONIC_NAME,
+				network: TEST_NETWORK
+			}
+		});
+
+		// Create a document to add the service to
+		const testDocument = await identityConnector.createDocument(TEST_IDENTITY_ID);
+		testDocumentId = testDocument.id;
+
+		const serviceId = "testService";
+		const serviceType = "TestServiceType";
+		const serviceEndpoint = "https://example.com/service";
+
+		const addedService = await identityConnector.addService(
+			TEST_IDENTITY_ID,
+			testDocumentId,
+			serviceId,
+			serviceType,
+			serviceEndpoint
+		);
+
+		// Check that the added service has the expected structure
+		expect(addedService).toBeDefined();
+		expect(addedService.id).toEqual(`${testDocumentId}#${serviceId}`);
+		expect(addedService.type).toEqual(serviceType);
+		expect(addedService.serviceEndpoint).toEqual(serviceEndpoint);
+	});
+
+	test("can resolve a document with added service", async () => {
+		// Skip if no document was created in the previous test
+		if (!testDocumentId) {
+			console.warn("Skipping resolve test as no document was created");
+			return;
+		}
+
+		const identityConnector = new IotaIdentityConnector({
+			config: {
+				clientOptions: TEST_CLIENT_OPTIONS,
+				vaultMnemonicId: TEST_MNEMONIC_NAME,
+				network: TEST_NETWORK
+			}
+		});
+
+		const resolvedDocument = await identityConnector.resolveDocument(testDocumentId);
+
+		// Verify the resolved document matches what we created
+		expect(resolvedDocument).toBeDefined();
+		expect(resolvedDocument.id).toEqual(testDocumentId);
+
+		// Check that the document has the expected structure
+		expect(resolvedDocument.service).toBeDefined();
+		expect(Array.isArray(resolvedDocument.service)).toBeTruthy();
+
+		const addedService = resolvedDocument.service?.find(
+			service => service.id === `${testDocumentId}#testService`
+		);
+		expect(addedService).toBeDefined();
+		expect(addedService?.type).toEqual("TestServiceType");
+		expect(addedService?.serviceEndpoint).toEqual("https://example.com/service");
+	});
 });
