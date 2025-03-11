@@ -37,7 +37,8 @@
 			"walletConnectorMissing": "The wallet connector must be available to perform this operation",
 			"proofType": "The proof type must be DataIntegrityProof, it is currently {proofType}",
 			"cryptosuite": "The proof cryptosuite must be eddsa-jcs-2022, it is currently {cryptosuite}",
-			"failedToReceiveGasFromFaucet": "Failed to receive gas from the faucet"
+			"failedToReceiveGasFromFaucet": "Failed to receive gas from the faucet",
+			"integerNegative": "The value must be a positive integer, it is currently {value}"
 		}
 	}
 }

@@ -2,10 +2,14 @@
 // SPDX-License-Identifier: Apache-2.0.
 import {
 	IotaDocument,
+	Duration,
 	IdentityClientReadOnly,
 	JwsAlgorithm,
 	KeyIdMemStore,
 	JwkMemStore,
+	JwtPresentationOptions,
+	JwtPresentationValidationOptions,
+	JwtPresentationValidator,
 	Storage,
 	VerificationMethod,
 	MethodScope,
@@ -13,10 +17,13 @@ import {
 	IotaDID,
 	IdentityClient,
 	StorageSigner,
+	Presentation,
 	Resolver,
 	Service,
 	Credential,
 	JwsSignatureOptions,
+	SubjectHolderRelationship,
+	Timestamp,
 	JwtCredentialValidator,
 	JwtCredentialValidationOptions,
 	FailFast,
@@ -30,14 +37,7 @@ import {
 } from "@iota/identity-wasm/node";
 import { IotaClient } from "@iota/iota-sdk/client";
 import { getFaucetHost, requestIotaFromFaucetV0 } from "@iota/iota-sdk/faucet";
-import {
-	GeneralError,
-	Guards,
-	Is,
-	NotFoundError,
-	NotImplementedError,
-	Converter
-} from "@twin.org/core";
+import { GeneralError, Guards, GuardError, Is, NotFoundError, Converter } from "@twin.org/core";
 import type { IJsonLdContextDefinitionRoot, IJsonLdNodeObject } from "@twin.org/data-json-ld";
 import { Iota } from "@twin.org/dlt-iota";
 import { DocumentHelper, type IIdentityConnector } from "@twin.org/identity-models";
@@ -50,10 +50,13 @@ import {
 	type IDidService,
 	type IDidVerifiableCredential,
 	type IDidVerifiablePresentation,
-	type ProofTypes
+	ProofTypes,
+	ProofHelper,
+	type IJsonWebSignature2020Proof
 } from "@twin.org/standards-w3c-did";
 import { VaultConnectorFactory, type IVaultConnector, VaultKeyType } from "@twin.org/vault-models";
 import { type IWalletConnector, WalletConnectorFactory } from "@twin.org/wallet-models";
+import { Jwk as JwkHelper } from "@twin.org/web";
 import type { IIotaIdentityConnectorConfig } from "./models/IIotaIdentityConnectorConfig";
 import type { IIotaIdentityConnectorConstructorOptions } from "./models/IIotaIdentityConnectorConstructorOptions";
 
@@ -889,7 +892,140 @@ export class IotaIdentityConnector implements IIdentityConnector {
 		verifiablePresentation: IDidVerifiablePresentation;
 		jwt: string;
 	}> {
-		throw new NotImplementedError(this.CLASS_NAME, "createVerifiablePresentation");
+		Guards.stringValue(this.CLASS_NAME, nameof(controller), controller);
+		Guards.stringValue(this.CLASS_NAME, nameof(verificationMethodId), verificationMethodId);
+		if (Is.array(types)) {
+			Guards.arrayValue(this.CLASS_NAME, nameof(types), types);
+		} else if (Is.string(types)) {
+			Guards.stringValue(this.CLASS_NAME, nameof(types), types);
+		}
+		Guards.arrayValue(this.CLASS_NAME, nameof(verifiableCredentials), verifiableCredentials);
+		if (!Is.undefined(expiresInMinutes)) {
+			Guards.integer(this.CLASS_NAME, nameof(expiresInMinutes), expiresInMinutes);
+			if (expiresInMinutes < 0) {
+				throw new GuardError(
+					this.CLASS_NAME,
+					"integerNegative",
+					nameof(expiresInMinutes),
+					expiresInMinutes
+				);
+			}
+		}
+
+		try {
+			const idParts = DocumentHelper.parseId(verificationMethodId);
+			if (Is.empty(idParts.fragment)) {
+				throw new NotFoundError(this.CLASS_NAME, "missingDid", verificationMethodId);
+			}
+
+			const controllerAddress = await this.getControllerAddress(controller);
+			const identityClient = await this.getFundedClient(controllerAddress);
+			const issuerDocument = await identityClient.resolveDid(IotaDID.parse(idParts.id));
+
+			if (Is.undefined(issuerDocument)) {
+				throw new NotFoundError(this.CLASS_NAME, "documentNotFound", idParts.id);
+			}
+
+			const methods = issuerDocument.methods();
+			const method = methods.find(m => m.id().toString() === verificationMethodId);
+			if (!method) {
+				throw new GeneralError(this.CLASS_NAME, "methodMissing", { method: verificationMethodId });
+			}
+
+			const didMethod = method.toJSON() as IDidDocumentVerificationMethod;
+			if (Is.undefined(didMethod.publicKeyJwk)) {
+				throw new GeneralError(this.CLASS_NAME, "publicKeyJwkMissing", {
+					method: verificationMethodId
+				});
+			}
+
+			const finalTypes = [];
+			if (Is.array(types)) {
+				finalTypes.push(...types);
+			} else if (Is.stringValue(types)) {
+				finalTypes.push(types);
+			}
+
+			const credentials = [];
+			for (const cred of verifiableCredentials) {
+				if (Is.stringValue(cred)) {
+					credentials.push(cred);
+				} else {
+					credentials.push(cred);
+				}
+			}
+
+			const unsignedVp = new Presentation({
+				context: contexts as
+					| string
+					| { [id: string]: unknown }
+					| (string | { [id: string]: unknown })[],
+				id: presentationId,
+				verifiableCredential: credentials,
+				type: finalTypes,
+				holder: idParts.id
+			});
+
+			// Get the private key for the verification method
+			const verificationMethodKey = await this._vaultConnector.getKey(
+				`${controller}:${idParts.fragment}`
+			);
+
+			if (Is.undefined(verificationMethodKey)) {
+				throw new GeneralError(this.CLASS_NAME, "verificationKeyMissing", {
+					method: verificationMethodId
+				});
+			}
+
+			const jwkParams = {
+				alg: didMethod.publicKeyJwk.alg,
+				kty: didMethod.publicKeyJwk.kty as JwkType,
+				crv: didMethod.publicKeyJwk.crv,
+				x: didMethod.publicKeyJwk.x,
+				d: Converter.bytesToBase64Url(verificationMethodKey.privateKey)
+			} as IJwkParams;
+
+			const jwkMemStore = new JwkMemStore();
+			const keyId = await jwkMemStore.insert(new Jwk(jwkParams));
+
+			const keyIdMemStore = new KeyIdMemStore();
+			const methodDigest = new MethodDigest(method);
+			await keyIdMemStore.insertKeyId(methodDigest, keyId);
+
+			const expirationDate =
+				Is.integer(expiresInMinutes) && expiresInMinutes > 0
+					? Timestamp.nowUTC().checkedAdd(Duration.minutes(expiresInMinutes))
+					: undefined;
+
+			const storage = new Storage(jwkMemStore, keyIdMemStore);
+			const presentationJwt = await issuerDocument.createPresentationJwt(
+				storage,
+				`#${method.id().fragment()?.toString()}`,
+				unsignedVp,
+				new JwsSignatureOptions(),
+				new JwtPresentationOptions({ expirationDate })
+			);
+
+			const validatedCredential = new JwtPresentationValidator(new EdDSAJwsVerifier());
+
+			const decoded = validatedCredential.validate(
+				presentationJwt,
+				issuerDocument,
+				new JwtPresentationValidationOptions()
+			);
+
+			return {
+				verifiablePresentation: decoded.presentation().toJSON() as IDidVerifiablePresentation,
+				jwt: presentationJwt.toString()
+			};
+		} catch (error) {
+			throw new GeneralError(
+				this.CLASS_NAME,
+				"createVerifiablePresentationFailed",
+				undefined,
+				Iota.extractPayloadError(error)
+			);
+		}
 	}
 
 	/**
@@ -902,7 +1038,101 @@ export class IotaIdentityConnector implements IIdentityConnector {
 		verifiablePresentation?: IDidVerifiablePresentation;
 		issuers?: IDidDocument[];
 	}> {
-		throw new NotImplementedError(this.CLASS_NAME, "checkVerifiablePresentation");
+		Guards.stringValue(this.CLASS_NAME, nameof(presentationJwt), presentationJwt);
+
+		try {
+			const iotaClient = new IotaClient(this._config.clientOptions);
+			const identityClientReadOnly = await IdentityClientReadOnly.createWithPkgId(
+				iotaClient,
+				IotaIdentityConnector._IOTA_IDENTITY_PKG_ID
+			);
+			const resolver = new Resolver<IotaDocument>({ client: identityClientReadOnly });
+
+			const jwt = new Jwt(presentationJwt);
+
+			const holderId = JwtPresentationValidator.extractHolder(jwt);
+			const holderDocument = await resolver.resolve(holderId.toString());
+
+			if (Is.undefined(holderDocument)) {
+				throw new NotFoundError(this.CLASS_NAME, "documentNotFound", holderId.toString());
+			}
+
+			const validatedCredential = new JwtPresentationValidator(new EdDSAJwsVerifier());
+			const decoded = validatedCredential.validate(
+				jwt,
+				holderDocument,
+				new JwtPresentationValidationOptions()
+			);
+
+			const presentation = decoded.presentation();
+
+			// Validate the credentials in the presentation.
+			const credentialValidator = new JwtCredentialValidator(new EdDSAJwsVerifier());
+			const validationOptions = new JwtCredentialValidationOptions({
+				subjectHolderRelationship: [holderId.toString(), SubjectHolderRelationship.AlwaysSubject]
+			});
+
+			const jwtCredentials: Jwt[] = decoded
+				.presentation()
+				.verifiableCredential()
+				.map(credential => {
+					const jwtCredential = credential.tryIntoJwt();
+					if (jwtCredential) {
+						return jwtCredential;
+					}
+					return null;
+				})
+				.filter(Boolean) as Jwt[];
+
+			// Concurrently resolve the issuers' documents.
+			const issuers: string[] = [];
+			for (const jwtCredential of jwtCredentials) {
+				const issuer = JwtCredentialValidator.extractIssuerFromJwt(jwtCredential);
+				issuers.push(issuer.toString());
+			}
+			const resolvedIssuers = await resolver.resolveMultiple(issuers);
+
+			// Validate the credentials in the presentation.
+			for (let i = 0; i < jwtCredentials.length; i++) {
+				credentialValidator.validate(
+					jwtCredentials[i],
+					resolvedIssuers[i],
+					validationOptions,
+					FailFast.FirstError
+				);
+			}
+
+			const jsonIssuers: unknown[] = [];
+			for (let issuer of resolvedIssuers) {
+				if (!("toJSON" in issuer)) {
+					issuer = issuer.toCoreDocument();
+				}
+				jsonIssuers.push(issuer.toJSON());
+			}
+
+			return {
+				revoked: false,
+				verifiablePresentation: presentation.toJSON() as IDidVerifiablePresentation,
+				issuers: jsonIssuers as IDidDocument[]
+			};
+		} catch (error) {
+			// eslint-disable-next-line no-console
+			console.log("error", error);
+			if (error instanceof Error && error.message.toLowerCase().includes("revoked")) {
+				return {
+					revoked: true
+				};
+			}
+			// eslint-disable-next-line no-console
+			console.log("error", error);
+
+			throw new GeneralError(
+				this.CLASS_NAME,
+				"checkingVerifiablePresentationFailed",
+				undefined,
+				Iota.extractPayloadError(error)
+			);
+		}
 	}
 
 	/**
@@ -919,7 +1149,145 @@ export class IotaIdentityConnector implements IIdentityConnector {
 		proofType: ProofTypes,
 		unsecureDocument: IJsonLdNodeObject
 	): Promise<IProof> {
-		throw new NotImplementedError(this.CLASS_NAME, "createProof");
+		Guards.stringValue(this.CLASS_NAME, nameof(controller), controller);
+		Guards.stringValue(this.CLASS_NAME, nameof(verificationMethodId), verificationMethodId);
+		Guards.arrayOneOf<ProofTypes>(
+			this.CLASS_NAME,
+			nameof(proofType),
+			proofType,
+			Object.values(ProofTypes)
+		);
+		Guards.object<IJsonLdNodeObject>(this.CLASS_NAME, nameof(unsecureDocument), unsecureDocument);
+
+		try {
+			const idParts = DocumentHelper.parseId(verificationMethodId);
+			if (Is.empty(idParts.fragment)) {
+				throw new NotFoundError(this.CLASS_NAME, "missingDid", verificationMethodId);
+			}
+
+			// Get the identity client
+			const controllerAddress = await this.getControllerAddress(controller);
+			const identityClient = await this.getFundedClient(controllerAddress);
+
+			// Resolve the document to verify the verification method exists
+			const document = await identityClient.resolveDid(IotaDID.parse(idParts.id));
+
+			if (Is.undefined(document)) {
+				throw new NotFoundError(this.CLASS_NAME, "documentNotFound", idParts.id);
+			}
+
+			// Find the verification method in the document
+			const methods = document.methods();
+			const method = methods.find(m => m.id().toString() === verificationMethodId);
+
+			if (!method) {
+				throw new GeneralError(this.CLASS_NAME, "methodMissing", { method: verificationMethodId });
+			}
+
+			// Get the private key from the vault
+			const keyId = `${controller}:${idParts.fragment}`;
+			// eslint-disable-next-line no-console
+			console.log(`Looking for key with ID: ${keyId}`);
+			const verificationMethodKey = await this._vaultConnector.getKey(keyId);
+
+			if (Is.undefined(verificationMethodKey)) {
+				throw new GeneralError(this.CLASS_NAME, "publicKeyJwkMissing", { keyId });
+			}
+
+			// eslint-disable-next-line no-console
+			console.log(
+				`Retrieved key: ${JSON.stringify({
+					type: verificationMethodKey.type,
+					hasPrivateKey: Boolean(verificationMethodKey.privateKey),
+					privateKeyLength: verificationMethodKey.privateKey?.length
+				})}`
+			);
+
+			// Create a storage with the private key
+			const jwkMemStore = new JwkMemStore();
+
+			// Create the JWK parameters
+			const jwkParams: IJwkParams = {
+				kty: JwkType.Okp,
+				crv: "Ed25519",
+				alg: JwsAlgorithm.EdDSA,
+				x: verificationMethodKey.publicKey
+					? Converter.bytesToBase64Url(verificationMethodKey.publicKey)
+					: "",
+				d: Converter.bytesToBase64Url(verificationMethodKey.privateKey)
+			};
+
+			// eslint-disable-next-line no-console
+			console.log("JWK params:", {
+				kty: jwkParams.kty,
+				crv: jwkParams.crv,
+				alg: jwkParams.alg,
+				xLength: jwkParams.x.length,
+				dLength: jwkParams.d?.length ?? 0
+			});
+
+			const keyIdStore = await jwkMemStore.insert(new Jwk(jwkParams));
+			// eslint-disable-next-line no-console
+			console.log("Key ID:", keyIdStore);
+
+			const keyIdMemStore = new KeyIdMemStore();
+			const methodDigest = new MethodDigest(method);
+			await keyIdMemStore.insertKeyId(methodDigest, keyIdStore);
+
+			const storage = new Storage(jwkMemStore, keyIdMemStore);
+
+			// Create the unsigned proof
+			const unsignedProof = ProofHelper.createUnsignedProof(proofType, verificationMethodId);
+			// eslint-disable-next-line no-console
+			console.log(`Created unsigned proof: ${JSON.stringify(unsignedProof)}`);
+
+			// eslint-disable-next-line no-console
+			console.log(`Document to sign: ${JSON.stringify(unsecureDocument)}`);
+
+			// For JsonWebSignature2020, we'll use the IOTA Identity WASM library's JWS signing
+			if (proofType === ProofTypes.JsonWebSignature2020) {
+				// Create a JWS signature
+				const jws = await document.createJws(
+					storage,
+					`#${idParts.fragment}`,
+					JSON.stringify(unsecureDocument),
+					new JwsSignatureOptions()
+				);
+
+				// Create the proof with the JWS signature
+				const proof: IJsonWebSignature2020Proof = {
+					...(unsignedProof as IJsonWebSignature2020Proof),
+					jws: jws.toString()
+				};
+
+				return proof;
+			}
+
+			// For other proof types, use the ProofHelper
+			const jwk = await JwkHelper.fromEd25519Private(verificationMethodKey.privateKey);
+			const signedProof = await ProofHelper.createProof(
+				proofType,
+				unsecureDocument,
+				unsignedProof,
+				jwk
+			);
+			return signedProof;
+		} catch (error) {
+			// eslint-disable-next-line no-console
+			console.error(
+				`Error in createProof: ${error instanceof Error ? error.message : String(error)}`
+			);
+			if (error instanceof Error && error.stack) {
+				// eslint-disable-next-line no-console
+				console.error(`Stack trace: ${error.stack}`);
+			}
+			throw new GeneralError(
+				this.CLASS_NAME,
+				"createProofFailed",
+				{ controller, verificationMethodId, proofType },
+				Iota.extractPayloadError(error)
+			);
+		}
 	}
 
 	/**
@@ -929,7 +1297,81 @@ export class IotaIdentityConnector implements IIdentityConnector {
 	 * @returns True if the proof is verified.
 	 */
 	public async verifyProof(document: IJsonLdNodeObject, proof: IProof): Promise<boolean> {
-		throw new NotImplementedError(this.CLASS_NAME, "verifyProof");
+		Guards.object<IJsonLdNodeObject>(this.CLASS_NAME, nameof(document), document);
+		Guards.object<IProof>(this.CLASS_NAME, nameof(proof), proof);
+		Guards.stringValue(this.CLASS_NAME, nameof(proof.verificationMethod), proof.verificationMethod);
+
+		try {
+			const idParts = DocumentHelper.parseId(proof.verificationMethod);
+			if (Is.empty(idParts.fragment)) {
+				throw new NotFoundError(this.CLASS_NAME, "missingDid", proof.verificationMethod);
+			}
+
+			// Get the identity client
+			const identityClient = await this.getFundedClient();
+
+			// Resolve the document to verify the verification method exists
+			const resolvedDocument = await identityClient.resolveDid(IotaDID.parse(idParts.id));
+
+			if (Is.undefined(resolvedDocument)) {
+				throw new NotFoundError(this.CLASS_NAME, "documentNotFound", idParts.id);
+			}
+
+			// Find the verification method in the document
+			const methods = resolvedDocument.methods();
+			const method = methods.find(m => m.id().toString() === proof.verificationMethod);
+
+			if (!method) {
+				throw new GeneralError(this.CLASS_NAME, "methodMissing", {
+					method: proof.verificationMethod
+				});
+			}
+
+			// For JsonWebSignature2020, use the IOTA Identity WASM library's JWS verification
+			if (proof.type === ProofTypes.JsonWebSignature2020) {
+				const jwsProof = proof as IJsonWebSignature2020Proof;
+				if (!jwsProof.jws) {
+					throw new GeneralError(this.CLASS_NAME, "jwsMissing", {
+						method: proof.verificationMethod
+					});
+				}
+
+				// For JWS verification, we'll use the ProofHelper since it handles the JWS verification correctly
+				const didMethod = method.toJSON() as IDidDocumentVerificationMethod;
+				if (Is.undefined(didMethod.publicKeyJwk)) {
+					throw new GeneralError(this.CLASS_NAME, "publicKeyJwkMissing", {
+						method: proof.verificationMethod
+					});
+				}
+
+				return ProofHelper.verifyProof(document, proof, didMethod.publicKeyJwk);
+			}
+
+			// For other proof types, use the ProofHelper
+			const didMethod = method.toJSON() as IDidDocumentVerificationMethod;
+			if (Is.undefined(didMethod.publicKeyJwk)) {
+				throw new GeneralError(this.CLASS_NAME, "publicKeyJwkMissing", {
+					method: proof.verificationMethod
+				});
+			}
+
+			return ProofHelper.verifyProof(document, proof, didMethod.publicKeyJwk);
+		} catch (error) {
+			// eslint-disable-next-line no-console
+			console.error(
+				`Error in verifyProof: ${error instanceof Error ? error.message : String(error)}`
+			);
+			if (error instanceof Error && error.stack) {
+				// eslint-disable-next-line no-console
+				console.error(`Stack trace: ${error.stack}`);
+			}
+			throw new GeneralError(
+				this.CLASS_NAME,
+				"verifyProofFailed",
+				undefined,
+				Iota.extractPayloadError(error)
+			);
+		}
 	}
 
 	/**
