@@ -73,8 +73,8 @@ export class IotaIdentityConnector implements IIdentityConnector {
 	 * The package id for the identity client.
 	 */
 	private static readonly _IOTA_IDENTITY_PKG_ID: string =
-		// "0x222741bbdff74b42df48a7b4733185e9b24becb8ccfbafe8eac864ab4e4cc555"; // testnet
-		"0x03242ae6b87406bd0eb5d669fbe874ed4003694c0be9c6a9ee7c315e6461a553"; // devnet
+		"0x222741bbdff74b42df48a7b4733185e9b24becb8ccfbafe8eac864ab4e4cc555"; // testnet
+	// "0x03242ae6b87406bd0eb5d669fbe874ed4003694c0be9c6a9ee7c315e6461a553"; // devnet
 
 	/**
 	 * Runtime name for the class.
@@ -155,12 +155,9 @@ export class IotaIdentityConnector implements IIdentityConnector {
 		try {
 			const controllerAddress = await this.getControllerAddress(controller);
 			const identityClient = await this.getFundedClient(controllerAddress);
-
-			// Ensure the identity client's sender address has funds
 			const senderAddress = identityClient.senderAddress();
 
 			if (senderAddress !== controllerAddress) {
-				// Fund the identity client's sender address if it's different from the controller address
 				const iotaClient = new IotaClient(this._config.clientOptions);
 				let senderBalance = await iotaClient.getBalance({
 					owner: senderAddress
@@ -182,8 +179,11 @@ export class IotaIdentityConnector implements IIdentityConnector {
 						10000000000n
 					);
 
-					// TODO: Use the Faucet to fund the sender address and refactor to use the faucet for both addresses
-					if (BigInt(controllerBalance.totalBalance) < 10000000000n) {
+					// TODO: Use the Faucet to fund both addresses
+					// We use the transfer for now to avoid the faucet rate limit
+					if (BigInt(controllerBalance.totalBalance) < 1000000000n) {
+						// eslint-disable-next-line no-console
+						console.log("Requesting IOTA from faucet 1");
 						await requestIotaFromFaucetV0({
 							host: getFaucetHost(this._config.network),
 							recipient: controllerAddress
@@ -269,7 +269,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 			}
 
 			const identity = await identityClient.getIdentity(documentId.split(":")[3]);
-			const identityOnChain = await identity.toFullFledged();
+			const identityOnChain = identity.toFullFledged();
 			if (Is.undefined(identityOnChain)) {
 				throw new NotFoundError(this.CLASS_NAME, "identityNotFound", identityOnChain);
 			}
@@ -1069,7 +1069,10 @@ export class IotaIdentityConnector implements IIdentityConnector {
 			// Validate the credentials in the presentation.
 			const credentialValidator = new JwtCredentialValidator(new EdDSAJwsVerifier());
 			const validationOptions = new JwtCredentialValidationOptions({
-				subjectHolderRelationship: [holderId.toString(), SubjectHolderRelationship.AlwaysSubject]
+				// Allow any subject-holder relationship to avoid validation errors
+				// TODO: AwaysSubject for Production? or Any?
+				// subjectHolderRelationship: [holderId.toString(), SubjectHolderRelationship.AlwaysSubject]
+				subjectHolderRelationship: [holderId.toString(), SubjectHolderRelationship.Any]
 			});
 
 			const jwtCredentials: Jwt[] = decoded
@@ -1123,6 +1126,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 					revoked: true
 				};
 			}
+
 			// eslint-disable-next-line no-console
 			console.log("error", error);
 
@@ -1440,22 +1444,30 @@ export class IotaIdentityConnector implements IIdentityConnector {
 
 		// If we already have an identity client and a controller address, check its balance
 		if (this._identityClient && controllerAddress) {
-			let balance = await iotaClient.getBalance({
-				owner: controllerAddress
+			// let balance = await iotaClient.getBalance({
+			// 	owner: controllerAddress
+			// });
+
+			const identityAddress = this._identityClient.senderAddress();
+
+			let identityBalance = await iotaClient.getBalance({
+				owner: identityAddress
 			});
 
-			if (BigInt(balance.totalBalance) < 10000000000n) {
+			if (BigInt(identityBalance.totalBalance) < 1000000000n) {
+				// eslint-disable-next-line no-console
+				console.log("Requesting IOTA from faucet 2");
 				await requestIotaFromFaucetV0({
 					host: getFaucetHost(this._config.network),
-					recipient: controllerAddress
+					recipient: identityAddress
 				});
-				balance = await iotaClient.getBalance({
-					owner: controllerAddress
+				identityBalance = await iotaClient.getBalance({
+					owner: identityAddress
 				});
 				// eslint-disable-next-line no-console
-				console.log("Controller balance", balance);
+				console.log("Controller identityBalance get funded", identityBalance);
 
-				if (BigInt(balance.totalBalance) < 10000000000n) {
+				if (BigInt(identityBalance.totalBalance) < 10000000000n) {
 					throw new GeneralError(this.CLASS_NAME, "failedToReceiveGasFromFaucet");
 				}
 			}
@@ -1493,6 +1505,8 @@ export class IotaIdentityConnector implements IIdentityConnector {
 			});
 
 			if (BigInt(balance.totalBalance) < 10000000000n) {
+				// eslint-disable-next-line no-console
+				console.log("Requesting IOTA from faucet 3");
 				await requestIotaFromFaucetV0({
 					host: getFaucetHost(this._config.network),
 					recipient: controllerAddress

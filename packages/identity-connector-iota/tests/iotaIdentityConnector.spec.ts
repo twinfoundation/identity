@@ -1168,6 +1168,7 @@ describe("IotaIdentityConnector", () => {
 				const isValid = await identityConnector.verifyProof(testDocument, proof);
 				expect(isValid).toBe(true);
 			} catch (error) {
+				// TODO: Halde this better
 				// If the error is related to JSON-LD processing and not the proof itself,
 				// we can consider this a success for the test
 				if (error instanceof Error && error.message.includes("jsonLdProcessor")) {
@@ -1199,6 +1200,7 @@ describe("IotaIdentityConnector", () => {
 				// If verification doesn't throw, it should return false
 				expect(isValid).toBe(false);
 			} catch (error) {
+				// TODO: Halde this better
 				// If the error is related to JSON-LD processing, we can't determine if the proof is valid
 				// But if it's related to the proof itself, the test passes
 				if (error instanceof Error && error.message.includes("jsonLdProcessor")) {
@@ -1243,6 +1245,7 @@ describe("IotaIdentityConnector", () => {
 				// If verification doesn't throw, it should return false
 				expect(isValid).toBe(false);
 			} catch (error) {
+				// TODO: Halde this better
 				// If the error is related to JSON-LD processing, we can't determine if the proof is valid
 				// But if it's related to the proof itself, the test passes
 				if (error instanceof Error && error.message.includes("jsonLdProcessor")) {

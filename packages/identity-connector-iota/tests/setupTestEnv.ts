@@ -106,6 +106,7 @@ export async function setupTestEnv(): Promise<void> {
 	console.debug(`Network: ${TEST_NETWORK}`);
 
 	try {
+		// TODO: Refactor and use this in the tests to fund the addresses
 		await requestIotaFromFaucetV0({
 			host: TEST_FAUCET_ENDPOINT,
 			recipient: TEST_ADDRESS
