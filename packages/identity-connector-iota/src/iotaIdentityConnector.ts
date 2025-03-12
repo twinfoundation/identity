@@ -637,6 +637,9 @@ export class IotaIdentityConnector implements IIdentityConnector {
 				throw error;
 			}
 		} catch (error) {
+			// eslint-disable-next-line no-console
+			console.log("error", error);
+
 			throw new GeneralError(this.CLASS_NAME, "createVerifiableCredentialFailed", {
 				error: error instanceof Error ? error.message : String(error)
 			});

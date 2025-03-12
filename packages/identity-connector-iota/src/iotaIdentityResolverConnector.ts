@@ -1,9 +1,13 @@
 // Copyright 2024 IOTA Stiftung.
 // SPDX-License-Identifier: Apache-2.0.
-import { Guards, NotImplementedError } from "@twin.org/core";
+import { IdentityClientReadOnly, type IotaDocument, Resolver } from "@iota/identity-wasm/node";
+import { IotaClient } from "@iota/iota-sdk/client";
+import { GeneralError, Guards, Is, NotFoundError } from "@twin.org/core";
+import { Iota } from "@twin.org/dlt-iota";
 import type { IIdentityResolverConnector } from "@twin.org/identity-models";
 import { nameof } from "@twin.org/nameof";
 import type { IDidDocument } from "@twin.org/standards-w3c-did";
+import type { IIotaIdentityConnectorConfig } from "./models/IIotaIdentityConnectorConfig";
 import type { IIotaIdentityResolverConnectorConfig } from "./models/IIotaIdentityResolverConnectorConfig";
 import type { IIotaIdentityResolverConnectorConstructorOptions } from "./models/IIotaIdentityResolverConnectorConstructorOptions";
 
@@ -17,9 +21,22 @@ export class IotaIdentityResolverConnector implements IIdentityResolverConnector
 	public static readonly NAMESPACE: string = "iota";
 
 	/**
+	 * The package id for the identity client.
+	 */
+	private static readonly _IOTA_IDENTITY_PKG_ID: string =
+		"0x222741bbdff74b42df48a7b4733185e9b24becb8ccfbafe8eac864ab4e4cc555"; // testnet
+	// "0x03242ae6b87406bd0eb5d669fbe874ed4003694c0be9c6a9ee7c315e6461a553"; // devnet
+
+	/**
 	 * Runtime name for the class.
 	 */
 	public readonly CLASS_NAME: string = nameof<IotaIdentityResolverConnector>();
+
+	/**
+	 * The configuration to use for IOTA operations.
+	 * @internal
+	 */
+	private readonly _config: IIotaIdentityConnectorConfig;
 
 	/**
 	 * Create a new instance of IotaIdentityResolverConnector.
@@ -32,6 +49,12 @@ export class IotaIdentityResolverConnector implements IIdentityResolverConnector
 			nameof(options.config),
 			options.config
 		);
+		Guards.object<IIotaIdentityConnectorConfig["clientOptions"]>(
+			this.CLASS_NAME,
+			nameof(options.config.clientOptions),
+			options.config.clientOptions
+		);
+		this._config = options.config;
 	}
 
 	/**
@@ -41,6 +64,39 @@ export class IotaIdentityResolverConnector implements IIdentityResolverConnector
 	 * @throws NotFoundError if the id can not be resolved.
 	 */
 	public async resolveDocument(documentId: string): Promise<IDidDocument> {
-		throw new NotImplementedError(this.CLASS_NAME, "resolveDocument");
+		Guards.stringValue(this.CLASS_NAME, nameof(documentId), documentId);
+
+		try {
+			const iotaClient = new IotaClient(this._config.clientOptions);
+
+			// Create a read-only client explicitly using the Package ID
+			const identityClientReadOnly = await IdentityClientReadOnly.createWithPkgId(
+				iotaClient,
+				IotaIdentityResolverConnector._IOTA_IDENTITY_PKG_ID
+			);
+
+			// Create a resolver with the read-only client
+			const resolver = new Resolver<IotaDocument>({
+				client: identityClientReadOnly
+			});
+
+			// Resolve the DID document
+			const resolvedDocument = await resolver.resolve(documentId);
+
+			if (Is.undefined(resolvedDocument)) {
+				throw new NotFoundError(this.CLASS_NAME, "documentNotFound", documentId);
+			}
+
+			// Convert to standard DID Document format
+			const doc = resolvedDocument.toJSON() as { doc: IDidDocument };
+			return doc.doc;
+		} catch (error) {
+			throw new GeneralError(
+				this.CLASS_NAME,
+				"resolveDocumentFailed",
+				{ documentId },
+				Iota.extractPayloadError(error)
+			);
+		}
 	}
 }
