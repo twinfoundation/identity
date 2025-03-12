@@ -37,7 +37,15 @@ import {
 } from "@iota/identity-wasm/node";
 import { IotaClient } from "@iota/iota-sdk/client";
 import { getFaucetHost, requestIotaFromFaucetV0 } from "@iota/iota-sdk/faucet";
-import { GeneralError, Guards, GuardError, Is, NotFoundError, Converter } from "@twin.org/core";
+import {
+	GeneralError,
+	Guards,
+	GuardError,
+	Is,
+	NotFoundError,
+	Converter,
+	RandomHelper
+} from "@twin.org/core";
 import type { IJsonLdContextDefinitionRoot, IJsonLdNodeObject } from "@twin.org/data-json-ld";
 import { Iota } from "@twin.org/dlt-iota";
 import { DocumentHelper, type IIdentityConnector } from "@twin.org/identity-models";
@@ -154,56 +162,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 
 		try {
 			const controllerAddress = await this.getControllerAddress(controller);
-			const identityClient = await this.getFundedClient(controllerAddress);
-			const senderAddress = identityClient.senderAddress();
-
-			if (senderAddress !== controllerAddress) {
-				const iotaClient = new IotaClient(this._config.clientOptions);
-				let senderBalance = await iotaClient.getBalance({
-					owner: senderAddress
-				});
-				// eslint-disable-next-line no-console
-				console.log("Initial sender balance", senderBalance);
-
-				const controllerBalance = await iotaClient.getBalance({
-					owner: controllerAddress
-				});
-				// eslint-disable-next-line no-console
-				console.log("Controller balance", controllerBalance);
-
-				if (BigInt(senderBalance.totalBalance) < 10000000000n) {
-					await this._walletConnector.transfer(
-						controller,
-						controllerAddress,
-						senderAddress,
-						10000000000n
-					);
-
-					// TODO: Use the Faucet to fund both addresses
-					// We use the transfer for now to avoid the faucet rate limit
-					if (BigInt(controllerBalance.totalBalance) < 1000000000n) {
-						// eslint-disable-next-line no-console
-						console.log("Requesting IOTA from faucet 1");
-						await requestIotaFromFaucetV0({
-							host: getFaucetHost(this._config.network),
-							recipient: controllerAddress
-						});
-					}
-
-					// Wait longer for the transaction to be processed (5 seconds)
-					await new Promise(resolve => setTimeout(resolve, 5000));
-
-					senderBalance = await iotaClient.getBalance({
-						owner: senderAddress
-					});
-					// eslint-disable-next-line no-console
-					console.log("Transfer successful", senderBalance);
-
-					if (BigInt(senderBalance.totalBalance) < 10000000000n) {
-						throw new GeneralError(this.CLASS_NAME, "failedToReceiveGasFromFaucet");
-					}
-				}
-			}
+			const identityClient = await this.getFundedClient(controllerAddress, controller);
 
 			const networkHrp = identityClient.network();
 			const document = new IotaDocument(networkHrp);
@@ -262,7 +221,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 		);
 		try {
 			const controllerAddress = await this.getControllerAddress(controller);
-			const identityClient = await this.getFundedClient(controllerAddress);
+			const identityClient = await this.getFundedClient(controllerAddress, controller);
 			const document = await identityClient.resolveDid(IotaDID.parse(documentId));
 			if (Is.undefined(document)) {
 				throw new NotFoundError(this.CLASS_NAME, "documentNotFound", documentId);
@@ -274,16 +233,15 @@ export class IotaIdentityConnector implements IIdentityConnector {
 				throw new NotFoundError(this.CLASS_NAME, "identityNotFound", identityOnChain);
 			}
 
-			// Generate a temporary key ID
-			const tempKeyId = `${controller}:temp-vm-${Date.now()}`;
-
-			// Create a key in the vault
+			const tempKeyId = this.buildKey(
+				controller,
+				`temp-vm-${Converter.bytesToBase64Url(RandomHelper.generate(16))}`
+			);
 			const verificationPublicKey = await this._vaultConnector.createKey(
 				tempKeyId,
 				VaultKeyType.Ed25519
 			);
 
-			// Create JWK parameters
 			const jwkParams: IJwkParams = {
 				alg: JwsAlgorithm.EdDSA,
 				kty: JwkType.Okp,
@@ -291,16 +249,12 @@ export class IotaIdentityConnector implements IIdentityConnector {
 				x: Converter.bytesToBase64Url(verificationPublicKey)
 			};
 
-			// Create a JWK
 			const jwk = new Jwk(jwkParams);
 
-			// Create a method ID
 			const methodId = `#${verificationMethodId ?? Converter.bytesToBase64Url(verificationPublicKey)}`;
 
-			// Rename the key in the vault
-			await this._vaultConnector.renameKey(tempKeyId, `${controller}:${methodId.slice(1)}`);
+			await this._vaultConnector.renameKey(tempKeyId, this.buildKey(controller, methodId.slice(1)));
 
-			// Create a verification method
 			const method = VerificationMethod.newFromJwk(document.id(), jwk, methodId);
 			const methods = document.methods();
 			const existingMethod = methods.find(m => m.id().toString() === method.id().toString());
@@ -364,7 +318,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 			}
 
 			const controllerAddress = await this.getControllerAddress(controller);
-			const identityClient = await this.getFundedClient(controllerAddress);
+			const identityClient = await this.getFundedClient(controllerAddress, controller);
 			const document = await identityClient.resolveDid(IotaDID.parse(idParts.id));
 
 			if (Is.undefined(document)) {
@@ -429,7 +383,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 
 		try {
 			const controllerAddress = await this.getControllerAddress(controller);
-			const identityClient = await this.getFundedClient(controllerAddress);
+			const identityClient = await this.getFundedClient(controllerAddress, controller);
 			const document = await identityClient.resolveDid(IotaDID.parse(documentId));
 			if (Is.undefined(document)) {
 				throw new NotFoundError(this.CLASS_NAME, "documentNotFound", documentId);
@@ -486,7 +440,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 			}
 
 			const controllerAddress = await this.getControllerAddress(controller);
-			const identityClient = await this.getFundedClient(controllerAddress);
+			const identityClient = await this.getFundedClient(controllerAddress, controller);
 			const document = await identityClient.resolveDid(IotaDID.parse(idParts.id));
 
 			if (Is.undefined(document)) {
@@ -557,7 +511,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 			}
 
 			const controllerAddress = await this.getControllerAddress(controller);
-			const identityClient = await this.getFundedClient(controllerAddress);
+			const identityClient = await this.getFundedClient(controllerAddress, controller);
 			const issuerDocument = await identityClient.resolveDid(IotaDID.parse(idParts.id));
 
 			if (Is.undefined(issuerDocument)) {
@@ -758,7 +712,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 
 		try {
 			const controllerAddress = await this.getControllerAddress(controller);
-			const identityClient = await this.getFundedClient(controllerAddress);
+			const identityClient = await this.getFundedClient(controllerAddress, controller);
 			const document = await identityClient.resolveDid(IotaDID.parse(issuerDocumentId));
 
 			if (Is.undefined(document)) {
@@ -821,7 +775,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 
 		try {
 			const controllerAddress = await this.getControllerAddress(controller);
-			const identityClient = await this.getFundedClient(controllerAddress);
+			const identityClient = await this.getFundedClient(controllerAddress, controller);
 			const document = await identityClient.resolveDid(IotaDID.parse(issuerDocumentId));
 
 			if (Is.undefined(document)) {
@@ -919,7 +873,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 			}
 
 			const controllerAddress = await this.getControllerAddress(controller);
-			const identityClient = await this.getFundedClient(controllerAddress);
+			const identityClient = await this.getFundedClient(controllerAddress, controller);
 			const issuerDocument = await identityClient.resolveDid(IotaDID.parse(idParts.id));
 
 			if (Is.undefined(issuerDocument)) {
@@ -1171,7 +1125,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 
 			// Get the identity client
 			const controllerAddress = await this.getControllerAddress(controller);
-			const identityClient = await this.getFundedClient(controllerAddress);
+			const identityClient = await this.getFundedClient(controllerAddress, controller);
 
 			// Resolve the document to verify the verification method exists
 			const document = await identityClient.resolveDid(IotaDID.parse(idParts.id));
@@ -1437,96 +1391,110 @@ export class IotaIdentityConnector implements IIdentityConnector {
 	/**
 	 * Get a funded client.
 	 * @param controllerAddress The address of the controller.
+	 * @param controller The controller to get the client for.
 	 * @returns The funded client.
 	 */
-	private async getFundedClient(controllerAddress?: string): Promise<IdentityClient> {
+	private async getFundedClient(
+		controllerAddress?: string,
+		controller?: string
+	): Promise<IdentityClient> {
 		const iotaClient = new IotaClient(this._config.clientOptions);
 
-		// If we already have an identity client and a controller address, check its balance
-		if (this._identityClient && controllerAddress) {
-			// let balance = await iotaClient.getBalance({
-			// 	owner: controllerAddress
-			// });
+		if (this._identityClient) {
+		} else {
+			// Create a read-only client first, explicitly using the Package ID
+			const identityClientReadOnly = await IdentityClientReadOnly.createWithPkgId(
+				iotaClient,
+				IotaIdentityConnector._IOTA_IDENTITY_PKG_ID
+			);
 
-			const identityAddress = this._identityClient.senderAddress();
+			// generate new key
+			const storage = new Storage(new JwkMemStore(), new KeyIdMemStore());
+			const generate = await storage.keyStorage().generate("Ed25519", JwsAlgorithm.EdDSA);
 
-			let identityBalance = await iotaClient.getBalance({
-				owner: identityAddress
-			});
-
-			if (BigInt(identityBalance.totalBalance) < 1000000000n) {
-				// eslint-disable-next-line no-console
-				console.log("Requesting IOTA from faucet 2");
-				await requestIotaFromFaucetV0({
-					host: getFaucetHost(this._config.network),
-					recipient: identityAddress
+			const publicKeyJwk = generate.jwk().toPublic();
+			if (publicKeyJwk === undefined) {
+				throw new GeneralError(this.CLASS_NAME, "publicKeyJwkMissing", {
+					jwk: generate.jwk().kid()
 				});
-				identityBalance = await iotaClient.getBalance({
-					owner: identityAddress
-				});
-				// eslint-disable-next-line no-console
-				console.log("Controller identityBalance get funded", identityBalance);
-
-				if (BigInt(identityBalance.totalBalance) < 10000000000n) {
-					throw new GeneralError(this.CLASS_NAME, "failedToReceiveGasFromFaucet");
-				}
 			}
-			return this._identityClient;
+			const keyId = generate.keyId();
+
+			// create signer from storage
+			const signer = new StorageSigner(storage, keyId, publicKeyJwk);
+
+			// Create the full identity client using the read-only client and signer
+			const identityClient = await IdentityClient.create(identityClientReadOnly, signer);
+
+			this._identityClient = identityClient;
 		}
 
-		// Create a read-only client first, explicitly using the Package ID
-		const identityClientReadOnly = await IdentityClientReadOnly.createWithPkgId(
-			iotaClient,
-			IotaIdentityConnector._IOTA_IDENTITY_PKG_ID
-		);
+		const senderAddress = this._identityClient.senderAddress();
 
-		// generate new key
-		const storage = new Storage(new JwkMemStore(), new KeyIdMemStore());
-		const generate = await storage.keyStorage().generate("Ed25519", JwsAlgorithm.EdDSA);
-
-		const publicKeyJwk = generate.jwk().toPublic();
-		if (publicKeyJwk === undefined) {
-			throw new GeneralError(this.CLASS_NAME, "publicKeyJwkMissing", {
-				jwk: generate.jwk().kid()
+		if (controllerAddress && controller && senderAddress !== controllerAddress) {
+			let senderBalance = await iotaClient.getBalance({
+				owner: senderAddress
 			});
-		}
-		const keyId = generate.keyId();
+			// eslint-disable-next-line no-console
+			console.log("Initial sender balance", senderBalance);
 
-		// create signer from storage
-		const signer = new StorageSigner(storage, keyId, publicKeyJwk);
-
-		// Create the full identity client using the read-only client and signer
-		const identityClient = await IdentityClient.create(identityClientReadOnly, signer);
-
-		// If we have a controller address, ensure it has enough balance
-		if (controllerAddress) {
-			let balance = await iotaClient.getBalance({
+			const controllerBalance = await iotaClient.getBalance({
 				owner: controllerAddress
 			});
+			// eslint-disable-next-line no-console
+			console.log("Controller balance", controllerBalance);
 
-			if (BigInt(balance.totalBalance) < 10000000000n) {
+			// TODO: Use the Faucet to fund both addresses
+			// We use the transfer for now to avoid the faucet rate limit
+			if (BigInt(controllerBalance.totalBalance) < 1000000000n) {
 				// eslint-disable-next-line no-console
-				console.log("Requesting IOTA from faucet 3");
+				console.log("Requesting IOTA from faucet 1");
 				await requestIotaFromFaucetV0({
 					host: getFaucetHost(this._config.network),
 					recipient: controllerAddress
 				});
+			}
 
-				// Wait a bit for the faucet request to be processed
+			// Wait longer for the transaction to be processed (5 seconds)
+			await new Promise(resolve => setTimeout(resolve, 5000));
+
+			if (BigInt(controllerBalance.totalBalance) < 10000000000n) {
+				throw new GeneralError(this.CLASS_NAME, "failedToReceiveGasFromFaucet");
+			}
+
+			if (BigInt(senderBalance.totalBalance) < 10000000000n) {
+				await this._walletConnector.transfer(
+					controller,
+					controllerAddress,
+					senderAddress,
+					10000000000n
+				);
+
+				// Wait longer for the transaction to be processed (5 seconds)
 				await new Promise(resolve => setTimeout(resolve, 5000));
 
-				balance = await iotaClient.getBalance({
-					owner: controllerAddress
+				senderBalance = await iotaClient.getBalance({
+					owner: senderAddress
 				});
-				// Balance after faucet request is checked
+				// eslint-disable-next-line no-console
+				console.log("Transfer successful", senderBalance);
 
-				if (BigInt(balance.totalBalance) < 10000000000n) {
+				if (BigInt(senderBalance.totalBalance) < 10000000000n) {
 					throw new GeneralError(this.CLASS_NAME, "failedToReceiveGasFromFaucet");
 				}
 			}
 		}
+		return this._identityClient;
+	}
 
-		this._identityClient = identityClient;
-		return identityClient;
+	/**
+	 * Build the key name to access the specified key in vault.
+	 * @param identity The identity of the user to access the vault keys.
+	 * @param keyId The id of the key.
+	 * @returns The vault key.
+	 * @internal
+	 */
+	private buildKey(identity: string, keyId: string): string {
+		return `${identity}/${keyId}`;
 	}
 }

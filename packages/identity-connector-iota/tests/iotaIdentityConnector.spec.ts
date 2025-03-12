@@ -1,14 +1,19 @@
 // Copyright 2024 IOTA Stiftung.
 // SPDX-License-Identifier: Apache-2.0.
-import { Is } from "@twin.org/core";
+import { Utils } from "@iota/sdk-wasm/node/lib/index.js";
+import { Is, Urn } from "@twin.org/core";
 import type { IJsonLdNodeObject } from "@twin.org/data-json-ld";
+import type { MemoryEntityStorageConnector } from "@twin.org/entity-storage-connector-memory";
+import { EntityStorageConnectorFactory } from "@twin.org/entity-storage-models";
 import {
 	DidContexts,
 	DidTypes,
+	type DidVerificationMethodType,
 	type IDataIntegrityProof,
 	type IDidService,
 	type IJsonWebSignature2020Proof
 } from "@twin.org/standards-w3c-did";
+import type { VaultSecret } from "@twin.org/vault-connector-entity-storage";
 import {
 	setupTestEnv,
 	TEST_CLIENT_OPTIONS,
@@ -22,50 +27,10 @@ import type { IIotaIdentityConnectorConfig } from "../src/models/IIotaIdentityCo
 let testVcJwt: string;
 let testDocumentId: string;
 let testVerificationMethodId: string;
-const TEST_REVOCATION_INDEX = 456;
 
 describe("IotaIdentityConnector", () => {
 	beforeAll(async () => {
 		await setupTestEnv();
-
-		// Create a document and verification method for testing
-		try {
-			const identityConnector = new IotaIdentityConnector({
-				config: {
-					clientOptions: TEST_CLIENT_OPTIONS,
-					vaultMnemonicId: TEST_MNEMONIC_NAME,
-					network: TEST_NETWORK
-				}
-			});
-
-			// Create a document
-			const document = await identityConnector.createDocument(TEST_IDENTITY_ID);
-			testDocumentId = document.id;
-
-			// Add a verification method
-			const verificationMethod = await identityConnector.addVerificationMethod(
-				TEST_IDENTITY_ID,
-				testDocumentId,
-				"assertionMethod",
-				"test-verification-method"
-			);
-			testVerificationMethodId = verificationMethod.id;
-
-			// Create a verifiable credential for testing
-			const result = await identityConnector.createVerifiableCredential(
-				TEST_IDENTITY_ID,
-				testVerificationMethodId,
-				"https://example.edu/credentials/test",
-				{
-					id: testDocumentId,
-					name: "Test Credential"
-				},
-				TEST_REVOCATION_INDEX
-			);
-			testVcJwt = result.jwt;
-		} catch (error) {
-			console.error("Error in beforeAll:", error);
-		}
 	});
 
 	test("can fail to construct with no options", () => {
@@ -78,6 +43,39 @@ describe("IotaIdentityConnector", () => {
 				message: "guard.objectUndefined",
 				properties: {
 					property: "options",
+					value: "undefined"
+				}
+			})
+		);
+	});
+
+	test("can fail to construct with no config", () => {
+		expect(
+			() => new IotaIdentityConnector({} as unknown as { config: IIotaIdentityConnectorConfig })
+		).toThrow(
+			expect.objectContaining({
+				name: "GuardError",
+				message: "guard.objectUndefined",
+				properties: {
+					property: "options.config",
+					value: "undefined"
+				}
+			})
+		);
+	});
+
+	test("can fail to construct with no config.clientOptions", () => {
+		expect(
+			() =>
+				new IotaIdentityConnector({ config: {} } as unknown as {
+					config: IIotaIdentityConnectorConfig;
+				})
+		).toThrow(
+			expect.objectContaining({
+				name: "GuardError",
+				message: "guard.objectUndefined",
+				properties: {
+					property: "options.config.clientOptions",
 					value: "undefined"
 				}
 			})
@@ -104,48 +102,37 @@ describe("IotaIdentityConnector", () => {
 		expect(testDocument.service).toBeDefined();
 		expect((testDocument.service?.[0] as IDidService)?.id).toEqual(`${testDocument.id}#revocation`);
 
-		// Safely check verification methods if they exist
-		if (testDocument.verificationMethod && testDocument.verificationMethod.length > 0) {
-			expect(testDocument.verificationMethod.length).toBeGreaterThan(0);
-		}
+		const didUrn = Urn.fromValidString(testDocument.id);
+		const didParts = didUrn.parts();
+		const docAddress = Utils.aliasIdToBech32(didParts[3], didParts[2]);
+
+		console.debug(
+			"DID Document",
+			`${process.env.TEST_EXPLORER_URL}address/${docAddress}?network=${TEST_NETWORK}`
+		);
 	});
 
-	test("can add a verification method", async () => {
-		const identityConnector = new IotaIdentityConnector({
+	test("can fail to resolve a document with no id", async () => {
+		const identityResolverConnector = new IotaIdentityConnector({
 			config: {
 				clientOptions: TEST_CLIENT_OPTIONS,
 				vaultMnemonicId: TEST_MNEMONIC_NAME,
 				network: TEST_NETWORK
 			}
 		});
-
-		// Create a document to add the verification method to
-		const testDocument = await identityConnector.createDocument(TEST_IDENTITY_ID);
-		testDocumentId = testDocument.id;
-
-		const verificationMethodType = "authentication";
-		const verificationMethodId = "testVerificationMethod";
-
-		const addedMethod = await identityConnector.addVerificationMethod(
-			TEST_IDENTITY_ID,
-			testDocumentId,
-			verificationMethodType,
-			verificationMethodId
-		);
-
-		// Check that the added method has the expected structure
-		expect(addedMethod).toBeDefined();
-		expect(addedMethod.id).toEqual(`${testDocumentId}#${verificationMethodId}`);
-		expect(addedMethod.type).toEqual("JsonWebKey2020");
+		await expect(
+			identityResolverConnector.resolveDocument(undefined as unknown as string)
+		).rejects.toMatchObject({
+			name: "GuardError",
+			message: "guard.string",
+			properties: {
+				property: "documentId",
+				value: "undefined"
+			}
+		});
 	});
 
-	test("can resolve a document", async () => {
-		// Skip if no document was created in the previous test
-		if (!testDocumentId) {
-			console.warn("Skipping resolve test as no document was created");
-			return;
-		}
-
+	test("can resolve a document id", async () => {
 		const identityConnector = new IotaIdentityConnector({
 			config: {
 				clientOptions: TEST_CLIENT_OPTIONS,
@@ -165,20 +152,90 @@ describe("IotaIdentityConnector", () => {
 		expect((resolvedDocument.service?.[0] as IDidService)?.id).toEqual(
 			`${testDocumentId}#revocation`
 		);
+	});
 
-		// Check for verification methods
-		if (resolvedDocument.verificationMethod && resolvedDocument.verificationMethod.length > 0) {
-			// Verify we have at least one verification method
-			expect(resolvedDocument.verificationMethod.length).toBeGreaterThan(0);
+	test("can fail to add a verification method with no document id", async () => {
+		const identityConnector = new IotaIdentityConnector({
+			config: {
+				clientOptions: TEST_CLIENT_OPTIONS,
+				vaultMnemonicId: TEST_MNEMONIC_NAME,
+				network: TEST_NETWORK
+			}
+		});
+		await expect(
+			identityConnector.addVerificationMethod(
+				TEST_IDENTITY_ID,
+				undefined as unknown as string,
+				undefined as unknown as DidVerificationMethodType,
+				undefined as unknown as string
+			)
+		).rejects.toMatchObject({
+			name: "GuardError",
+			message: "guard.string",
+			properties: {
+				property: "documentId",
+				value: "undefined"
+			}
+		});
+	});
 
-			const hasAddedMethod = resolvedDocument.verificationMethod.some(method => {
-				if (Is.string(method)) {
-					return method === `${testDocumentId}#testVerificationMethod`;
-				}
-				return method.id === `${testDocumentId}#testVerificationMethod`;
-			});
-			expect(hasAddedMethod).toBeTruthy();
-		}
+	test("can fail to add a verification method with no document verification method type", async () => {
+		const identityConnector = new IotaIdentityConnector({
+			config: {
+				clientOptions: TEST_CLIENT_OPTIONS,
+				vaultMnemonicId: TEST_MNEMONIC_NAME,
+				network: TEST_NETWORK
+			}
+		});
+		await expect(
+			identityConnector.addVerificationMethod(
+				TEST_IDENTITY_ID,
+				"foo",
+				undefined as unknown as DidVerificationMethodType,
+				undefined as unknown as string
+			)
+		).rejects.toMatchObject({
+			name: "GuardError",
+			message: "guard.arrayOneOf",
+			properties: {
+				property: "verificationMethodType",
+				value: "undefined"
+			}
+		});
+	});
+
+	test("can add a verification method", async () => {
+		const identityConnector = new IotaIdentityConnector({
+			config: {
+				clientOptions: TEST_CLIENT_OPTIONS,
+				vaultMnemonicId: TEST_MNEMONIC_NAME,
+				network: TEST_NETWORK
+			}
+		});
+
+		const verificationMethodType = "authentication";
+		const verificationMethodId = "testVerificationMethod";
+
+		const testDocument = await identityConnector.createDocument(TEST_IDENTITY_ID);
+		testDocumentId = testDocument.id;
+
+		const addedMethod = await identityConnector.addVerificationMethod(
+			TEST_IDENTITY_ID,
+			testDocumentId,
+			verificationMethodType,
+			verificationMethodId
+		);
+
+		// Check that the added method has the expected structure
+		expect(addedMethod).toBeDefined();
+		expect(addedMethod.id).toEqual(`${testDocumentId}#${verificationMethodId}`);
+		expect(addedMethod.type).toEqual("JsonWebKey2020");
+		testVerificationMethodId = verificationMethodId ?? "";
+		const keyStore =
+			EntityStorageConnectorFactory.get<MemoryEntityStorageConnector<VaultSecret>>(
+				"vault-key"
+			).getStore();
+		expect(keyStore?.[0].id).toEqual(`${TEST_IDENTITY_ID}/${verificationMethodId}`);
 	});
 
 	test("can verify verification methods in a resolved document", async () => {
@@ -683,74 +740,6 @@ describe("IotaIdentityConnector", () => {
 				value: "undefined"
 			}
 		});
-	});
-
-	test("handles errors when revoking a verifiable credential", async () => {
-		// Create a new identity connector
-		const identityConnector = new IotaIdentityConnector({
-			config: {
-				clientOptions: TEST_CLIENT_OPTIONS,
-				vaultMnemonicId: TEST_MNEMONIC_NAME,
-				network: TEST_NETWORK
-			}
-		});
-
-		// Create a document
-		console.log("Creating document...");
-		const document = await identityConnector.createDocument(TEST_IDENTITY_ID);
-		expect(document).toBeDefined();
-		expect(document.id).toBeDefined();
-		const did = document.id;
-		console.log("Document created with ID:", did);
-
-		// Add a verification method
-		console.log("Adding verification method...");
-		const verificationMethod = await identityConnector.addVerificationMethod(
-			TEST_IDENTITY_ID,
-			did,
-			"assertionMethod",
-			"revocation-test-key"
-		);
-		expect(verificationMethod).toBeDefined();
-		expect(verificationMethod.id).toBeDefined();
-		console.log("Verification method added with ID:", verificationMethod.id);
-
-		// Create a verifiable credential with a specific revocation index
-		console.log("Creating verifiable credential...");
-		const revocationIndex = 456;
-		const result = await identityConnector.createVerifiableCredential(
-			TEST_IDENTITY_ID,
-			verificationMethod.id,
-			"https://example.edu/credentials/revocation-test",
-			{
-				id: did,
-				name: "Revocation Test"
-			},
-			revocationIndex
-		);
-
-		// Verify the credential was created
-		expect(result).toBeDefined();
-		expect(result.verifiableCredential).toBeDefined();
-		expect(result.jwt).toBeDefined();
-		const vcJwt = result.jwt;
-		console.log(`Verifiable credential created with JWT: ${vcJwt.slice(0, 20)}...`);
-
-		// Check that the credential is not revoked initially
-		console.log("Checking if credential is revoked initially...");
-		const initialCheck = await identityConnector.checkVerifiableCredential(vcJwt);
-		expect(initialCheck.revoked).toBeFalsy();
-		console.log("Initial revocation status:", initialCheck.revoked);
-
-		// Attempt to revoke the credential and expect an error
-		console.log("Attempting to revoke credential (expecting error)...");
-		await expect(
-			identityConnector.revokeVerifiableCredentials(TEST_IDENTITY_ID, did, [revocationIndex])
-		).rejects.toThrow("iotaIdentityConnector.revokeVerifiableCredentialsFailed");
-
-		// Store the JWT and DID for future tests if needed
-		testVcJwt = vcJwt;
-		testDocumentId = did;
 	});
 
 	test("can unrevoke a verifiable credential", async () => {
