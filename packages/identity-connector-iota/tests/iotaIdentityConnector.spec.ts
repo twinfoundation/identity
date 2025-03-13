@@ -8,6 +8,8 @@ import { EntityStorageConnectorFactory } from "@twin.org/entity-storage-models";
 import {
 	DidContexts,
 	DidTypes,
+	type IDidVerifiableCredential,
+	type IProof,
 	ProofTypes,
 	type DidVerificationMethodType,
 	type IDataIntegrityProof,
@@ -1002,109 +1004,130 @@ describe("IotaIdentityConnector", () => {
 			});
 		});
 
+		test("can fail to verify a proof with no bytes", async () => {
+			await expect(
+				identityConnector.verifyProof(
+					undefined as unknown as IJsonLdNodeObject,
+					undefined as unknown as IProof
+				)
+			).rejects.toMatchObject({
+				name: "GuardError",
+				message: "guard.objectUndefined",
+				properties: {
+					property: "document",
+					value: "undefined"
+				}
+			});
+		});
+
+		test("can fail to verify a proof with no proof", async () => {
+			await expect(
+				identityConnector.verifyProof({}, undefined as unknown as IProof)
+			).rejects.toMatchObject({
+				name: "GuardError",
+				message: "guard.objectUndefined",
+				properties: {
+					property: "proof",
+					value: "undefined"
+				}
+			});
+		});
+
 		it("should verify a valid proof xoxo", async () => {
-			// Create a proof for the test document
+			const unsecuredDocument: IDidVerifiableCredential & IJsonLdNodeObject = {
+				"@context": [
+					"https://www.w3.org/ns/credentials/v2",
+					"https://www.w3.org/ns/credentials/examples/v2"
+				],
+				id: "urn:uuid:58172aac-d8ba-11ed-83dd-0b3aef56cc33",
+				type: ["VerifiableCredential", "AlumniCredential"],
+				name: "Alumni Credential",
+				description: "A minimum viable example of an Alumni Credential.",
+				issuer: "https://vc.example/issuers/5678",
+				validFrom: "2023-01-01T00:00:00Z",
+				credentialSubject: {
+					id: "did:example:abcdefgh",
+					alumniOf: "The School of Examples"
+				}
+			};
+
 			const proof = await identityConnector2.createProof(
 				TEST_IDENTITY_ID,
 				testVerificationMethodId,
-				"JsonWebSignature2020",
-				testDocument
+				ProofTypes.DataIntegrityProof,
+				unsecuredDocument
 			);
 
-			// Verify the proof
-			// try {
-			const isValid = await identityConnector2.verifyProof(testDocument, proof);
-			expect(isValid).toBe(true);
-			// } catch (error) {
-			// 	// TODO: Halde this better
-			// 	// If the error is related to JSON-LD processing and not the proof itself,
-			// 	// we can consider this a success for the test
-			// 	if (error instanceof Error && error.message.includes("jsonLdProcessor")) {
-			// 		console.log("JSON-LD processing error occurred, but the proof creation was successful");
-			// 		// Test passes
-			// 	} else {
-			// 		// If it's another type of error, fail the test
-			// 		throw error;
-			// 	}
-			// }
+			const isValid = await identityConnector2.verifyProof(unsecuredDocument, proof);
+			expect(isValid).toBeTruthy();
 		});
 
 		it("should fail to verify a tampered document", async () => {
-			// Create a proof for the test document
+			const unsecuredDocument: IDidVerifiableCredential & IJsonLdNodeObject = {
+				"@context": [
+					"https://www.w3.org/ns/credentials/v2",
+					"https://www.w3.org/ns/credentials/examples/v2"
+				],
+				id: "urn:uuid:58172aac-d8ba-11ed-83dd-0b3aef56cc33",
+				type: ["VerifiableCredential", "AlumniCredential"],
+				name: "Alumni Credential",
+				description: "A minimum viable example of an Alumni Credential.",
+				issuer: "https://vc.example/issuers/5678",
+				validFrom: "2023-01-01T00:00:00Z",
+				credentialSubject: {
+					id: "did:example:abcdefgh",
+					alumniOf: "The School of Examples"
+				}
+			};
+
 			const proof = await identityConnector2.createProof(
 				TEST_IDENTITY_ID,
 				testVerificationMethodId,
-				"JsonWebSignature2020",
-				testDocument
+				ProofTypes.DataIntegrityProof,
+				unsecuredDocument
 			);
 
-			// Create a tampered document
-			const tamperedDocument = { ...testDocument };
+			const tamperedDocument = { ...unsecuredDocument };
 			tamperedDocument.name = "Tampered Document";
 
-			// Verify the proof with the tampered document
-			try {
-				const isValid = await identityConnector2.verifyProof(tamperedDocument, proof);
-				// If verification doesn't throw, it should return false
-				expect(isValid).toBe(false);
-			} catch (error) {
-				// TODO: Halde this better
-				// If the error is related to JSON-LD processing, we can't determine if the proof is valid
-				// But if it's related to the proof itself, the test passes
-				if (error instanceof Error && error.message.includes("jsonLdProcessor")) {
-					console.log("JSON-LD processing error occurred, but the test is considered a success");
-					// Test passes
-				} else {
-					// If it's another type of error, it's likely related to the tampered document
-					// which is what we expect, so the test passes
-					expect(error).toBeDefined();
-				}
-			}
+			const isValid = await identityConnector2.verifyProof(tamperedDocument, proof);
+			expect(isValid).toBeFalsy();
 		});
 
 		it("should fail to verify a tampered proof", async () => {
-			// Create a proof for the test document
+			const unsecuredDocument: IDidVerifiableCredential & IJsonLdNodeObject = {
+				"@context": [
+					"https://www.w3.org/ns/credentials/v2",
+					"https://www.w3.org/ns/credentials/examples/v2"
+				],
+				id: "urn:uuid:58172aac-d8ba-11ed-83dd-0b3aef56cc33",
+				type: ["VerifiableCredential", "AlumniCredential"],
+				name: "Alumni Credential",
+				description: "A minimum viable example of an Alumni Credential.",
+				issuer: "https://vc.example/issuers/5678",
+				validFrom: "2023-01-01T00:00:00Z",
+				credentialSubject: {
+					id: "did:example:abcdefgh",
+					alumniOf: "The School of Examples"
+				}
+			};
+
 			const proof = await identityConnector2.createProof(
 				TEST_IDENTITY_ID,
 				testVerificationMethodId,
-				"JsonWebSignature2020",
-				testDocument
+				ProofTypes.DataIntegrityProof,
+				unsecuredDocument
 			);
 
-			// Create a tampered proof
 			const tamperedProof = { ...proof };
-
-			// Tamper with the signature value based on proof type
-			if (proof.type === "JsonWebSignature2020") {
-				const jwsProof = tamperedProof as IJsonWebSignature2020Proof;
-				if (jwsProof.jws) {
-					jwsProof.jws = jwsProof.jws.replace(/.$/, "X"); // Change the last character
-				}
-			} else if (proof.type === "DataIntegrityProof") {
-				const dataIntegrityProof = tamperedProof as IDataIntegrityProof;
-				if (dataIntegrityProof.proofValue) {
-					dataIntegrityProof.proofValue = dataIntegrityProof.proofValue.replace(/.$/, "X"); // Change the last character
-				}
+			if (tamperedProof.type === "JsonWebSignature2020") {
+				(tamperedProof as IJsonWebSignature2020Proof).jws += "tampered";
+			} else if (tamperedProof.type === "DataIntegrityProof") {
+				(tamperedProof as IDataIntegrityProof).proofValue += "tampered";
 			}
 
-			// Verify the tampered proof
-			try {
-				const isValid = await identityConnector2.verifyProof(testDocument, tamperedProof);
-				// If verification doesn't throw, it should return false
-				expect(isValid).toBe(false);
-			} catch (error) {
-				// TODO: Halde this better
-				// If the error is related to JSON-LD processing, we can't determine if the proof is valid
-				// But if it's related to the proof itself, the test passes
-				if (error instanceof Error && error.message.includes("jsonLdProcessor")) {
-					console.log("JSON-LD processing error occurred, but the test is considered a success");
-					// Test passes
-				} else {
-					// If it's another type of error, it's likely related to the tampered proof
-					// which is what we expect, so the test passes
-					expect(error).toBeDefined();
-				}
-			}
+			const isValid = await identityConnector2.verifyProof(unsecuredDocument, tamperedProof);
+			expect(isValid).toBeFalsy();
 		});
 	});
 });
