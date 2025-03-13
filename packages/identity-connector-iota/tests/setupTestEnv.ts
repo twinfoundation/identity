@@ -1,7 +1,7 @@
 // Copyright 2024 IOTA Stiftung.
 // SPDX-License-Identifier: Apache-2.0.
 import path from "node:path";
-import { requestIotaFromFaucetV0 } from "@iota/iota-sdk/faucet";
+// import { requestIotaFromFaucetV0 } from "@iota/iota-sdk/faucet";
 import { Guards, Is } from "@twin.org/core";
 import { Bip39 } from "@twin.org/crypto";
 import { MemoryEntityStorageConnector } from "@twin.org/entity-storage-connector-memory";
@@ -107,10 +107,10 @@ export async function setupTestEnv(): Promise<void> {
 
 	try {
 		// TODO: Refactor and use this in the tests to fund the addresses
-		await requestIotaFromFaucetV0({
-			host: TEST_FAUCET_ENDPOINT,
-			recipient: TEST_ADDRESS
-		});
+		// await requestIotaFromFaucetV0({
+		// 	host: TEST_FAUCET_ENDPOINT,
+		// 	recipient: TEST_ADDRESS
+		// });
 
 		await TEST_WALLET_CONNECTOR.ensureBalance(TEST_IDENTITY_ID, TEST_ADDRESS, 1000000000n);
 		const val = await TEST_WALLET_CONNECTOR.getBalance(TEST_IDENTITY_ID, TEST_ADDRESS);

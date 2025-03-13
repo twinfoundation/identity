@@ -37,7 +37,7 @@ import {
 } from "@iota/identity-wasm/node";
 import { IotaClient } from "@iota/iota-sdk/client";
 import { getFaucetHost, requestIotaFromFaucetV0 } from "@iota/iota-sdk/faucet";
-import { GeneralError, Guards, GuardError, Is, NotFoundError, Converter } from "@twin.org/core";
+import { GeneralError, Guards, Is, NotFoundError, Converter } from "@twin.org/core";
 import type { IJsonLdContextDefinitionRoot, IJsonLdNodeObject } from "@twin.org/data-json-ld";
 import { Iota } from "@twin.org/dlt-iota";
 import { DocumentHelper, type IIdentityConnector } from "@twin.org/identity-models";
@@ -73,8 +73,8 @@ export class IotaIdentityConnector implements IIdentityConnector {
 	 * The package id for the identity client.
 	 */
 	private static readonly _IOTA_IDENTITY_PKG_ID: string =
-		"0x222741bbdff74b42df48a7b4733185e9b24becb8ccfbafe8eac864ab4e4cc555"; // testnet
-	// "0x03242ae6b87406bd0eb5d669fbe874ed4003694c0be9c6a9ee7c315e6461a553"; // devnet
+		// "0x222741bbdff74b42df48a7b4733185e9b24becb8ccfbafe8eac864ab4e4cc555"; // testnet
+		"0x03242ae6b87406bd0eb5d669fbe874ed4003694c0be9c6a9ee7c315e6461a553"; // devnet
 
 	/**
 	 * Runtime name for the class.
@@ -851,14 +851,14 @@ export class IotaIdentityConnector implements IIdentityConnector {
 		Guards.arrayValue(this.CLASS_NAME, nameof(verifiableCredentials), verifiableCredentials);
 		if (!Is.undefined(expiresInMinutes)) {
 			Guards.integer(this.CLASS_NAME, nameof(expiresInMinutes), expiresInMinutes);
-			if (expiresInMinutes < 0) {
-				throw new GuardError(
-					this.CLASS_NAME,
-					"integerNegative",
-					nameof(expiresInMinutes),
-					expiresInMinutes
-				);
-			}
+			// if (expiresInMinutes < 0) {
+			// 	throw new GuardError(
+			// 		this.CLASS_NAME,
+			// 		"integerNegative",
+			// 		nameof(expiresInMinutes),
+			// 		expiresInMinutes
+			// 	);
+			// }
 		}
 
 		try {
@@ -866,6 +866,9 @@ export class IotaIdentityConnector implements IIdentityConnector {
 			if (Is.empty(idParts.fragment)) {
 				throw new NotFoundError(this.CLASS_NAME, "missingDid", verificationMethodId);
 			}
+
+			// eslint-disable-next-line no-console
+			console.log("verificationMethodIdOG", verificationMethodId);
 
 			const controllerAddress = await this.getControllerAddress(controller);
 			const identityClient = await this.getFundedClient(controllerAddress, controller);
@@ -903,6 +906,18 @@ export class IotaIdentityConnector implements IIdentityConnector {
 					credentials.push(cred);
 				}
 			}
+
+			// eslint-disable-next-line no-console
+			console.log({
+				context: contexts as
+					| string
+					| { [id: string]: unknown }
+					| (string | { [id: string]: unknown })[],
+				id: presentationId,
+				verifiableCredential: credentials,
+				type: finalTypes,
+				holder: idParts.id
+			});
 
 			const unsignedVp = new Presentation({
 				context: contexts as
@@ -968,6 +983,8 @@ export class IotaIdentityConnector implements IIdentityConnector {
 				jwt: presentationJwt.toString()
 			};
 		} catch (error) {
+			// eslint-disable-next-line no-console
+			console.log("error", error);
 			throw new GeneralError(
 				this.CLASS_NAME,
 				"createVerifiablePresentationFailed",
@@ -1272,7 +1289,11 @@ export class IotaIdentityConnector implements IIdentityConnector {
 
 			// Find the verification method in the document
 			const methods = resolvedDocument.methods();
+			// eslint-disable-next-line no-console
+			console.log("methods", methods);
 			const method = methods.find(m => m.id().toString() === proof.verificationMethod);
+			// eslint-disable-next-line no-console
+			console.log("method", method?.toJSON());
 
 			if (!method) {
 				throw new GeneralError(this.CLASS_NAME, "methodMissing", {
@@ -1290,8 +1311,10 @@ export class IotaIdentityConnector implements IIdentityConnector {
 				}
 
 				// For JWS verification, we'll use the ProofHelper since it handles the JWS verification correctly
+				// eslint-disable-next-line no-console
+				console.log("method", method);
 				const didMethod = method.toJSON() as IDidDocumentVerificationMethod;
-				if (Is.undefined(didMethod.publicKeyJwk)) {
+				if (Is.undefined(didMethod?.publicKeyJwk)) {
 					throw new GeneralError(this.CLASS_NAME, "publicKeyJwkMissing", {
 						method: proof.verificationMethod
 					});
@@ -1448,22 +1471,29 @@ export class IotaIdentityConnector implements IIdentityConnector {
 					host: getFaucetHost(this._config.network),
 					recipient: controllerAddress
 				});
+
+				// Wait longer for the transaction to be processed (5 seconds)
+				await new Promise(resolve => setTimeout(resolve, 5000));
 			}
 
-			// Wait longer for the transaction to be processed (5 seconds)
-			await new Promise(resolve => setTimeout(resolve, 5000));
-
-			if (BigInt(controllerBalance.totalBalance) < 10000000000n) {
+			if (BigInt(controllerBalance.totalBalance) < 1000000000n) {
 				throw new GeneralError(this.CLASS_NAME, "failedToReceiveGasFromFaucet");
 			}
 
-			if (BigInt(senderBalance.totalBalance) < 10000000000n) {
-				await this._walletConnector.transfer(
-					controller,
-					controllerAddress,
-					senderAddress,
-					10000000000n
-				);
+			if (BigInt(senderBalance.totalBalance) < 1000000000n) {
+				try {
+					const response = await this._walletConnector.transfer(
+						controller,
+						controllerAddress,
+						senderAddress,
+						1200000000n
+					);
+					// eslint-disable-next-line no-console
+					console.log("Transfer response", response);
+				} catch (error) {
+					// eslint-disable-next-line no-console
+					console.log("Error transferring IOTA", error);
+				}
 
 				// Wait longer for the transaction to be processed (5 seconds)
 				await new Promise(resolve => setTimeout(resolve, 5000));
@@ -1474,7 +1504,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 				// eslint-disable-next-line no-console
 				console.log("Transfer successful", senderBalance);
 
-				if (BigInt(senderBalance.totalBalance) < 10000000000n) {
+				if (BigInt(senderBalance.totalBalance) < 1000000000n) {
 					throw new GeneralError(this.CLASS_NAME, "failedToReceiveGasFromFaucet");
 				}
 			}

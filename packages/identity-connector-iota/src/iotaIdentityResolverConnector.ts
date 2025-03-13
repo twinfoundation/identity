@@ -24,8 +24,8 @@ export class IotaIdentityResolverConnector implements IIdentityResolverConnector
 	 * The package id for the identity client.
 	 */
 	private static readonly _IOTA_IDENTITY_PKG_ID: string =
-		"0x222741bbdff74b42df48a7b4733185e9b24becb8ccfbafe8eac864ab4e4cc555"; // testnet
-	// "0x03242ae6b87406bd0eb5d669fbe874ed4003694c0be9c6a9ee7c315e6461a553"; // devnet
+		// "0x222741bbdff74b42df48a7b4733185e9b24becb8ccfbafe8eac864ab4e4cc555"; // testnet
+		"0x03242ae6b87406bd0eb5d669fbe874ed4003694c0be9c6a9ee7c315e6461a553"; // devnet
 
 	/**
 	 * Runtime name for the class.
@@ -91,6 +91,8 @@ export class IotaIdentityResolverConnector implements IIdentityResolverConnector
 			const doc = resolvedDocument.toJSON() as { doc: IDidDocument };
 			return doc.doc;
 		} catch (error) {
+			// eslint-disable-next-line no-console
+			console.log("error", error);
 			throw new GeneralError(
 				this.CLASS_NAME,
 				"resolveDocumentFailed",
