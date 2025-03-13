@@ -37,15 +37,7 @@ import {
 } from "@iota/identity-wasm/node";
 import { IotaClient } from "@iota/iota-sdk/client";
 import { getFaucetHost, requestIotaFromFaucetV0 } from "@iota/iota-sdk/faucet";
-import {
-	GeneralError,
-	Guards,
-	GuardError,
-	Is,
-	NotFoundError,
-	Converter,
-	RandomHelper
-} from "@twin.org/core";
+import { GeneralError, Guards, GuardError, Is, NotFoundError, Converter } from "@twin.org/core";
 import type { IJsonLdContextDefinitionRoot, IJsonLdNodeObject } from "@twin.org/data-json-ld";
 import { Iota } from "@twin.org/dlt-iota";
 import { DocumentHelper, type IIdentityConnector } from "@twin.org/identity-models";
@@ -233,10 +225,9 @@ export class IotaIdentityConnector implements IIdentityConnector {
 				throw new NotFoundError(this.CLASS_NAME, "identityNotFound", identityOnChain);
 			}
 
-			const tempKeyId = this.buildKey(
-				controller,
-				`temp-vm-${Converter.bytesToBase64Url(RandomHelper.generate(16))}`
-			);
+			// Generate a temporary key ID
+			const tempKeyId = `${controller}:temp-vm-${Date.now()}`;
+
 			const verificationPublicKey = await this._vaultConnector.createKey(
 				tempKeyId,
 				VaultKeyType.Ed25519
@@ -253,7 +244,8 @@ export class IotaIdentityConnector implements IIdentityConnector {
 
 			const methodId = `#${verificationMethodId ?? Converter.bytesToBase64Url(verificationPublicKey)}`;
 
-			await this._vaultConnector.renameKey(tempKeyId, this.buildKey(controller, methodId.slice(1)));
+			// Rename the key in the vault
+			await this._vaultConnector.renameKey(tempKeyId, `${controller}:${methodId.slice(1)}`);
 
 			const method = VerificationMethod.newFromJwk(document.id(), jwk, methodId);
 			const methods = document.methods();
@@ -1488,16 +1480,5 @@ export class IotaIdentityConnector implements IIdentityConnector {
 			}
 		}
 		return this._identityClient;
-	}
-
-	/**
-	 * Build the key name to access the specified key in vault.
-	 * @param identity The identity of the user to access the vault keys.
-	 * @param keyId The id of the key.
-	 * @returns The vault key.
-	 * @internal
-	 */
-	private buildKey(identity: string, keyId: string): string {
-		return `${identity}/${keyId}`;
 	}
 }

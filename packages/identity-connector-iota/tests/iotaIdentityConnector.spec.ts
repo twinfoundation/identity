@@ -221,7 +221,7 @@ describe("IotaIdentityConnector", () => {
 			).getStore();
 		console.log({ keyStore });
 
-		expect(keyStore?.[0].id).toEqual(`${TEST_IDENTITY_ID}/${verificationMethodId}`);
+		expect(keyStore?.[0].id).toEqual(`${TEST_IDENTITY_ID}:${verificationMethodId}`);
 	});
 
 	test("can verify verification methods in a resolved document", async () => {
@@ -547,13 +547,11 @@ describe("IotaIdentityConnector", () => {
 
 	test("can create a verifiable credential", async () => {
 		try {
-			// Create a document
 			const document = await identityConnector.createDocument(TEST_IDENTITY_ID);
 			expect(document).toBeDefined();
 			expect(document.id).toBeDefined();
 			const did = document.id;
 
-			// Add a verification method
 			const verificationMethod = await identityConnector.addVerificationMethod(
 				TEST_IDENTITY_ID,
 				did,
@@ -563,7 +561,6 @@ describe("IotaIdentityConnector", () => {
 			expect(verificationMethod).toBeDefined();
 			expect(verificationMethod.id).toBeDefined();
 
-			// Create a verifiable credential
 			const result = await identityConnector.createVerifiableCredential(
 				TEST_IDENTITY_ID,
 				verificationMethod.id,
@@ -575,7 +572,6 @@ describe("IotaIdentityConnector", () => {
 				123
 			);
 
-			// Verify the result
 			expect(result).toBeDefined();
 			expect(result.verifiableCredential).toBeDefined();
 
