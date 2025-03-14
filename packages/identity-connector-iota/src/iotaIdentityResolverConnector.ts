@@ -21,11 +21,19 @@ export class IotaIdentityResolverConnector implements IIdentityResolverConnector
 	public static readonly NAMESPACE: string = "iota";
 
 	/**
-	 * The package id for the identity client.
+	 * Default package IDs for different networks.
 	 */
-	private static readonly _IOTA_IDENTITY_PKG_ID: string =
-		// "0x222741bbdff74b42df48a7b4733185e9b24becb8ccfbafe8eac864ab4e4cc555"; // testnet
-		"0x03242ae6b87406bd0eb5d669fbe874ed4003694c0be9c6a9ee7c315e6461a553"; // devnet
+	private static readonly _DEFAULT_IDENTITY_PKG_IDS = {
+		/**
+		 * Default package ID for testnet.
+		 */
+		TESTNET: "0x222741bbdff74b42df48a7b4733185e9b24becb8ccfbafe8eac864ab4e4cc555",
+
+		/**
+		 * Default package ID for devnet.
+		 */
+		DEVNET: "0x03242ae6b87406bd0eb5d669fbe874ed4003694c0be9c6a9ee7c315e6461a553"
+	};
 
 	/**
 	 * Runtime name for the class.
@@ -54,6 +62,7 @@ export class IotaIdentityResolverConnector implements IIdentityResolverConnector
 			nameof(options.config.clientOptions),
 			options.config.clientOptions
 		);
+
 		this._config = options.config;
 	}
 
@@ -68,31 +77,23 @@ export class IotaIdentityResolverConnector implements IIdentityResolverConnector
 
 		try {
 			const iotaClient = new IotaClient(this._config.clientOptions);
-
-			// Create a read-only client explicitly using the Package ID
 			const identityClientReadOnly = await IdentityClientReadOnly.createWithPkgId(
 				iotaClient,
-				IotaIdentityResolverConnector._IOTA_IDENTITY_PKG_ID
+				this.getIdentityPkgId()
 			);
-
-			// Create a resolver with the read-only client
 			const resolver = new Resolver<IotaDocument>({
 				client: identityClientReadOnly
 			});
-
-			// Resolve the DID document
 			const resolvedDocument = await resolver.resolve(documentId);
 
 			if (Is.undefined(resolvedDocument)) {
 				throw new NotFoundError(this.CLASS_NAME, "documentNotFound", documentId);
 			}
 
-			// Convert to standard DID Document format
 			const doc = resolvedDocument.toJSON() as { doc: IDidDocument };
+
 			return doc.doc;
 		} catch (error) {
-			// eslint-disable-next-line no-console
-			console.log("error", error);
 			throw new GeneralError(
 				this.CLASS_NAME,
 				"resolveDocumentFailed",
@@ -100,5 +101,27 @@ export class IotaIdentityResolverConnector implements IIdentityResolverConnector
 				Iota.extractPayloadError(error)
 			);
 		}
+	}
+
+	/**
+	 * Gets the identity package ID to use, either from config or defaults.
+	 * @returns The identity package ID.
+	 */
+	private getIdentityPkgId(): string {
+		if (this._config.identityPkgId) {
+			return this._config.identityPkgId;
+		}
+
+		const clientOptions = this._config.clientOptions;
+		const url =
+			typeof clientOptions === "object" && "url" in clientOptions
+				? (clientOptions.url as string)
+				: "";
+
+		const isTestnet = url.includes("testnet");
+
+		return isTestnet
+			? IotaIdentityResolverConnector._DEFAULT_IDENTITY_PKG_IDS.TESTNET
+			: IotaIdentityResolverConnector._DEFAULT_IDENTITY_PKG_IDS.DEVNET;
 	}
 }

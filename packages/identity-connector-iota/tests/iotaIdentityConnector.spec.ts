@@ -35,13 +35,10 @@ let identityConnector: IotaIdentityConnector;
 
 describe("IotaIdentityConnector", () => {
 	beforeAll(async () => {
-		console.log("Starting beforeAll hook...");
 		await setupTestEnv();
-		console.log("Test environment setup complete");
 
 		// Create a document and verification method for testing
 		try {
-			console.log("Creating identity connector in beforeAll...");
 			identityConnector = new IotaIdentityConnector({
 				config: {
 					clientOptions: TEST_CLIENT_OPTIONS,
@@ -49,17 +46,13 @@ describe("IotaIdentityConnector", () => {
 					network: TEST_NETWORK
 				}
 			});
-			console.log("Identity connector created successfully");
 
 			// Create a document
-			console.log("Creating document in beforeAll...");
 			const document = await identityConnector.createDocument(TEST_IDENTITY_ID);
 			testDocumentId = document.id;
-			console.log("Document created in beforeAll with ID:", testDocumentId);
 		} catch (error) {
 			console.error("Error in beforeAll:", error);
 		}
-		console.log("beforeAll hook completed");
 	});
 
 	test("can fail to construct with no options", () => {
@@ -111,7 +104,7 @@ describe("IotaIdentityConnector", () => {
 		);
 	});
 
-	test("can create a document xoxo", async () => {
+	test("can create a document", async () => {
 		const testDocument = await identityConnector.createDocument(TEST_IDENTITY_ID);
 		testDocumentId = testDocument.id;
 
@@ -163,11 +156,8 @@ describe("IotaIdentityConnector", () => {
 		});
 		const resolvedDocument = await identityResolverConnector.resolveDocument(testDocumentId);
 
-		// Verify the resolved document matches what we created
 		expect(resolvedDocument).toBeDefined();
 		expect(resolvedDocument.id).toEqual(testDocumentId);
-
-		// Check that the document has the expected structure
 		expect(resolvedDocument.service).toBeDefined();
 		expect((resolvedDocument.service?.[0] as IDidService)?.id).toEqual(
 			`${testDocumentId}#revocation`
@@ -210,7 +200,7 @@ describe("IotaIdentityConnector", () => {
 		});
 	});
 
-	test("can add a verification method xoxo", async () => {
+	test("can add a verification method", async () => {
 		const verificationMethodType = "authentication";
 		const verificationMethodId = "testVerificationMethod";
 
@@ -225,12 +215,11 @@ describe("IotaIdentityConnector", () => {
 		expect(addedMethod.id).toEqual(`${testDocumentId}#${verificationMethodId}`);
 		expect(addedMethod.type).toEqual("JsonWebKey2020");
 		testVerificationMethodId = addedMethod.id;
-		console.log("1testVerificationMethodId", testVerificationMethodId);
+
 		const keyStore =
 			EntityStorageConnectorFactory.get<MemoryEntityStorageConnector<VaultSecret>>(
 				"vault-key"
 			).getStore();
-		console.log({ keyStore });
 
 		expect(keyStore?.[0].id).toEqual(`${TEST_IDENTITY_ID}:${verificationMethodId}`);
 	});
@@ -248,14 +237,11 @@ describe("IotaIdentityConnector", () => {
 			verificationMethodId
 		);
 
-		// Now resolve the document to verify the method was added correctly
 		const resolvedDocument = await identityConnector.resolveDocument(documentId);
 
-		// Basic document verification
 		expect(resolvedDocument).toBeDefined();
 		expect(resolvedDocument.id).toEqual(documentId);
 
-		// Verify verification methods exist
 		expect(resolvedDocument.verificationMethod).toBeDefined();
 		expect(Array.isArray(resolvedDocument.verificationMethod)).toBeTruthy();
 		expect(resolvedDocument.verificationMethod?.length).toBeGreaterThan(0);
@@ -450,13 +436,13 @@ describe("IotaIdentityConnector", () => {
 
 		expect(resolvedDocument).toBeDefined();
 		expect(resolvedDocument.id).toEqual(testDocumentId);
-
 		expect(resolvedDocument.service).toBeDefined();
 		expect(Array.isArray(resolvedDocument.service)).toBeTruthy();
 
 		const addedService = resolvedDocument.service?.find(
 			service => service.id === `${testDocumentId}#testService`
 		);
+
 		expect(addedService).toBeDefined();
 		expect(addedService?.type).toEqual("TestServiceType");
 		expect(addedService?.serviceEndpoint).toEqual("https://example.com/service");
@@ -582,7 +568,6 @@ describe("IotaIdentityConnector", () => {
 		expect(result).toBeDefined();
 		expect(result.verifiableCredential).toBeDefined();
 
-		// Check credential properties
 		expect(result.verifiableCredential.id).toEqual("https://example.edu/credentials/3732");
 		expect(result.verifiableCredential.type).toContain("VerifiableCredential");
 
@@ -594,10 +579,7 @@ describe("IotaIdentityConnector", () => {
 			expect(credentialSubject.name).toEqual("Jane Doe");
 		}
 
-		// Check issuer
 		expect(result.verifiableCredential.issuer).toEqual(did);
-
-		// Check issuance date
 		expect(result.verifiableCredential.issuanceDate).toBeDefined();
 
 		// Check credential status
@@ -632,17 +614,15 @@ describe("IotaIdentityConnector", () => {
 	test("can validate a verifiable credential", async () => {
 		const checkResult = await identityConnector.checkVerifiableCredential(testVcJwt);
 
-		// Verify the check result
 		expect(checkResult).toBeDefined();
 		expect(checkResult.revoked).toBeFalsy();
 		expect(checkResult.verifiableCredential).toBeDefined();
 
-		// Check credential properties in the check result
 		expect(checkResult.verifiableCredential?.id).toEqual("https://example.edu/credentials/3732");
 		expect(checkResult.verifiableCredential?.type).toContain("VerifiableCredential");
 
-		// Check credential subject in the check result
 		const checkedCredentialSubject = checkResult.verifiableCredential?.credentialSubject;
+
 		expect(checkedCredentialSubject).toBeDefined();
 		if (checkedCredentialSubject && !Array.isArray(checkedCredentialSubject)) {
 			expect(checkedCredentialSubject.name).toEqual("Jane Doe");
@@ -706,7 +686,6 @@ describe("IotaIdentityConnector", () => {
 
 	test("can unrevoke a verifiable credential", async () => {
 		const didId = testDocumentId;
-		console.log("Using document ID:", didId);
 
 		const verificationMethod = await identityConnector.addVerificationMethod(
 			TEST_IDENTITY_ID,
@@ -788,16 +767,11 @@ describe("IotaIdentityConnector", () => {
 	});
 
 	test("handles errors when unrevoking a verifiable credential with non-existent document", async () => {
-		// Create a new identity connector
-
 		// Use a non-existent document ID
 		const nonExistentDocumentId =
 			"did:iota:e678123a:0x0000000000000000000000000000000000000000000000000000000000000000";
 
 		// Attempt to unrevoke the credential and expect an error
-		console.log(
-			"Attempting to unrevoke credential with non-existent document (expecting error)..."
-		);
 		await expect(
 			identityConnector.unrevokeVerifiableCredentials(TEST_IDENTITY_ID, nonExistentDocumentId, [
 				123
@@ -905,7 +879,6 @@ describe("IotaIdentityConnector", () => {
 		);
 
 		const vpJwt = createResult.jwt;
-
 		const result = await identityConnector.checkVerifiablePresentation(vpJwt);
 
 		expect(result.revoked).toBeFalsy();
@@ -918,216 +891,195 @@ describe("IotaIdentityConnector", () => {
 		expect(result.issuers?.length).toBeGreaterThan(0);
 	});
 
-	describe("createProof and verifyProof", () => {
-		let identityConnector2: IotaIdentityConnector;
-		let testDocument: IJsonLdNodeObject;
+	it("should create a proof for a document", async () => {
+		const testDocument = {
+			"@context": "https://www.w3.org/ns/did/v1",
+			id: "did:example:123456789abcdefghi",
+			name: "Test Document",
+			description: "This is a test document for proof creation and verification"
+		};
+		const proof = await identityConnector.createProof(
+			TEST_IDENTITY_ID,
+			testVerificationMethodId,
+			"JsonWebSignature2020",
+			testDocument
+		);
 
-		beforeAll(async () => {
-			const config: IIotaIdentityConnectorConfig = {
-				clientOptions: TEST_CLIENT_OPTIONS,
-				vaultMnemonicId: TEST_MNEMONIC_NAME,
-				network: TEST_NETWORK
-			};
+		expect(proof).toBeDefined();
+		expect(proof.type).toBe("JsonWebSignature2020");
+		expect(proof.verificationMethod).toBe(testVerificationMethodId);
+		expect(proof.proofPurpose).toBe("assertionMethod");
+		expect(proof.created).toBeDefined();
 
-			identityConnector2 = new IotaIdentityConnector({
-				config
-			});
+		// Check for signature based on proof type
+		if (proof.type === "JsonWebSignature2020") {
+			// For JsonWebSignature2020, we expect a jws property
+			expect((proof as IJsonWebSignature2020Proof).jws).toBeDefined();
+		} else if (proof.type === "DataIntegrityProof") {
+			// For DataIntegrityProof, we expect a proofValue property
+			expect((proof as IDataIntegrityProof).proofValue).toBeDefined();
+		}
+	});
 
-			// Create a simple test document with minimal structure
-			testDocument = {
-				"@context": "https://www.w3.org/ns/did/v1",
-				id: "did:example:123456789abcdefghi",
-				name: "Test Document",
-				description: "This is a test document for proof creation and verification"
-			};
-		});
-
-		it("should create a proof for a document", async () => {
-			// Create a proof for the test document
-			const proof = await identityConnector2.createProof(
+	test("can fail to create a proof with no verificationMethodId", async () => {
+		await expect(
+			identityConnector.createProof(
 				TEST_IDENTITY_ID,
-				testVerificationMethodId,
-				"JsonWebSignature2020",
-				testDocument
-			);
-
-			// Verify the proof has the expected properties
-			expect(proof).toBeDefined();
-			expect(proof.type).toBe("JsonWebSignature2020");
-			expect(proof.verificationMethod).toBe(testVerificationMethodId);
-			expect(proof.proofPurpose).toBe("assertionMethod");
-			expect(proof.created).toBeDefined();
-
-			// Check for signature based on proof type
-			if (proof.type === "JsonWebSignature2020") {
-				// For JsonWebSignature2020, we expect a jws property
-				expect((proof as IJsonWebSignature2020Proof).jws).toBeDefined();
-			} else if (proof.type === "DataIntegrityProof") {
-				// For DataIntegrityProof, we expect a proofValue property
-				expect((proof as IDataIntegrityProof).proofValue).toBeDefined();
+				undefined as unknown as string,
+				ProofTypes.DataIntegrityProof,
+				undefined as unknown as IJsonLdNodeObject
+			)
+		).rejects.toMatchObject({
+			name: "GuardError",
+			message: "guard.string",
+			properties: {
+				property: "verificationMethodId",
+				value: "undefined"
 			}
 		});
+	});
 
-		test("can fail to create a proof with no verificationMethodId", async () => {
-			await expect(
-				identityConnector.createProof(
-					TEST_IDENTITY_ID,
-					undefined as unknown as string,
-					ProofTypes.DataIntegrityProof,
-					undefined as unknown as IJsonLdNodeObject
-				)
-			).rejects.toMatchObject({
-				name: "GuardError",
-				message: "guard.string",
-				properties: {
-					property: "verificationMethodId",
-					value: "undefined"
-				}
-			});
-		});
-
-		test("can fail to create a proof with no document", async () => {
-			await expect(
-				identityConnector.createProof(
-					TEST_IDENTITY_ID,
-					"foo",
-					ProofTypes.DataIntegrityProof,
-					undefined as unknown as IJsonLdNodeObject
-				)
-			).rejects.toMatchObject({
-				name: "GuardError",
-				message: "guard.objectUndefined",
-				properties: {
-					property: "unsecureDocument",
-					value: "undefined"
-				}
-			});
-		});
-
-		test("can fail to verify a proof with no bytes", async () => {
-			await expect(
-				identityConnector.verifyProof(
-					undefined as unknown as IJsonLdNodeObject,
-					undefined as unknown as IProof
-				)
-			).rejects.toMatchObject({
-				name: "GuardError",
-				message: "guard.objectUndefined",
-				properties: {
-					property: "document",
-					value: "undefined"
-				}
-			});
-		});
-
-		test("can fail to verify a proof with no proof", async () => {
-			await expect(
-				identityConnector.verifyProof({}, undefined as unknown as IProof)
-			).rejects.toMatchObject({
-				name: "GuardError",
-				message: "guard.objectUndefined",
-				properties: {
-					property: "proof",
-					value: "undefined"
-				}
-			});
-		});
-
-		it("should verify a valid proof xoxo", async () => {
-			const unsecuredDocument: IDidVerifiableCredential & IJsonLdNodeObject = {
-				"@context": [
-					"https://www.w3.org/ns/credentials/v2",
-					"https://www.w3.org/ns/credentials/examples/v2"
-				],
-				id: "urn:uuid:58172aac-d8ba-11ed-83dd-0b3aef56cc33",
-				type: ["VerifiableCredential", "AlumniCredential"],
-				name: "Alumni Credential",
-				description: "A minimum viable example of an Alumni Credential.",
-				issuer: "https://vc.example/issuers/5678",
-				validFrom: "2023-01-01T00:00:00Z",
-				credentialSubject: {
-					id: "did:example:abcdefgh",
-					alumniOf: "The School of Examples"
-				}
-			};
-
-			const proof = await identityConnector2.createProof(
+	test("can fail to create a proof with no document", async () => {
+		await expect(
+			identityConnector.createProof(
 				TEST_IDENTITY_ID,
-				testVerificationMethodId,
+				"foo",
 				ProofTypes.DataIntegrityProof,
-				unsecuredDocument
-			);
-
-			const isValid = await identityConnector2.verifyProof(unsecuredDocument, proof);
-			expect(isValid).toBeTruthy();
-		});
-
-		it("should fail to verify a tampered document", async () => {
-			const unsecuredDocument: IDidVerifiableCredential & IJsonLdNodeObject = {
-				"@context": [
-					"https://www.w3.org/ns/credentials/v2",
-					"https://www.w3.org/ns/credentials/examples/v2"
-				],
-				id: "urn:uuid:58172aac-d8ba-11ed-83dd-0b3aef56cc33",
-				type: ["VerifiableCredential", "AlumniCredential"],
-				name: "Alumni Credential",
-				description: "A minimum viable example of an Alumni Credential.",
-				issuer: "https://vc.example/issuers/5678",
-				validFrom: "2023-01-01T00:00:00Z",
-				credentialSubject: {
-					id: "did:example:abcdefgh",
-					alumniOf: "The School of Examples"
-				}
-			};
-
-			const proof = await identityConnector2.createProof(
-				TEST_IDENTITY_ID,
-				testVerificationMethodId,
-				ProofTypes.DataIntegrityProof,
-				unsecuredDocument
-			);
-
-			const tamperedDocument = { ...unsecuredDocument };
-			tamperedDocument.name = "Tampered Document";
-
-			const isValid = await identityConnector2.verifyProof(tamperedDocument, proof);
-			expect(isValid).toBeFalsy();
-		});
-
-		it("should fail to verify a tampered proof", async () => {
-			const unsecuredDocument: IDidVerifiableCredential & IJsonLdNodeObject = {
-				"@context": [
-					"https://www.w3.org/ns/credentials/v2",
-					"https://www.w3.org/ns/credentials/examples/v2"
-				],
-				id: "urn:uuid:58172aac-d8ba-11ed-83dd-0b3aef56cc33",
-				type: ["VerifiableCredential", "AlumniCredential"],
-				name: "Alumni Credential",
-				description: "A minimum viable example of an Alumni Credential.",
-				issuer: "https://vc.example/issuers/5678",
-				validFrom: "2023-01-01T00:00:00Z",
-				credentialSubject: {
-					id: "did:example:abcdefgh",
-					alumniOf: "The School of Examples"
-				}
-			};
-
-			const proof = await identityConnector2.createProof(
-				TEST_IDENTITY_ID,
-				testVerificationMethodId,
-				ProofTypes.DataIntegrityProof,
-				unsecuredDocument
-			);
-
-			const tamperedProof = { ...proof };
-			if (tamperedProof.type === "JsonWebSignature2020") {
-				(tamperedProof as IJsonWebSignature2020Proof).jws += "tampered";
-			} else if (tamperedProof.type === "DataIntegrityProof") {
-				(tamperedProof as IDataIntegrityProof).proofValue += "tampered";
+				undefined as unknown as IJsonLdNodeObject
+			)
+		).rejects.toMatchObject({
+			name: "GuardError",
+			message: "guard.objectUndefined",
+			properties: {
+				property: "unsecureDocument",
+				value: "undefined"
 			}
-
-			const isValid = await identityConnector2.verifyProof(unsecuredDocument, tamperedProof);
-			expect(isValid).toBeFalsy();
 		});
+	});
+
+	test("can fail to verify a proof with no bytes", async () => {
+		await expect(
+			identityConnector.verifyProof(
+				undefined as unknown as IJsonLdNodeObject,
+				undefined as unknown as IProof
+			)
+		).rejects.toMatchObject({
+			name: "GuardError",
+			message: "guard.objectUndefined",
+			properties: {
+				property: "document",
+				value: "undefined"
+			}
+		});
+	});
+
+	test("can fail to verify a proof with no proof", async () => {
+		await expect(
+			identityConnector.verifyProof({}, undefined as unknown as IProof)
+		).rejects.toMatchObject({
+			name: "GuardError",
+			message: "guard.objectUndefined",
+			properties: {
+				property: "proof",
+				value: "undefined"
+			}
+		});
+	});
+
+	it("should verify a valid proof", async () => {
+		const unsecuredDocument: IDidVerifiableCredential & IJsonLdNodeObject = {
+			"@context": [
+				"https://www.w3.org/ns/credentials/v2",
+				"https://www.w3.org/ns/credentials/examples/v2"
+			],
+			id: "urn:uuid:58172aac-d8ba-11ed-83dd-0b3aef56cc33",
+			type: ["VerifiableCredential", "AlumniCredential"],
+			name: "Alumni Credential",
+			description: "A minimum viable example of an Alumni Credential.",
+			issuer: "https://vc.example/issuers/5678",
+			validFrom: "2023-01-01T00:00:00Z",
+			credentialSubject: {
+				id: "did:example:abcdefgh",
+				alumniOf: "The School of Examples"
+			}
+		};
+
+		const proof = await identityConnector.createProof(
+			TEST_IDENTITY_ID,
+			testVerificationMethodId,
+			ProofTypes.DataIntegrityProof,
+			unsecuredDocument
+		);
+
+		const isValid = await identityConnector.verifyProof(unsecuredDocument, proof);
+		expect(isValid).toBeTruthy();
+	});
+
+	it("should fail to verify a tampered document", async () => {
+		const unsecuredDocument: IDidVerifiableCredential & IJsonLdNodeObject = {
+			"@context": [
+				"https://www.w3.org/ns/credentials/v2",
+				"https://www.w3.org/ns/credentials/examples/v2"
+			],
+			id: "urn:uuid:58172aac-d8ba-11ed-83dd-0b3aef56cc33",
+			type: ["VerifiableCredential", "AlumniCredential"],
+			name: "Alumni Credential",
+			description: "A minimum viable example of an Alumni Credential.",
+			issuer: "https://vc.example/issuers/5678",
+			validFrom: "2023-01-01T00:00:00Z",
+			credentialSubject: {
+				id: "did:example:abcdefgh",
+				alumniOf: "The School of Examples"
+			}
+		};
+
+		const proof = await identityConnector.createProof(
+			TEST_IDENTITY_ID,
+			testVerificationMethodId,
+			ProofTypes.DataIntegrityProof,
+			unsecuredDocument
+		);
+
+		const tamperedDocument = { ...unsecuredDocument };
+		tamperedDocument.name = "Tampered Document";
+
+		const isValid = await identityConnector.verifyProof(tamperedDocument, proof);
+		expect(isValid).toBeFalsy();
+	});
+
+	it("should fail to verify a tampered proof", async () => {
+		const unsecuredDocument: IDidVerifiableCredential & IJsonLdNodeObject = {
+			"@context": [
+				"https://www.w3.org/ns/credentials/v2",
+				"https://www.w3.org/ns/credentials/examples/v2"
+			],
+			id: "urn:uuid:58172aac-d8ba-11ed-83dd-0b3aef56cc33",
+			type: ["VerifiableCredential", "AlumniCredential"],
+			name: "Alumni Credential",
+			description: "A minimum viable example of an Alumni Credential.",
+			issuer: "https://vc.example/issuers/5678",
+			validFrom: "2023-01-01T00:00:00Z",
+			credentialSubject: {
+				id: "did:example:abcdefgh",
+				alumniOf: "The School of Examples"
+			}
+		};
+
+		const proof = await identityConnector.createProof(
+			TEST_IDENTITY_ID,
+			testVerificationMethodId,
+			ProofTypes.DataIntegrityProof,
+			unsecuredDocument
+		);
+
+		const tamperedProof = { ...proof };
+		if (tamperedProof.type === "JsonWebSignature2020") {
+			(tamperedProof as IJsonWebSignature2020Proof).jws += "tampered";
+		} else if (tamperedProof.type === "DataIntegrityProof") {
+			(tamperedProof as IDataIntegrityProof).proofValue += "tampered";
+		}
+
+		const isValid = await identityConnector.verifyProof(unsecuredDocument, tamperedProof);
+		expect(isValid).toBeFalsy();
 	});
 });

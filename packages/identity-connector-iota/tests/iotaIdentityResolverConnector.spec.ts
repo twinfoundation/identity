@@ -116,11 +116,8 @@ describe("IotaIdentityResolverConnector", () => {
 
 		const resolvedDocument = await identityResolverConnector.resolveDocument(testDocumentId);
 
-		// Verify the resolved document matches what we created
 		expect(resolvedDocument).toBeDefined();
 		expect(resolvedDocument.id).toEqual(testDocumentId);
-
-		// Check that the document has the expected structure
 		expect(resolvedDocument.service).toBeDefined();
 		expect(resolvedDocument.service?.[0]?.id).toEqual(`${testDocumentId}#revocation`);
 	});
