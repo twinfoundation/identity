@@ -24,7 +24,7 @@ Runtime name for the class.
 
 ### verifyJwt()
 
-> **verifyJwt**\<`T`, `U`\>(`resolver`, `jwt`): `Promise`\<\{ `header`: `T`; `payload`: `U`; \}\>
+> `static` **verifyJwt**\<`T`, `U`\>(`resolver`, `jwt`): `Promise`\<\{ `header`: `T`; `payload`: `U`; \}\>
 
 Verified the JWT.
 
@@ -58,7 +58,7 @@ The decoded payload.
 
 ### verifyProof()
 
-> **verifyProof**(`resolver`, `secureDocument`): `Promise`\<`boolean`\>
+> `static` **verifyProof**(`resolver`, `secureDocument`): `Promise`\<`boolean`\>
 
 Verified the proof for the document e.g. verifiable credential.
 

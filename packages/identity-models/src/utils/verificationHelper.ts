@@ -23,7 +23,7 @@ export class VerificationHelper {
 	 * @param jwt The token to verify.
 	 * @returns The decoded payload.
 	 */
-	public async verifyJwt<T extends IJwtHeader, U extends IJwtPayload>(
+	public static async verifyJwt<T extends IJwtHeader, U extends IJwtPayload>(
 		resolver: IIdentityResolverConnector,
 		jwt: string
 	): Promise<{
@@ -68,7 +68,7 @@ export class VerificationHelper {
 	 * @param secureDocument The secure document to verify.
 	 * @returns True if the verification is successful.
 	 */
-	public async verifyProof(
+	public static async verifyProof(
 		resolver: IIdentityResolverConnector,
 		secureDocument: IJsonLdNodeObject
 	): Promise<boolean> {
