@@ -1,9 +1,8 @@
 // Copyright 2024 IOTA Stiftung.
 // SPDX-License-Identifier: Apache-2.0.
 import path from "node:path";
-import { IotaClient } from "@iota/iota-sdk/client";
-import { requestIotaFromFaucetV0 } from "@iota/iota-sdk/faucet";
-import { GeneralError, Guards, Is } from "@twin.org/core";
+// import { requestIotaFromFaucetV0 } from "@iota/iota-sdk/faucet";
+import { Guards, Is } from "@twin.org/core";
 import { Bip39 } from "@twin.org/crypto";
 import { MemoryEntityStorageConnector } from "@twin.org/entity-storage-connector-memory";
 import { EntityStorageConnectorFactory } from "@twin.org/entity-storage-models";
@@ -106,97 +105,19 @@ export async function setupTestEnv(): Promise<void> {
 	);
 	console.debug(`Network: ${TEST_NETWORK}`);
 
-	const MIN_BALANCE = 1000000000n;
-	const MIN_TRANSFER_AMOUNT = 1100000000n;
+	// try {
+	// 	await requestIotaFromFaucetV0({
+	// 		host: TEST_FAUCET_ENDPOINT,
+	// 		recipient: TEST_IDENTITY_ID
+	// 	});
 
-	try {
-		const iotaClient = new IotaClient(TEST_CLIENT_OPTIONS);
+	// 	await TEST_WALLET_CONNECTOR.ensureBalance(TEST_IDENTITY_ID, TEST_ADDRESS, 1000000000n);
+	// 	const val = await TEST_WALLET_CONNECTOR.getBalance(TEST_IDENTITY_ID, TEST_ADDRESS);
+	// 	console.log("Balance", val);
 
-		// Fund the test address (controller)
-		let controllerBalance = await iotaClient.getBalance({
-			owner: TEST_ADDRESS
-		});
-		console.debug("Initial controller balance", controllerBalance);
-
-		if (BigInt(controllerBalance.totalBalance) < MIN_BALANCE) {
-			console.debug("Requesting IOTA from FAUCET for controller");
-			await requestIotaFromFaucetV0({
-				host: TEST_FAUCET_ENDPOINT,
-				recipient: TEST_ADDRESS
-			});
-
-			// Wait for the transaction to be processed
-			await new Promise(resolve => setTimeout(resolve, 5000));
-
-			controllerBalance = await iotaClient.getBalance({
-				owner: TEST_ADDRESS
-			});
-			console.debug("Controller balance after faucet", controllerBalance);
-
-			if (BigInt(controllerBalance.totalBalance) < MIN_BALANCE) {
-				throw new GeneralError("TestEnv", "failedToReceiveGasFromFaucet");
-			}
-		}
-
-		// Get the sender address from the wallet
-		const senderAddresses = await TEST_WALLET_CONNECTOR.getAddresses(TEST_IDENTITY_ID, 0, 1, 1);
-		const senderAddress = senderAddresses[0];
-
-		// Fund the sender address
-		let senderBalance = await iotaClient.getBalance({
-			owner: senderAddress
-		});
-		console.debug("Initial sender balance", senderBalance);
-
-		if (BigInt(senderBalance.totalBalance) < MIN_BALANCE) {
-			try {
-				// First try to get funds from the faucet
-				console.debug("Requesting IOTA from FAUCET for sender");
-				await requestIotaFromFaucetV0({
-					host: TEST_FAUCET_ENDPOINT,
-					recipient: senderAddress
-				});
-
-				// Wait for the transaction to be processed
-				await new Promise(resolve => setTimeout(resolve, 5000));
-
-				senderBalance = await iotaClient.getBalance({
-					owner: senderAddress
-				});
-				console.debug("Sender balance after faucet", senderBalance);
-
-				// If faucet didn't provide enough, transfer from controller
-				if (BigInt(senderBalance.totalBalance) < MIN_BALANCE) {
-					console.debug("Transferring IOTA from controller to sender");
-					const response = await TEST_WALLET_CONNECTOR.transfer(
-						TEST_IDENTITY_ID,
-						TEST_ADDRESS,
-						senderAddress,
-						MIN_TRANSFER_AMOUNT
-					);
-					console.debug("Transfer successful", response);
-
-					// Wait for the transaction to be processed
-					await new Promise(resolve => setTimeout(resolve, 5000));
-
-					senderBalance = await iotaClient.getBalance({
-						owner: senderAddress
-					});
-					console.debug("Sender balance after transfer", senderBalance);
-				}
-			} catch (error) {
-				console.error("Error funding sender address", error);
-				throw new GeneralError("TestEnv", "failedToFundSenderAddress");
-			}
-
-			if (BigInt(senderBalance.totalBalance) < MIN_BALANCE) {
-				throw new GeneralError("TestEnv", "failedToReceiveGasFromFaucet");
-			}
-		}
-
-		console.debug("Test environment setup complete");
-	} catch (error) {
-		console.error("Error setting up test environment", error);
-		throw error;
-	}
+	// 	console.debug("Test environment setup complete");
+	// } catch (error) {
+	// 	console.error("Error setting up test environment", error);
+	// 	throw error;
+	// }
 }

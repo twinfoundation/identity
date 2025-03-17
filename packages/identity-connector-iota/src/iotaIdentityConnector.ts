@@ -48,6 +48,7 @@ import {
 	ObjectHelper,
 	BaseError
 } from "@twin.org/core";
+import { Bip44, KeyType } from "@twin.org/crypto";
 import type { IJsonLdContextDefinitionRoot, IJsonLdNodeObject } from "@twin.org/data-json-ld";
 import { Iota } from "@twin.org/dlt-iota";
 import { DocumentHelper, type IIdentityConnector } from "@twin.org/identity-models";
@@ -875,7 +876,14 @@ export class IotaIdentityConnector implements IIdentityConnector {
 			} as IJwkParams;
 
 			const jwkMemStore = new JwkMemStore();
-			const keyId = await jwkMemStore.insert(new Jwk(jwkParams));
+			const jwk = new Jwk(jwkParams);
+			const publicKeyJwk = jwk.toPublic();
+			if (!publicKeyJwk) {
+				throw new GeneralError(this.CLASS_NAME, "publicKeyJwkMissing", {
+					jwk: jwk.kid()
+				});
+			}
+			const keyId = await jwkMemStore.insert(jwk);
 			const keyIdMemStore = new KeyIdMemStore();
 			const methodDigest = new MethodDigest(method);
 
@@ -1213,29 +1221,60 @@ export class IotaIdentityConnector implements IIdentityConnector {
 		const iotaClient = new IotaClient(this._config.clientOptions);
 
 		if (this._identityClient) {
-		} else {
-			const identityClientReadOnly = await IdentityClientReadOnly.createWithPkgId(
-				iotaClient,
-				getIdentityPkgId(this._config)
-			);
-			const storage = new Storage(new JwkMemStore(), new KeyIdMemStore());
-			const generate = await storage.keyStorage().generate("Ed25519", JwsAlgorithm.EdDSA);
-			const publicKeyJwk = generate.jwk().toPublic();
-
-			if (publicKeyJwk === undefined) {
-				throw new GeneralError(this.CLASS_NAME, "publicKeyJwkMissing", {
-					jwk: generate.jwk().kid()
-				});
-			}
-
-			const keyId = generate.keyId();
-			const signer = new StorageSigner(storage, keyId, publicKeyJwk);
-			const identityClient = await IdentityClient.create(identityClientReadOnly, signer);
-
-			this._identityClient = identityClient;
+			return this._identityClient;
 		}
 
+		const identityClientReadOnly = await IdentityClientReadOnly.createWithPkgId(
+			iotaClient,
+			getIdentityPkgId(this._config)
+		);
+
+		if (Is.undefined(controller)) {
+			throw new GeneralError(this.CLASS_NAME, "controllerMissing");
+		}
+
+		const seed = await Iota.getSeed(this._config, this._vaultConnector, controller);
+
+		const kp = Bip44.keyPair(
+			seed,
+			KeyType.Ed25519,
+			this._config.coinType ?? Iota.DEFAULT_COIN_TYPE,
+			0,
+			false,
+			this._walletAddressIndex
+		);
+
+		const jwkMemStore = new JwkMemStore();
+		const keyIdMemStore = new KeyIdMemStore();
+		const storage = new Storage(jwkMemStore, keyIdMemStore);
+
+		const jwkParams: IJwkParams = {
+			kty: JwkType.Okp,
+			crv: "Ed25519",
+			alg: JwsAlgorithm.EdDSA,
+			x: Converter.bytesToBase64Url(kp.publicKey),
+			d: Converter.bytesToBase64Url(kp.privateKey)
+		};
+
+		const jwk = new Jwk(jwkParams);
+		const publicKeyJwk = jwk.toPublic();
+		if (!publicKeyJwk) {
+			throw new GeneralError(this.CLASS_NAME, "publicKeyJwkMissing", {
+				jwk: jwk.kid()
+			});
+		}
+		const keyId = await jwkMemStore.insert(jwk);
+		const signer = new StorageSigner(storage, keyId, publicKeyJwk);
+		const identityClient = await IdentityClient.create(identityClientReadOnly, signer);
+
+		this._identityClient = identityClient;
+
 		const senderAddress = this._identityClient.senderAddress();
+
+		// eslint-disable-next-line no-console
+		console.log("controllerAddress", controllerAddress);
+		// eslint-disable-next-line no-console
+		console.log("senderAddress", senderAddress);
 
 		if (controllerAddress && controller && senderAddress !== controllerAddress) {
 			let senderBalance = await iotaClient.getBalance({
@@ -1323,3 +1362,9 @@ export class IotaIdentityConnector implements IIdentityConnector {
 		return parts[3];
 	}
 }
+
+// controllerAddress 0xc4e5156b423983b95f58185a31ed42e92cb5133d9f8c18861766374819f529bb
+// senderAddress 0xc4e5156b423983b95f58185a31ed42e92cb5133d9f8c18861766374819f529bb
+
+// controllerAddress 0xc4e5156b423983b95f58185a31ed42e92cb5133d9f8c18861766374819f529bb
+// senderAddress 0x0e8b2eeec2c27caa30f5688ffdf724b5c5b6eec81704aa82f3d3f9c6d1e0ab18
