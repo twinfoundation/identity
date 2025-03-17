@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: Apache-2.0.
 import { GeneralError, Is, Urn } from "@twin.org/core";
 import {
-	IdentityConnectorFactory,
 	IdentityResolverConnectorFactory,
 	type IIdentityResolverComponent,
 	type IIdentityResolverConnector
@@ -36,7 +35,7 @@ export class IdentityResolverService implements IIdentityResolverComponent {
 	 * @param options The options for the service.
 	 */
 	constructor(options?: IIdentityResolverServiceConstructorOptions) {
-		const names = IdentityConnectorFactory.names();
+		const names = IdentityResolverConnectorFactory.names();
 		if (names.length === 0) {
 			throw new GeneralError(this.CLASS_NAME, "noConnectors");
 		}
