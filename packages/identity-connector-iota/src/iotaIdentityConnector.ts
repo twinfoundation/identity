@@ -38,7 +38,6 @@ import {
 	type IPresentation
 } from "@iota/identity-wasm/node";
 import { IotaClient } from "@iota/iota-sdk/client";
-import { getFaucetHost, requestIotaFromFaucetV0 } from "@iota/iota-sdk/faucet";
 import {
 	GeneralError,
 	Guards,
@@ -156,9 +155,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 		Guards.stringValue(this.CLASS_NAME, nameof(controller), controller);
 
 		try {
-			const controllerAddress = await this.getControllerAddress(controller);
-			const identityClient = await this.getFundedClient(controllerAddress, controller);
-
+			const identityClient = await this.getIdentityClient(controller);
 			const networkHrp = identityClient.network();
 			const document = new IotaDocument(networkHrp);
 
@@ -215,8 +212,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 			Object.values(DidVerificationMethodType)
 		);
 		try {
-			const controllerAddress = await this.getControllerAddress(controller);
-			const identityClient = await this.getFundedClient(controllerAddress, controller);
+			const identityClient = await this.getIdentityClient(controller);
 			const document = await identityClient.resolveDid(IotaDID.parse(documentId));
 			if (Is.undefined(document)) {
 				throw new NotFoundError(this.CLASS_NAME, "documentNotFound", documentId);
@@ -307,8 +303,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 				throw new NotFoundError(this.CLASS_NAME, "missingDid", verificationMethodId);
 			}
 
-			const controllerAddress = await this.getControllerAddress(controller);
-			const identityClient = await this.getFundedClient(controllerAddress, controller);
+			const identityClient = await this.getIdentityClient(controller);
 			const document = await identityClient.resolveDid(IotaDID.parse(idParts.id));
 
 			if (Is.undefined(document)) {
@@ -373,8 +368,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 		Guards.stringValue(this.CLASS_NAME, nameof(serviceEndpoint), serviceEndpoint);
 
 		try {
-			const controllerAddress = await this.getControllerAddress(controller);
-			const identityClient = await this.getFundedClient(controllerAddress, controller);
+			const identityClient = await this.getIdentityClient(controller);
 			const document = await identityClient.resolveDid(IotaDID.parse(documentId));
 			if (Is.undefined(document)) {
 				throw new NotFoundError(this.CLASS_NAME, "documentNotFound", documentId);
@@ -429,8 +423,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 				throw new NotFoundError(this.CLASS_NAME, "missingDid", serviceId);
 			}
 
-			const controllerAddress = await this.getControllerAddress(controller);
-			const identityClient = await this.getFundedClient(controllerAddress, controller);
+			const identityClient = await this.getIdentityClient(controller);
 			const document = await identityClient.resolveDid(IotaDID.parse(idParts.id));
 
 			if (Is.undefined(document)) {
@@ -501,8 +494,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 				throw new NotFoundError(this.CLASS_NAME, "missingDid", verificationMethodId);
 			}
 
-			const controllerAddress = await this.getControllerAddress(controller);
-			const identityClient = await this.getFundedClient(controllerAddress, controller);
+			const identityClient = await this.getIdentityClient(controller);
 			const issuerDocument = await identityClient.resolveDid(IotaDID.parse(idParts.id));
 
 			if (Is.undefined(issuerDocument)) {
@@ -618,7 +610,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 		Guards.stringValue(this.CLASS_NAME, nameof(credentialJwt), credentialJwt);
 
 		try {
-			const identityClient = await this.getFundedClient();
+			const identityClient = await this.getIdentityClient();
 			const resolver = new Resolver({ client: identityClient });
 			const jwt = new Jwt(credentialJwt);
 			const issuerDocumentId = JwtCredentialValidator.extractIssuerFromJwt(jwt);
@@ -670,8 +662,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 		Guards.array(this.CLASS_NAME, nameof(credentialIndices), credentialIndices);
 
 		try {
-			const controllerAddress = await this.getControllerAddress(controller);
-			const identityClient = await this.getFundedClient(controllerAddress, controller);
+			const identityClient = await this.getIdentityClient(controller);
 			const document = await identityClient.resolveDid(IotaDID.parse(issuerDocumentId));
 
 			if (Is.undefined(document)) {
@@ -728,8 +719,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 		Guards.array(this.CLASS_NAME, nameof(credentialIndices), credentialIndices);
 
 		try {
-			const controllerAddress = await this.getControllerAddress(controller);
-			const identityClient = await this.getFundedClient(controllerAddress, controller);
+			const identityClient = await this.getIdentityClient(controller);
 			const document = await identityClient.resolveDid(IotaDID.parse(issuerDocumentId));
 
 			if (Is.undefined(document)) {
@@ -810,8 +800,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 				throw new NotFoundError(this.CLASS_NAME, "missingDid", verificationMethodId);
 			}
 
-			const controllerAddress = await this.getControllerAddress(controller);
-			const identityClient = await this.getFundedClient(controllerAddress, controller);
+			const identityClient = await this.getIdentityClient(controller);
 			const issuerDocument = await identityClient.resolveDid(IotaDID.parse(idParts.id));
 
 			if (Is.undefined(issuerDocument)) {
@@ -1056,8 +1045,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 				throw new NotFoundError(this.CLASS_NAME, "missingDid", verificationMethodId);
 			}
 
-			const controllerAddress = await this.getControllerAddress(controller);
-			const identityClient = await this.getFundedClient(controllerAddress, controller);
+			const identityClient = await this.getIdentityClient(controller);
 			const document = await identityClient.resolveDid(IotaDID.parse(idParts.id));
 
 			if (Is.undefined(document)) {
@@ -1118,7 +1106,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 				throw new NotFoundError(this.CLASS_NAME, "missingDid", proof.verificationMethod);
 			}
 
-			const identityClient = await this.getFundedClient();
+			const identityClient = await this.getIdentityClient();
 			const resolvedDocument = await identityClient.resolveDid(IotaDID.parse(idParts.id));
 
 			if (Is.undefined(resolvedDocument)) {
@@ -1189,41 +1177,16 @@ export class IotaIdentityConnector implements IIdentityConnector {
 	}
 
 	/**
-	 * Get the address for a controller.
-	 * @param controller The controller to get the address for.
-	 * @returns The address for the controller.
-	 */
-	private async getControllerAddress(controller: string): Promise<string> {
-		const seed = await Iota.getSeed(this._config, this._vaultConnector, controller);
-		const addresses = Iota.getAddresses(
-			seed,
-			this._config.coinType ?? Iota.DEFAULT_COIN_TYPE,
-			0,
-			this._walletAddressIndex,
-			1
-		);
-		return addresses[0];
-	}
-
-	/**
-	 * Get a funded client.
-	 * @param controllerAddress The address of the controller.
+	 * Get an identity client.
 	 * @param controller The controller to get the client for.
-	 * @returns The funded client.
+	 * @returns The identity client.
 	 */
-	private async getFundedClient(
-		controllerAddress?: string,
-		controller?: string
-	): Promise<IdentityClient> {
-		const MIN_BALANCE = 1000000000n;
-		const MIN_TRANSFER_AMOUNT = 1100000000n;
-
-		const iotaClient = new IotaClient(this._config.clientOptions);
-
+	private async getIdentityClient(controller?: string): Promise<IdentityClient> {
 		if (this._identityClient) {
 			return this._identityClient;
 		}
 
+		const iotaClient = new IotaClient(this._config.clientOptions);
 		const identityClientReadOnly = await IdentityClientReadOnly.createWithPkgId(
 			iotaClient,
 			getIdentityPkgId(this._config)
@@ -1268,72 +1231,6 @@ export class IotaIdentityConnector implements IIdentityConnector {
 		const identityClient = await IdentityClient.create(identityClientReadOnly, signer);
 
 		this._identityClient = identityClient;
-
-		const senderAddress = this._identityClient.senderAddress();
-
-		// eslint-disable-next-line no-console
-		console.log("controllerAddress", controllerAddress);
-		// eslint-disable-next-line no-console
-		console.log("senderAddress", senderAddress);
-
-		if (controllerAddress && controller && senderAddress !== controllerAddress) {
-			let senderBalance = await iotaClient.getBalance({
-				owner: senderAddress
-			});
-			// eslint-disable-next-line no-console
-			console.log("Initial sender balance", senderBalance);
-
-			const controllerBalance = await iotaClient.getBalance({
-				owner: controllerAddress
-			});
-			// eslint-disable-next-line no-console
-			console.log("Controller balance", controllerBalance);
-
-			// TODO: Use the Faucet to fund both addresses
-			// We use the transfer for now to avoid the faucet rate limit
-			if (BigInt(controllerBalance.totalBalance) < MIN_BALANCE) {
-				// eslint-disable-next-line no-console
-				console.log("Requesting IOTA from FAUCET");
-				await requestIotaFromFaucetV0({
-					host: getFaucetHost(this._config.network),
-					recipient: controllerAddress
-				});
-
-				// Wait for the transaction to be processed
-				await new Promise(resolve => setTimeout(resolve, 5000));
-			}
-
-			if (BigInt(controllerBalance.totalBalance) < MIN_BALANCE) {
-				throw new GeneralError(this.CLASS_NAME, "failedToReceiveGasFromFaucet");
-			}
-
-			if (BigInt(senderBalance.totalBalance) < MIN_BALANCE) {
-				try {
-					const response = await this._walletConnector.transfer(
-						controller,
-						controllerAddress,
-						senderAddress,
-						MIN_TRANSFER_AMOUNT
-					);
-					// eslint-disable-next-line no-console
-					console.log("Transfer Successful", response);
-				} catch (error) {
-					// eslint-disable-next-line no-console
-					console.log("Error transferring IOTA", error);
-				}
-
-				// Wait for the transaction to be processed
-				await new Promise(resolve => setTimeout(resolve, 5000));
-
-				senderBalance = await iotaClient.getBalance({
-					owner: senderAddress
-				});
-
-				if (BigInt(senderBalance.totalBalance) < MIN_BALANCE) {
-					throw new GeneralError(this.CLASS_NAME, "failedToReceiveGasFromFaucet");
-				}
-			}
-		}
 		return this._identityClient;
 	}
 
@@ -1362,9 +1259,3 @@ export class IotaIdentityConnector implements IIdentityConnector {
 		return parts[3];
 	}
 }
-
-// controllerAddress 0xc4e5156b423983b95f58185a31ed42e92cb5133d9f8c18861766374819f529bb
-// senderAddress 0xc4e5156b423983b95f58185a31ed42e92cb5133d9f8c18861766374819f529bb
-
-// controllerAddress 0xc4e5156b423983b95f58185a31ed42e92cb5133d9f8c18861766374819f529bb
-// senderAddress 0x0e8b2eeec2c27caa30f5688ffdf724b5c5b6eec81704aa82f3d3f9c6d1e0ab18
