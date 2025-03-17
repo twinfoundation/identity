@@ -1,6 +1,6 @@
 {
 	"name": "@twin.org/identity",
-	"version": "0.0.1-next.32",
+	"version": "0.0.1-next.33",
 	"description": "Identity",
 	"repository": {
 		"type": "git",
@@ -45,6 +45,7 @@
 		"packages/identity-rest-client",
 		"packages/identity-connector-iota",
 		"packages/identity-connector-iota-stardust",
+		"packages/identity-connector-universal",
 		"apps/identity-cli"
 	],
 	"type": "module"

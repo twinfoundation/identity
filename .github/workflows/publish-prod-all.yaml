@@ -12,7 +12,7 @@ jobs:
       TEST_MNEMONIC: ${{ secrets.TEST_MNEMONIC }}
 
     services:
-      iota-universal-resolver:
+      universal-resolver:
         image: iotaledger/uni-resolver-driver-iota:v0.2.0-alpha
         ports:
           - 8080:8080
@@ -30,6 +30,7 @@ jobs:
             'packages/identity-connector-entity-storage',
             'packages/identity-connector-iota',
             'packages/identity-connector-iota-stardust',
+            'packages/identity-connector-universal',
             'packages/identity-service',
             'packages/identity-rest-client',
             'apps/identity-cli'

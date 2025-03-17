@@ -6,22 +6,22 @@ import { nameof } from "@twin.org/nameof";
 import type { IDidDocument } from "@twin.org/standards-w3c-did";
 import { FetchHelper, HttpMethod } from "@twin.org/web";
 import type { IUniversalResolverResult } from "./models/api/IUniversalResolverResult";
-import type { IIotaUniversalResolverConnectorConfig } from "./models/IIotaUniversalResolverConnectorConfig";
-import type { IIotaUniversalResolverConnectorConstructorOptions } from "./models/IIotaUniversalResolverConnectorConstructorOptions";
+import type { IUniversalResolverConnectorConfig } from "./models/IUniversalResolverConnectorConfig";
+import type { IUniversalResolverConnectorConstructorOptions } from "./models/IUniversalResolverConnectorConstructorOptions";
 
 /**
- * Class for performing identity operations on IOTA universal resolver.
+ * Class for performing identity operations on universal resolver.
  */
-export class IotaUniversalResolverConnector implements IIdentityResolverConnector {
+export class UniversalResolverConnector implements IIdentityResolverConnector {
 	/**
 	 * The namespace supported by the identity connector.
 	 */
-	public static readonly NAMESPACE: string = "iota";
+	public static readonly NAMESPACE: string = "universal";
 
 	/**
 	 * Runtime name for the class.
 	 */
-	public readonly CLASS_NAME: string = nameof<IotaUniversalResolverConnector>();
+	public readonly CLASS_NAME: string = nameof<UniversalResolverConnector>();
 
 	/**
 	 * The url for the resolver.
@@ -30,12 +30,12 @@ export class IotaUniversalResolverConnector implements IIdentityResolverConnecto
 	private readonly _resolverEndpoint: string;
 
 	/**
-	 * Create a new instance of IotaUniversalResolverConnector.
+	 * Create a new instance of UniversalResolverConnector.
 	 * @param options The options for the identity connector.
 	 */
-	constructor(options: IIotaUniversalResolverConnectorConstructorOptions) {
+	constructor(options: IUniversalResolverConnectorConstructorOptions) {
 		Guards.object(this.CLASS_NAME, nameof(options), options);
-		Guards.object<IIotaUniversalResolverConnectorConfig>(
+		Guards.object<IUniversalResolverConnectorConfig>(
 			this.CLASS_NAME,
 			nameof(options.config),
 			options.config
