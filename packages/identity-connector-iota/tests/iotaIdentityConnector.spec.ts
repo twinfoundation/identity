@@ -32,7 +32,7 @@ let testVcJwt: string;
 let testDocumentId: string;
 let testVerificationMethodId: string;
 let identityConnector: IotaIdentityConnector;
-
+let identityResolverConnector: IotaIdentityResolverConnector;
 describe("IotaIdentityConnector", () => {
 	beforeAll(async () => {
 		await setupTestEnv();
@@ -40,6 +40,14 @@ describe("IotaIdentityConnector", () => {
 		// Create a document and verification method for testing
 		try {
 			identityConnector = new IotaIdentityConnector({
+				config: {
+					clientOptions: TEST_CLIENT_OPTIONS,
+					vaultMnemonicId: TEST_MNEMONIC_NAME,
+					network: TEST_NETWORK
+				}
+			});
+
+			identityResolverConnector = new IotaIdentityResolverConnector({
 				config: {
 					clientOptions: TEST_CLIENT_OPTIONS,
 					vaultMnemonicId: TEST_MNEMONIC_NAME,
@@ -127,13 +135,6 @@ describe("IotaIdentityConnector", () => {
 	});
 
 	test("can fail to resolve a document with no id", async () => {
-		const identityResolverConnector = new IotaIdentityResolverConnector({
-			config: {
-				clientOptions: TEST_CLIENT_OPTIONS,
-				vaultMnemonicId: TEST_MNEMONIC_NAME,
-				network: TEST_NETWORK
-			}
-		});
 		await expect(
 			identityResolverConnector.resolveDocument(undefined as unknown as string)
 		).rejects.toMatchObject({
@@ -147,13 +148,6 @@ describe("IotaIdentityConnector", () => {
 	});
 
 	test("can resolve a document id", async () => {
-		const identityResolverConnector = new IotaIdentityResolverConnector({
-			config: {
-				clientOptions: TEST_CLIENT_OPTIONS,
-				vaultMnemonicId: TEST_MNEMONIC_NAME,
-				network: TEST_NETWORK
-			}
-		});
 		const resolvedDocument = await identityResolverConnector.resolveDocument(testDocumentId);
 
 		expect(resolvedDocument).toBeDefined();
@@ -237,7 +231,7 @@ describe("IotaIdentityConnector", () => {
 			verificationMethodId
 		);
 
-		const resolvedDocument = await identityConnector.resolveDocument(documentId);
+		const resolvedDocument = await identityResolverConnector.resolveDocument(documentId);
 
 		expect(resolvedDocument).toBeDefined();
 		expect(resolvedDocument.id).toEqual(documentId);
@@ -314,13 +308,6 @@ describe("IotaIdentityConnector", () => {
 			`${testDocumentId}#${verificationMethodId}`
 		);
 
-		const identityResolverConnector = new IotaIdentityResolverConnector({
-			config: {
-				clientOptions: TEST_CLIENT_OPTIONS,
-				vaultMnemonicId: TEST_MNEMONIC_NAME,
-				network: TEST_NETWORK
-			}
-		});
 		const resolvedDocument = await identityResolverConnector.resolveDocument(testDocumentId);
 
 		expect(resolvedDocument).toBeDefined();
@@ -432,7 +419,7 @@ describe("IotaIdentityConnector", () => {
 	});
 
 	test("can resolve a document with added service", async () => {
-		const resolvedDocument = await identityConnector.resolveDocument(testDocumentId);
+		const resolvedDocument = await identityResolverConnector.resolveDocument(testDocumentId);
 
 		expect(resolvedDocument).toBeDefined();
 		expect(resolvedDocument.id).toEqual(testDocumentId);
@@ -901,21 +888,21 @@ describe("IotaIdentityConnector", () => {
 		const proof = await identityConnector.createProof(
 			TEST_IDENTITY_ID,
 			testVerificationMethodId,
-			"JsonWebSignature2020",
+			ProofTypes.DataIntegrityProof,
 			testDocument
 		);
 
 		expect(proof).toBeDefined();
-		expect(proof.type).toBe("JsonWebSignature2020");
+		expect(proof.type).toBe(ProofTypes.DataIntegrityProof);
 		expect(proof.verificationMethod).toBe(testVerificationMethodId);
 		expect(proof.proofPurpose).toBe("assertionMethod");
 		expect(proof.created).toBeDefined();
 
 		// Check for signature based on proof type
-		if (proof.type === "JsonWebSignature2020") {
+		if (proof.type === ProofTypes.JsonWebSignature2020) {
 			// For JsonWebSignature2020, we expect a jws property
 			expect((proof as IJsonWebSignature2020Proof).jws).toBeDefined();
-		} else if (proof.type === "DataIntegrityProof") {
+		} else if (proof.type === ProofTypes.DataIntegrityProof) {
 			// For DataIntegrityProof, we expect a proofValue property
 			expect((proof as IDataIntegrityProof).proofValue).toBeDefined();
 		}

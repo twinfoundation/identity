@@ -33,11 +33,21 @@ import {
 	JwkType,
 	Jwt,
 	type IJwkParams,
-	type DIDUrl
+	type DIDUrl,
+	type ICredential,
+	type IPresentation
 } from "@iota/identity-wasm/node";
 import { IotaClient } from "@iota/iota-sdk/client";
 import { getFaucetHost, requestIotaFromFaucetV0 } from "@iota/iota-sdk/faucet";
-import { GeneralError, Guards, Is, NotFoundError, Converter } from "@twin.org/core";
+import {
+	GeneralError,
+	Guards,
+	Is,
+	NotFoundError,
+	Converter,
+	ObjectHelper,
+	BaseError
+} from "@twin.org/core";
 import type { IJsonLdContextDefinitionRoot, IJsonLdNodeObject } from "@twin.org/data-json-ld";
 import { Iota } from "@twin.org/dlt-iota";
 import { DocumentHelper, type IIdentityConnector } from "@twin.org/identity-models";
@@ -51,14 +61,14 @@ import {
 	type IDidVerifiableCredential,
 	type IDidVerifiablePresentation,
 	ProofTypes,
-	ProofHelper,
-	type IJsonWebSignature2020Proof
+	ProofHelper
 } from "@twin.org/standards-w3c-did";
 import { VaultConnectorFactory, type IVaultConnector, VaultKeyType } from "@twin.org/vault-models";
 import { type IWalletConnector, WalletConnectorFactory } from "@twin.org/wallet-models";
 import { Jwk as JwkHelper } from "@twin.org/web";
 import type { IIotaIdentityConnectorConfig } from "./models/IIotaIdentityConnectorConfig";
 import type { IIotaIdentityConnectorConstructorOptions } from "./models/IIotaIdentityConnectorConstructorOptions";
+import { getIdentityPkgId } from "./utils/iotaIdentityUtils";
 
 /**
  * Class for performing identity operations on IOTA.
@@ -68,21 +78,6 @@ export class IotaIdentityConnector implements IIdentityConnector {
 	 * The namespace supported by the identity connector.
 	 */
 	public static readonly NAMESPACE: string = "iota";
-
-	/**
-	 * Default package IDs for different networks.
-	 */
-	private static readonly _DEFAULT_IDENTITY_PKG_IDS = {
-		/**
-		 * Default package ID for testnet.
-		 */
-		TESTNET: "0x222741bbdff74b42df48a7b4733185e9b24becb8ccfbafe8eac864ab4e4cc555",
-
-		/**
-		 * Default package ID for devnet.
-		 */
-		DEVNET: "0x03242ae6b87406bd0eb5d669fbe874ed4003694c0be9c6a9ee7c315e6461a553"
-	};
 
 	/**
 	 * Runtime name for the class.
@@ -183,6 +178,8 @@ export class IotaIdentityConnector implements IIdentityConnector {
 			const doc = resolved.toJSON() as { doc: IDidDocument };
 			return doc.doc;
 		} catch (error) {
+			// eslint-disable-next-line no-console
+			console.log(error);
 			throw new GeneralError(
 				this.CLASS_NAME,
 				"createDocumentFailed",
@@ -224,7 +221,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 				throw new NotFoundError(this.CLASS_NAME, "documentNotFound", documentId);
 			}
 
-			const identity = await identityClient.getIdentity(documentId.split(":")[3]);
+			const identity = await identityClient.getIdentity(this.extractAliasId(documentId));
 			const identityOnChain = identity.toFullFledged();
 			if (Is.undefined(identityOnChain)) {
 				throw new NotFoundError(this.CLASS_NAME, "identityNotFound", identityOnChain);
@@ -273,11 +270,12 @@ export class IotaIdentityConnector implements IIdentityConnector {
 			await identityOnChain
 				.updateDidDocument(document.clone())
 				.withGasBudget(this._gasBudget)
-				.execute(identityClient)
-				.then(result => result.output);
+				.execute(identityClient);
 
 			return method.toJSON() as IDidDocumentVerificationMethod;
 		} catch (error) {
+			// eslint-disable-next-line no-console
+			console.log(error);
 			throw new GeneralError(
 				this.CLASS_NAME,
 				"addVerificationMethodFailed",
@@ -328,18 +326,19 @@ export class IotaIdentityConnector implements IIdentityConnector {
 
 			document.removeMethod(method.id());
 
-			const identity = await identityClient.getIdentity(idParts.id.split(":")[3]);
+			const identity = await identityClient.getIdentity(this.extractAliasId(idParts.id));
 			const identityOnChain = identity.toFullFledged();
 			if (Is.undefined(identityOnChain)) {
-				throw new NotFoundError(this.CLASS_NAME, "identityNotFound", idParts.id);
+				throw new NotFoundError(this.CLASS_NAME, "identityNotFound", verificationMethodId);
 			}
 
 			await identityOnChain
 				.updateDidDocument(document.clone())
 				.withGasBudget(this._gasBudget)
-				.execute(identityClient)
-				.then(result => result.output);
+				.execute(identityClient);
 		} catch (error) {
+			// eslint-disable-next-line no-console
+			console.log(error);
 			throw new GeneralError(
 				this.CLASS_NAME,
 				"removeVerificationMethodFailed",
@@ -380,7 +379,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 				throw new NotFoundError(this.CLASS_NAME, "documentNotFound", documentId);
 			}
 
-			const identity = await identityClient.getIdentity(documentId.split(":")[3]);
+			const identity = await identityClient.getIdentity(this.extractAliasId(documentId));
 			const identityOnChain = identity.toFullFledged();
 			if (Is.undefined(identityOnChain)) {
 				throw new NotFoundError(this.CLASS_NAME, "identityNotFound", identityOnChain);
@@ -397,11 +396,12 @@ export class IotaIdentityConnector implements IIdentityConnector {
 			await identityOnChain
 				.updateDidDocument(document.clone())
 				.withGasBudget(this._gasBudget)
-				.execute(identityClient)
-				.then(result => result.output);
+				.execute(identityClient);
 
 			return service.toJSON() as unknown as IDidService;
 		} catch (error) {
+			// eslint-disable-next-line no-console
+			console.log(error);
 			throw new GeneralError(
 				this.CLASS_NAME,
 				"addServiceFailed",
@@ -445,7 +445,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 
 			document.removeService(service.id());
 
-			const identity = await identityClient.getIdentity(idParts.id.split(":")[3]);
+			const identity = await identityClient.getIdentity(this.extractAliasId(idParts.id));
 			const identityOnChain = identity.toFullFledged();
 			if (Is.undefined(identityOnChain)) {
 				throw new NotFoundError(this.CLASS_NAME, "identityNotFound", idParts.id);
@@ -454,9 +454,10 @@ export class IotaIdentityConnector implements IIdentityConnector {
 			await identityOnChain
 				.updateDidDocument(document.clone())
 				.withGasBudget(this._gasBudget)
-				.execute(identityClient)
-				.then(result => result.output);
+				.execute(identityClient);
 		} catch (error) {
+			// eslint-disable-next-line no-console
+			console.log(error);
 			throw new GeneralError(
 				this.CLASS_NAME,
 				"removeServiceFailed",
@@ -513,10 +514,12 @@ export class IotaIdentityConnector implements IIdentityConnector {
 				throw new GeneralError(this.CLASS_NAME, "methodMissing", { method: verificationMethodId });
 			}
 
-			const subjectClone = { ...subject };
+			const subjectClone = ObjectHelper.clone(subject);
 
-			const credContext = subjectClone["@context"];
-			const credType = subjectClone["@type"] || subjectClone.type;
+			const credContext = ObjectHelper.extractProperty(subjectClone, "@context", false);
+			const credType =
+				ObjectHelper.extractProperty(subjectClone, "@type", false) ||
+				ObjectHelper.extractProperty(subjectClone, "type", false);
 
 			const finalTypes = ["VerifiableCredential"];
 			if (Is.stringValue(credType)) {
@@ -533,15 +536,19 @@ export class IotaIdentityConnector implements IIdentityConnector {
 				});
 			}
 
+			if (Is.undefined(verificationMethodKey.publicKey)) {
+				throw new GeneralError(this.CLASS_NAME, "verificationPublicKeyMissing", {
+					method: verificationMethodId
+				});
+			}
+
 			const jwkMemStore = new JwkMemStore();
 
 			const jwkParams: IJwkParams = {
 				kty: JwkType.Okp,
 				crv: "Ed25519",
 				alg: JwsAlgorithm.EdDSA,
-				x: verificationMethodKey.publicKey
-					? Converter.bytesToBase64Url(verificationMethodKey.publicKey)
-					: "",
+				x: Converter.bytesToBase64Url(verificationMethodKey.publicKey),
 				d: Converter.bytesToBase64Url(verificationMethodKey.privateKey)
 			};
 
@@ -556,8 +563,8 @@ export class IotaIdentityConnector implements IIdentityConnector {
 				issuer: idParts.id,
 				credentialSubject: subjectClone,
 				type: finalTypes,
-				...(id ? { id } : {}),
-				...(credContext ? { context: credContext } : {})
+				id,
+				context: credContext as IPresentation["context"]
 			});
 
 			if (!Is.undefined(revocationIndex)) {
@@ -590,8 +597,10 @@ export class IotaIdentityConnector implements IIdentityConnector {
 				jwt: credentialJwt.toString()
 			};
 		} catch (error) {
+			// eslint-disable-next-line no-console
+			console.log(error);
 			throw new GeneralError(this.CLASS_NAME, "createVerifiableCredentialFailed", {
-				error: error instanceof Error ? error.message : String(error)
+				error: BaseError.fromError(error)
 			});
 		}
 	}
@@ -638,7 +647,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 				};
 			}
 			throw new GeneralError(this.CLASS_NAME, "checkingVerifiableCredentialFailed", {
-				error: error instanceof Error ? error.message : String(error)
+				error: BaseError.fromError(error)
 			});
 		}
 	}
@@ -681,7 +690,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 				document.revokeCredentials("revocation", index);
 			}
 
-			const aliasId = issuerDocumentId.split(":")[3];
+			const aliasId = this.extractAliasId(issuerDocumentId);
 			const identity = await identityClient.getIdentity(aliasId);
 			const identityOnChain = identity.toFullFledged();
 			if (Is.undefined(identityOnChain)) {
@@ -691,11 +700,12 @@ export class IotaIdentityConnector implements IIdentityConnector {
 			await identityOnChain
 				.updateDidDocument(document.clone())
 				.withGasBudget(this._gasBudget)
-				.execute(identityClient)
-				.then(result => result.output);
+				.execute(identityClient);
 		} catch (error) {
+			// eslint-disable-next-line no-console
+			console.log(error);
 			throw new GeneralError(this.CLASS_NAME, "revokeVerifiableCredentialsFailed", {
-				error: error instanceof Error ? error.message : String(error)
+				error: BaseError.fromError(error)
 			});
 		}
 	}
@@ -736,7 +746,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 				document.unrevokeCredentials("revocation", index);
 			}
 
-			const aliasId = issuerDocumentId.split(":")[3];
+			const aliasId = this.extractAliasId(issuerDocumentId);
 			const identity = await identityClient.getIdentity(aliasId);
 			const identityOnChain = identity.toFullFledged();
 
@@ -747,11 +757,12 @@ export class IotaIdentityConnector implements IIdentityConnector {
 			await identityOnChain
 				.updateDidDocument(document.clone())
 				.withGasBudget(this._gasBudget)
-				.execute(identityClient)
-				.then(result => result.output);
+				.execute(identityClient);
 		} catch (error) {
+			// eslint-disable-next-line no-console
+			console.log(error);
 			throw new GeneralError(this.CLASS_NAME, "unrevokeVerifiableCredentialsFailed", {
-				error: error instanceof Error ? error.message : String(error)
+				error: BaseError.fromError(error)
 			});
 		}
 	}
@@ -833,15 +844,12 @@ export class IotaIdentityConnector implements IIdentityConnector {
 				if (Is.stringValue(cred)) {
 					credentials.push(cred);
 				} else {
-					credentials.push(cred);
+					credentials.push(new Credential(cred as unknown as ICredential));
 				}
 			}
 
 			const unsignedVp = new Presentation({
-				context: contexts as
-					| string
-					| { [id: string]: unknown }
-					| (string | { [id: string]: unknown })[],
+				context: contexts as IPresentation["context"],
 				id: presentationId,
 				verifiableCredential: credentials,
 				type: finalTypes,
@@ -898,6 +906,8 @@ export class IotaIdentityConnector implements IIdentityConnector {
 				jwt: presentationJwt.toString()
 			};
 		} catch (error) {
+			// eslint-disable-next-line no-console
+			console.log(error);
 			throw new GeneralError(
 				this.CLASS_NAME,
 				"createVerifiablePresentationFailed",
@@ -923,7 +933,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 			const iotaClient = new IotaClient(this._config.clientOptions);
 			const identityClientReadOnly = await IdentityClientReadOnly.createWithPkgId(
 				iotaClient,
-				this.getIdentityPkgId()
+				getIdentityPkgId(this._config)
 			);
 			const resolver = new Resolver<IotaDocument>({ client: identityClientReadOnly });
 			const jwt = new Jwt(presentationJwt);
@@ -1060,41 +1070,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 				throw new GeneralError(this.CLASS_NAME, "publicKeyJwkMissing", { keyId });
 			}
 
-			const jwkMemStore = new JwkMemStore();
-
-			const jwkParams: IJwkParams = {
-				kty: JwkType.Okp,
-				crv: "Ed25519",
-				alg: JwsAlgorithm.EdDSA,
-				x: verificationMethodKey.publicKey
-					? Converter.bytesToBase64Url(verificationMethodKey.publicKey)
-					: "",
-				d: Converter.bytesToBase64Url(verificationMethodKey.privateKey)
-			};
-
-			const keyIdStore = await jwkMemStore.insert(new Jwk(jwkParams));
-			const keyIdMemStore = new KeyIdMemStore();
-			const methodDigest = new MethodDigest(method);
-
-			await keyIdMemStore.insertKeyId(methodDigest, keyIdStore);
-
-			const storage = new Storage(jwkMemStore, keyIdMemStore);
 			const unsignedProof = ProofHelper.createUnsignedProof(proofType, verificationMethodId);
-
-			if (proofType === ProofTypes.JsonWebSignature2020) {
-				const jws = await document.createJws(
-					storage,
-					`#${idParts.fragment}`,
-					JSON.stringify(unsecureDocument),
-					new JwsSignatureOptions()
-				);
-				const proof: IJsonWebSignature2020Proof = {
-					...(unsignedProof as IJsonWebSignature2020Proof),
-					jws: jws.toString()
-				};
-
-				return proof;
-			}
 
 			const jwk = await JwkHelper.fromEd25519Private(verificationMethodKey.privateKey);
 			const signedProof = await ProofHelper.createProof(
@@ -1105,6 +1081,8 @@ export class IotaIdentityConnector implements IIdentityConnector {
 			);
 			return signedProof;
 		} catch (error) {
+			// eslint-disable-next-line no-console
+			console.log(error);
 			throw new GeneralError(
 				this.CLASS_NAME,
 				"createProofFailed",
@@ -1148,23 +1126,6 @@ export class IotaIdentityConnector implements IIdentityConnector {
 				});
 			}
 
-			if (proof.type === ProofTypes.JsonWebSignature2020) {
-				const jwsProof = proof as IJsonWebSignature2020Proof;
-				if (!jwsProof.jws) {
-					throw new GeneralError(this.CLASS_NAME, "jwsMissing", {
-						method: proof.verificationMethod
-					});
-				}
-				const didMethod = method.toJSON() as IDidDocumentVerificationMethod;
-				if (Is.undefined(didMethod?.publicKeyJwk)) {
-					throw new GeneralError(this.CLASS_NAME, "publicKeyJwkMissing", {
-						method: proof.verificationMethod
-					});
-				}
-
-				return ProofHelper.verifyProof(document, proof, didMethod.publicKeyJwk);
-			}
-
 			const didMethod = method.toJSON() as IDidDocumentVerificationMethod;
 			if (Is.undefined(didMethod.publicKeyJwk)) {
 				throw new GeneralError(this.CLASS_NAME, "publicKeyJwkMissing", {
@@ -1174,6 +1135,8 @@ export class IotaIdentityConnector implements IIdentityConnector {
 
 			return ProofHelper.verifyProof(document, proof, didMethod.publicKeyJwk);
 		} catch (error) {
+			// eslint-disable-next-line no-console
+			console.log(error);
 			throw new GeneralError(
 				this.CLASS_NAME,
 				"verifyProofFailed",
@@ -1196,7 +1159,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 			const iotaClient = new IotaClient(this._config.clientOptions);
 			const identityClientReadOnly = await IdentityClientReadOnly.createWithPkgId(
 				iotaClient,
-				this.getIdentityPkgId()
+				getIdentityPkgId(this._config)
 			);
 			const resolver = new Resolver<IotaDocument>({
 				client: identityClientReadOnly
@@ -1206,6 +1169,8 @@ export class IotaIdentityConnector implements IIdentityConnector {
 
 			return doc.doc;
 		} catch (error) {
+			// eslint-disable-next-line no-console
+			console.log(error);
 			throw new GeneralError(
 				this.CLASS_NAME,
 				"resolveDocumentFailed",
@@ -1221,8 +1186,10 @@ export class IotaIdentityConnector implements IIdentityConnector {
 	 * @returns The address for the controller.
 	 */
 	private async getControllerAddress(controller: string): Promise<string> {
-		const addresses = await this._walletConnector.getAddresses(
-			controller,
+		const seed = await Iota.getSeed(this._config, this._vaultConnector, controller);
+		const addresses = Iota.getAddresses(
+			seed,
+			this._config.coinType ?? Iota.DEFAULT_COIN_TYPE,
 			0,
 			this._walletAddressIndex,
 			1
@@ -1249,7 +1216,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 		} else {
 			const identityClientReadOnly = await IdentityClientReadOnly.createWithPkgId(
 				iotaClient,
-				this.getIdentityPkgId()
+				getIdentityPkgId(this._config)
 			);
 			const storage = new Storage(new JwkMemStore(), new KeyIdMemStore());
 			const generate = await storage.keyStorage().generate("Ed25519", JwsAlgorithm.EdDSA);
@@ -1322,8 +1289,6 @@ export class IotaIdentityConnector implements IIdentityConnector {
 				senderBalance = await iotaClient.getBalance({
 					owner: senderAddress
 				});
-				// eslint-disable-next-line no-console
-				console.log("Transfer successful", senderBalance);
 
 				if (BigInt(senderBalance.totalBalance) < MIN_BALANCE) {
 					throw new GeneralError(this.CLASS_NAME, "failedToReceiveGasFromFaucet");
@@ -1334,24 +1299,27 @@ export class IotaIdentityConnector implements IIdentityConnector {
 	}
 
 	/**
-	 * Gets the identity package ID to use, either from config or defaults.
-	 * @returns The identity package ID.
+	 * Extracts the alias ID from a document ID.
+	 * @param documentId The document ID to extract from.
+	 * @returns The alias ID.
+	 * @throws GeneralError if the document ID format is invalid.
 	 */
-	private getIdentityPkgId(): string {
-		if (this._config.identityPkgId) {
-			return this._config.identityPkgId;
+	private extractAliasId(documentId: string): string {
+		Guards.stringValue(this.CLASS_NAME, nameof(documentId), documentId);
+
+		const parts = documentId.split(":");
+		if (parts.length !== 4) {
+			throw new GeneralError(this.CLASS_NAME, "invalidDocumentIdFormat", {
+				documentId
+			});
 		}
 
-		const clientOptions = this._config.clientOptions;
-		const url =
-			typeof clientOptions === "object" && "url" in clientOptions
-				? (clientOptions.url as string)
-				: "";
+		if (parts[0] !== "did") {
+			throw new GeneralError(this.CLASS_NAME, "invalidDocumentIdFormat", {
+				documentId
+			});
+		}
 
-		const isTestnet = url.includes("testnet");
-
-		return isTestnet
-			? IotaIdentityConnector._DEFAULT_IDENTITY_PKG_IDS.TESTNET
-			: IotaIdentityConnector._DEFAULT_IDENTITY_PKG_IDS.DEVNET;
+		return parts[3];
 	}
 }

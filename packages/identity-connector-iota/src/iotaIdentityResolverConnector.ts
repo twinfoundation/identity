@@ -10,6 +10,7 @@ import type { IDidDocument } from "@twin.org/standards-w3c-did";
 import type { IIotaIdentityConnectorConfig } from "./models/IIotaIdentityConnectorConfig";
 import type { IIotaIdentityResolverConnectorConfig } from "./models/IIotaIdentityResolverConnectorConfig";
 import type { IIotaIdentityResolverConnectorConstructorOptions } from "./models/IIotaIdentityResolverConnectorConstructorOptions";
+import { getIdentityPkgId } from "./utils/iotaIdentityUtils";
 
 /**
  * Class for performing identity operations on IOTA.
@@ -19,21 +20,6 @@ export class IotaIdentityResolverConnector implements IIdentityResolverConnector
 	 * The namespace supported by the identity connector.
 	 */
 	public static readonly NAMESPACE: string = "iota";
-
-	/**
-	 * Default package IDs for different networks.
-	 */
-	private static readonly _DEFAULT_IDENTITY_PKG_IDS = {
-		/**
-		 * Default package ID for testnet.
-		 */
-		TESTNET: "0x222741bbdff74b42df48a7b4733185e9b24becb8ccfbafe8eac864ab4e4cc555",
-
-		/**
-		 * Default package ID for devnet.
-		 */
-		DEVNET: "0x03242ae6b87406bd0eb5d669fbe874ed4003694c0be9c6a9ee7c315e6461a553"
-	};
 
 	/**
 	 * Runtime name for the class.
@@ -79,7 +65,7 @@ export class IotaIdentityResolverConnector implements IIdentityResolverConnector
 			const iotaClient = new IotaClient(this._config.clientOptions);
 			const identityClientReadOnly = await IdentityClientReadOnly.createWithPkgId(
 				iotaClient,
-				this.getIdentityPkgId()
+				getIdentityPkgId(this._config)
 			);
 			const resolver = new Resolver<IotaDocument>({
 				client: identityClientReadOnly
@@ -101,27 +87,5 @@ export class IotaIdentityResolverConnector implements IIdentityResolverConnector
 				Iota.extractPayloadError(error)
 			);
 		}
-	}
-
-	/**
-	 * Gets the identity package ID to use, either from config or defaults.
-	 * @returns The identity package ID.
-	 */
-	private getIdentityPkgId(): string {
-		if (this._config.identityPkgId) {
-			return this._config.identityPkgId;
-		}
-
-		const clientOptions = this._config.clientOptions;
-		const url =
-			typeof clientOptions === "object" && "url" in clientOptions
-				? (clientOptions.url as string)
-				: "";
-
-		const isTestnet = url.includes("testnet");
-
-		return isTestnet
-			? IotaIdentityResolverConnector._DEFAULT_IDENTITY_PKG_IDS.TESTNET
-			: IotaIdentityResolverConnector._DEFAULT_IDENTITY_PKG_IDS.DEVNET;
 	}
 }
