@@ -974,6 +974,22 @@ describe("IotaIdentityConnector", () => {
 	});
 
 	it("should verify a valid proof", async () => {
+		const verificationMethodType = "assertionMethod";
+		const verificationMethodId = "proofTestMethod";
+
+		const document = await identityConnector.createDocument(TEST_IDENTITY_ID);
+		const testDocumentId2 = document.id;
+
+		const method = await identityConnector.addVerificationMethod(
+			TEST_IDENTITY_ID,
+			testDocumentId2,
+			verificationMethodType,
+			verificationMethodId
+		);
+
+		expect(method).toBeDefined();
+		expect(method.id).toBeDefined();
+
 		const unsecuredDocument: IDidVerifiableCredential & IJsonLdNodeObject = {
 			"@context": [
 				"https://www.w3.org/ns/credentials/v2",
@@ -993,7 +1009,7 @@ describe("IotaIdentityConnector", () => {
 
 		const proof = await identityConnector.createProof(
 			TEST_IDENTITY_ID,
-			testVerificationMethodId,
+			method.id,
 			ProofTypes.DataIntegrityProof,
 			unsecuredDocument
 		);

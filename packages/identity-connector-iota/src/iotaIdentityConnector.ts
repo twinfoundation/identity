@@ -107,12 +107,6 @@ export class IotaIdentityConnector implements IIdentityConnector {
 	private readonly _gasBudget: bigint;
 
 	/**
-	 * The IOTA client.
-	 * @internal
-	 */
-	private _identityClient?: IdentityClient;
-
-	/**
 	 * Create a new instance of IotaIdentityConnector.
 	 * @param options The options for the identity connector.
 	 */
@@ -700,9 +694,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 				throw new NotFoundError(this.CLASS_NAME, "revocationServiceNotFound", serviceId);
 			}
 
-			for (const index of credentialIndices) {
-				document.unrevokeCredentials("revocation", index);
-			}
+			document.unrevokeCredentials("revocation", credentialIndices);
 
 			const aliasId = this.extractAliasId(issuerDocumentId);
 			const identity = await identityClient.getIdentity(aliasId);
@@ -1101,48 +1093,12 @@ export class IotaIdentityConnector implements IIdentityConnector {
 	}
 
 	/**
-	 * Resolve a document from its id.
-	 * @param documentId The id of the document to resolve.
-	 * @returns The resolved document.
-	 * @throws NotFoundError if the id can not be resolved.
-	 */
-	public async resolveDocument(documentId: string): Promise<IDidDocument> {
-		Guards.stringValue(this.CLASS_NAME, nameof(documentId), documentId);
-
-		try {
-			const iotaClient = new IotaClient(this._config.clientOptions);
-			const identityClientReadOnly = await IdentityClientReadOnly.createWithPkgId(
-				iotaClient,
-				getIdentityPkgId(this._config)
-			);
-			const resolver = new Resolver<IotaDocument>({
-				client: identityClientReadOnly
-			});
-			const resolvedDocument = await resolver.resolve(documentId);
-			const doc = resolvedDocument.toJSON() as { doc: IDidDocument };
-
-			return doc.doc;
-		} catch (error) {
-			throw new GeneralError(
-				this.CLASS_NAME,
-				"resolveDocumentFailed",
-				{ documentId },
-				Iota.extractPayloadError(error)
-			);
-		}
-	}
-
-	/**
 	 * Get an identity client.
 	 * @param controller The controller to get the client for.
 	 * @returns The identity client.
 	 * @internal
 	 */
 	private async getIdentityClient(controller?: string): Promise<IdentityClient> {
-		if (this._identityClient) {
-			return this._identityClient;
-		}
-
 		const iotaClient = new IotaClient(this._config.clientOptions);
 		const identityClientReadOnly = await IdentityClientReadOnly.createWithPkgId(
 			iotaClient,
@@ -1153,18 +1109,18 @@ export class IotaIdentityConnector implements IIdentityConnector {
 			const jwkMemStore = new JwkMemStore();
 			const keyIdMemStore = new KeyIdMemStore();
 			const storage = new Storage(jwkMemStore, keyIdMemStore);
-			const placeholderJwkParams: IJwkParams = {
+
+			// Create a proper no-op signer with valid but empty keys
+			const noOpJwkParams: IJwkParams = {
 				kty: JwkType.Okp,
 				crv: "Ed25519",
 				alg: JwsAlgorithm.EdDSA,
-				x: "",
-				d: ""
+				x: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", // Base64 encoded empty 32-byte array
+				d: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
 			};
-			const placeholderJwk = new Jwk(placeholderJwkParams);
-			const signer = new StorageSigner(storage, "", placeholderJwk);
-			const identityClient = await IdentityClient.create(identityClientReadOnly, signer);
-			this._identityClient = identityClient;
-			return this._identityClient;
+			const noOpJwk = new Jwk(noOpJwkParams);
+			const signer = new StorageSigner(storage, "", noOpJwk);
+			return IdentityClient.create(identityClientReadOnly, signer);
 		}
 
 		const seed = await Iota.getSeed(this._config, this._vaultConnector, controller);
@@ -1198,10 +1154,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 		}
 		const keyId = await jwkMemStore.insert(jwk);
 		const signer = new StorageSigner(storage, keyId, publicKeyJwk);
-		const identityClient = await IdentityClient.create(identityClientReadOnly, signer);
-
-		this._identityClient = identityClient;
-		return this._identityClient;
+		return IdentityClient.create(identityClientReadOnly, signer);
 	}
 
 	/**
