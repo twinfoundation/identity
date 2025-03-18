@@ -32,11 +32,8 @@
 			"insufficientFunds": "There were insufficient funds to complete the operation",
 			"walletConnectorMissing": "The wallet connector must be available to perform this operation",
 			"proofType": "The proof type must be DataIntegrityProof, it is currently {proofType}",
-			"cryptosuite": "The proof cryptosuite must be eddsa-jcs-2022, it is currently {cryptosuite}",
-			"failedToReceiveGasFromFaucet": "Failed to receive gas from the faucet",
 			"integerNegative": "The value must be a positive integer, it is currently {value}",
-			"invalidDocumentIdFormat": "The document ID format is invalid, it is currently {documentId}",
-			"verificationPublicKeyMissing": "The verification method contains no publicKey in JWK \"{jwk}\""
+			"invalidDocumentIdFormat": "The document ID format is invalid, it is currently {documentId}"
 		}
 	}
 }

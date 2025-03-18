@@ -18,20 +18,6 @@ vault
 
 ***
 
-### walletConnectorType?
-
-> `optional` **walletConnectorType**: `string`
-
-The wallet connector.
-
-#### Default
-
-```ts
-wallet
-```
-
-***
-
 ### config
 
 > **config**: [`IIotaIdentityConnectorConfig`](IIotaIdentityConnectorConfig.md)

@@ -168,8 +168,6 @@ export class IotaIdentityConnector implements IIdentityConnector {
 			const doc = resolved.toJSON() as { doc: IDidDocument };
 			return doc.doc;
 		} catch (error) {
-			// eslint-disable-next-line no-console
-			console.log(error);
 			throw new GeneralError(
 				this.CLASS_NAME,
 				"createDocumentFailed",
@@ -263,8 +261,6 @@ export class IotaIdentityConnector implements IIdentityConnector {
 
 			return method.toJSON() as IDidDocumentVerificationMethod;
 		} catch (error) {
-			// eslint-disable-next-line no-console
-			console.log(error);
 			throw new GeneralError(
 				this.CLASS_NAME,
 				"addVerificationMethodFailed",
@@ -325,8 +321,6 @@ export class IotaIdentityConnector implements IIdentityConnector {
 				.withGasBudget(this._gasBudget)
 				.execute(identityClient);
 		} catch (error) {
-			// eslint-disable-next-line no-console
-			console.log(error);
 			throw new GeneralError(
 				this.CLASS_NAME,
 				"removeVerificationMethodFailed",
@@ -387,8 +381,6 @@ export class IotaIdentityConnector implements IIdentityConnector {
 
 			return service.toJSON() as unknown as IDidService;
 		} catch (error) {
-			// eslint-disable-next-line no-console
-			console.log(error);
 			throw new GeneralError(
 				this.CLASS_NAME,
 				"addServiceFailed",
@@ -442,8 +434,6 @@ export class IotaIdentityConnector implements IIdentityConnector {
 				.withGasBudget(this._gasBudget)
 				.execute(identityClient);
 		} catch (error) {
-			// eslint-disable-next-line no-console
-			console.log(error);
 			throw new GeneralError(
 				this.CLASS_NAME,
 				"removeServiceFailed",
@@ -522,7 +512,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 			}
 
 			if (Is.undefined(verificationMethodKey.publicKey)) {
-				throw new GeneralError(this.CLASS_NAME, "verificationPublicKeyMissing", {
+				throw new GeneralError(this.CLASS_NAME, "publicKeyJwkMissing", {
 					method: verificationMethodId
 				});
 			}
@@ -582,8 +572,6 @@ export class IotaIdentityConnector implements IIdentityConnector {
 				jwt: credentialJwt.toString()
 			};
 		} catch (error) {
-			// eslint-disable-next-line no-console
-			console.log(error);
 			throw new GeneralError(this.CLASS_NAME, "createVerifiableCredentialFailed", {
 				error: BaseError.fromError(error)
 			});
@@ -686,8 +674,6 @@ export class IotaIdentityConnector implements IIdentityConnector {
 				.withGasBudget(this._gasBudget)
 				.execute(identityClient);
 		} catch (error) {
-			// eslint-disable-next-line no-console
-			console.log(error);
 			throw new GeneralError(this.CLASS_NAME, "revokeVerifiableCredentialsFailed", {
 				error: BaseError.fromError(error)
 			});
@@ -742,8 +728,6 @@ export class IotaIdentityConnector implements IIdentityConnector {
 				.withGasBudget(this._gasBudget)
 				.execute(identityClient);
 		} catch (error) {
-			// eslint-disable-next-line no-console
-			console.log(error);
 			throw new GeneralError(this.CLASS_NAME, "unrevokeVerifiableCredentialsFailed", {
 				error: BaseError.fromError(error)
 			});
@@ -895,8 +879,6 @@ export class IotaIdentityConnector implements IIdentityConnector {
 				jwt: presentationJwt.toString()
 			};
 		} catch (error) {
-			// eslint-disable-next-line no-console
-			console.log(error);
 			throw new GeneralError(
 				this.CLASS_NAME,
 				"createVerifiablePresentationFailed",
@@ -1068,8 +1050,6 @@ export class IotaIdentityConnector implements IIdentityConnector {
 			);
 			return signedProof;
 		} catch (error) {
-			// eslint-disable-next-line no-console
-			console.log(error);
 			throw new GeneralError(
 				this.CLASS_NAME,
 				"createProofFailed",
@@ -1122,8 +1102,6 @@ export class IotaIdentityConnector implements IIdentityConnector {
 
 			return ProofHelper.verifyProof(document, proof, didMethod.publicKeyJwk);
 		} catch (error) {
-			// eslint-disable-next-line no-console
-			console.log(error);
 			throw new GeneralError(
 				this.CLASS_NAME,
 				"verifyProofFailed",
@@ -1156,8 +1134,6 @@ export class IotaIdentityConnector implements IIdentityConnector {
 
 			return doc.doc;
 		} catch (error) {
-			// eslint-disable-next-line no-console
-			console.log(error);
 			throw new GeneralError(
 				this.CLASS_NAME,
 				"resolveDocumentFailed",

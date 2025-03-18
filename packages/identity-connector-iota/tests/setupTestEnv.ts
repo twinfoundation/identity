@@ -1,7 +1,6 @@
 // Copyright 2024 IOTA Stiftung.
 // SPDX-License-Identifier: Apache-2.0.
 import path from "node:path";
-import { requestIotaFromFaucetV0 } from "@iota/iota-sdk/faucet";
 import { Guards, Is } from "@twin.org/core";
 import { Bip39 } from "@twin.org/crypto";
 import { MemoryEntityStorageConnector } from "@twin.org/entity-storage-connector-memory";
@@ -105,36 +104,9 @@ export async function setupTestEnv(): Promise<void> {
 	);
 	console.debug(`Network: ${TEST_NETWORK}`);
 
-	const MIN_BALANCE = 2000000000n;
-	const MIN_TRANSFER_AMOUNT = 1000000000n;
+	await TEST_WALLET_CONNECTOR.ensureBalance(TEST_IDENTITY_ID, TEST_ADDRESS, 2000000000n);
+	const balance = await TEST_WALLET_CONNECTOR.getBalance(TEST_IDENTITY_ID, TEST_ADDRESS);
 
-	try {
-		const currentBalance = await TEST_WALLET_CONNECTOR.getBalance(TEST_IDENTITY_ID, TEST_ADDRESS);
-		console.debug("Current balance:", currentBalance);
-
-		// Only request funds if balance is too low
-		if (currentBalance < MIN_BALANCE) {
-			console.debug("Balance too low, requesting funds from faucet...");
-			await requestIotaFromFaucetV0({
-				host: TEST_FAUCET_ENDPOINT,
-				recipient: TEST_ADDRESS
-			});
-
-			// Wait for funds to arrive
-			await TEST_WALLET_CONNECTOR.ensureBalance(
-				TEST_IDENTITY_ID,
-				TEST_ADDRESS,
-				MIN_TRANSFER_AMOUNT
-			);
-			const newBalance = await TEST_WALLET_CONNECTOR.getBalance(TEST_IDENTITY_ID, TEST_ADDRESS);
-			console.debug("New balance after faucet request:", newBalance);
-		} else {
-			console.debug("Sufficient balance available, skipping faucet request");
-		}
-
-		console.debug("Test environment setup complete");
-	} catch (error) {
-		console.error("Error setting up test environment", error);
-		throw error;
-	}
+	console.debug("Current balance:", balance);
+	console.debug("Test environment setup complete");
 }
