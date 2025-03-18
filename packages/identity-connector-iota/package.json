@@ -7,7 +7,7 @@
 		"url": "git+https://github.com/twinfoundation/identity.git",
 		"directory": "packages/identity-connector-iota"
 	},
-	"author": "martyn.janes@iota.org",
+	"author": "cornel.filip@iota.org; adrian.sanchez.sequeira@iota.org; martyn.janes@iota.org",
 	"license": "Apache-2.0",
 	"type": "module",
 	"engines": {

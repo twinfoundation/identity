@@ -47,7 +47,6 @@ import {
 	ObjectHelper,
 	BaseError
 } from "@twin.org/core";
-import { Bip44, KeyType } from "@twin.org/crypto";
 import type { IJsonLdContextDefinitionRoot, IJsonLdNodeObject } from "@twin.org/data-json-ld";
 import { Iota } from "@twin.org/dlt-iota";
 import { DocumentHelper, type IIdentityConnector } from "@twin.org/identity-models";
@@ -64,7 +63,6 @@ import {
 	ProofHelper
 } from "@twin.org/standards-w3c-did";
 import { VaultConnectorFactory, type IVaultConnector, VaultKeyType } from "@twin.org/vault-models";
-import { type IWalletConnector, WalletConnectorFactory } from "@twin.org/wallet-models";
 import { Jwk as JwkHelper } from "@twin.org/web";
 import type { IIotaIdentityConnectorConfig } from "./models/IIotaIdentityConnectorConfig";
 import type { IIotaIdentityConnectorConstructorOptions } from "./models/IIotaIdentityConnectorConstructorOptions";
@@ -89,12 +87,6 @@ export class IotaIdentityConnector implements IIdentityConnector {
 	 * @internal
 	 */
 	private readonly _vaultConnector: IVaultConnector;
-
-	/**
-	 * The wallet connector.
-	 * @internal
-	 */
-	private readonly _walletConnector: IWalletConnector;
 
 	/**
 	 * The configuration to use for IOTA operations.
@@ -137,9 +129,9 @@ export class IotaIdentityConnector implements IIdentityConnector {
 			options.config.clientOptions
 		);
 		this._vaultConnector = VaultConnectorFactory.get(options.vaultConnectorType ?? "vault");
-		this._walletConnector = WalletConnectorFactory.get(options.walletConnectorType ?? "wallet");
 
 		this._config = options.config;
+
 		this._gasBudget = this._config.gasBudget ?? 1000000000n;
 		this._walletAddressIndex = options.config.walletAddressIndex ?? 0;
 
@@ -951,7 +943,6 @@ export class IotaIdentityConnector implements IIdentityConnector {
 
 			const credentialValidator = new JwtCredentialValidator(new EdDSAJwsVerifier());
 			const validationOptions = new JwtCredentialValidationOptions({
-				// TODO: Find out if this should be AwaysSubject or Any?
 				subjectHolderRelationship: [holderId.toString(), SubjectHolderRelationship.AlwaysSubject]
 			});
 
@@ -1198,13 +1189,12 @@ export class IotaIdentityConnector implements IIdentityConnector {
 
 		const seed = await Iota.getSeed(this._config, this._vaultConnector, controller);
 
-		const kp = Bip44.keyPair(
+		const kp = Iota.getKeyPair(
 			seed,
-			KeyType.Ed25519,
 			this._config.coinType ?? Iota.DEFAULT_COIN_TYPE,
 			0,
-			false,
-			this._walletAddressIndex
+			this._walletAddressIndex,
+			false
 		);
 
 		const jwkMemStore = new JwkMemStore();

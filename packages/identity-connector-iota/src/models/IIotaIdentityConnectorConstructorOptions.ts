@@ -13,12 +13,6 @@ export interface IIotaIdentityConnectorConstructorOptions {
 	vaultConnectorType?: string;
 
 	/**
-	 * The wallet connector.
-	 * @default wallet
-	 */
-	walletConnectorType?: string;
-
-	/**
 	 * The configuration for the identity connector.
 	 */
 	config: IIotaIdentityConnectorConfig;
