@@ -1,6 +1,6 @@
-# Class: IotaUniversalResolverConnector
+# Class: UniversalResolverConnector
 
-Class for performing identity operations on IOTA universal resolver.
+Class for performing identity operations on universal resolver.
 
 ## Implements
 
@@ -8,29 +8,29 @@ Class for performing identity operations on IOTA universal resolver.
 
 ## Constructors
 
-### new IotaUniversalResolverConnector()
+### new UniversalResolverConnector()
 
-> **new IotaUniversalResolverConnector**(`options`): [`IotaUniversalResolverConnector`](IotaUniversalResolverConnector.md)
+> **new UniversalResolverConnector**(`options`): [`UniversalResolverConnector`](UniversalResolverConnector.md)
 
-Create a new instance of IotaUniversalResolverConnector.
+Create a new instance of UniversalResolverConnector.
 
 #### Parameters
 
 ##### options
 
-[`IIotaUniversalResolverConnectorConstructorOptions`](../interfaces/IIotaUniversalResolverConnectorConstructorOptions.md)
+[`IUniversalResolverConnectorConstructorOptions`](../interfaces/IUniversalResolverConnectorConstructorOptions.md)
 
 The options for the identity connector.
 
 #### Returns
 
-[`IotaUniversalResolverConnector`](IotaUniversalResolverConnector.md)
+[`UniversalResolverConnector`](UniversalResolverConnector.md)
 
 ## Properties
 
 ### NAMESPACE
 
-> `readonly` `static` **NAMESPACE**: `string` = `"iota"`
+> `readonly` `static` **NAMESPACE**: `string` = `"universal"`
 
 The namespace supported by the identity connector.
 

@@ -2,9 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0.
 
 /**
- * Configuration for the IOTA Universal Resolver Connector.
+ * Configuration for the Universal Resolver Connector.
  */
-export interface IIotaUniversalResolverConnectorConfig {
+export interface IUniversalResolverConnectorConfig {
 	/**
 	 * The root url for the universal resolver.
 	 */

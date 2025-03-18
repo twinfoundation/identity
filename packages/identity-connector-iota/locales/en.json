@@ -4,10 +4,6 @@
 			"documentNotFound": "The document could not be found",
 			"resolveDocumentFailed": "Resolving the document failed \"{documentId}\""
 		},
-		"iotaUniversalResolverConnector": {
-			"documentNotFound": "The document could not be found",
-			"resolveDocumentFailed": "Resolving the document failed \"{documentId}\""
-		},
 		"iotaIdentityConnector": {
 			"createDocumentFailed": "Creating the document failed",
 			"missingDid": "The full id including DID is required",
