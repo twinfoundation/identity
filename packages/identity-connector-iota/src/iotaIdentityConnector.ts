@@ -220,14 +220,8 @@ export class IotaIdentityConnector implements IIdentityConnector {
 				VaultKeyType.Ed25519
 			);
 
-			const jwkParams: IJwkParams = {
-				alg: JwsAlgorithm.EdDSA,
-				kty: JwkType.Okp,
-				crv: "Ed25519",
-				x: Converter.bytesToBase64Url(verificationPublicKey)
-			};
-
-			const jwk = new Jwk(jwkParams);
+			const jwkParams = await JwkHelper.fromEd25519Public(verificationPublicKey);
+			const jwk = new Jwk(jwkParams as IJwkParams);
 			const methodId = `#${verificationMethodId ?? Converter.bytesToBase64Url(verificationPublicKey)}`;
 
 			await this._vaultConnector.renameKey(tempKeyId, `${controller}:${methodId.slice(1)}`);
@@ -492,9 +486,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 			const subjectClone = ObjectHelper.clone(subject);
 
 			const credContext = ObjectHelper.extractProperty(subjectClone, "@context", false);
-			const credType =
-				ObjectHelper.extractProperty(subjectClone, "@type", false) ||
-				ObjectHelper.extractProperty(subjectClone, "type", false);
+			const credType = ObjectHelper.extractProperty(subjectClone, ["@type", "type"], false);
 
 			const finalTypes = ["VerifiableCredential"];
 			if (Is.stringValue(credType)) {
@@ -512,20 +504,15 @@ export class IotaIdentityConnector implements IIdentityConnector {
 			}
 
 			if (Is.undefined(verificationMethodKey.publicKey)) {
-				throw new GeneralError(this.CLASS_NAME, "publicKeyJwkMissing", {
+				throw new GeneralError(this.CLASS_NAME, "publicKeyJwkMethodMissing", {
 					method: verificationMethodId
 				});
 			}
 
 			const jwkMemStore = new JwkMemStore();
 
-			const jwkParams: IJwkParams = {
-				kty: JwkType.Okp,
-				crv: "Ed25519",
-				alg: JwsAlgorithm.EdDSA,
-				x: Converter.bytesToBase64Url(verificationMethodKey.publicKey),
-				d: Converter.bytesToBase64Url(verificationMethodKey.privateKey)
-			};
+			const jwkResult = await JwkHelper.fromEd25519Private(verificationMethodKey.privateKey);
+			const jwkParams = jwkResult as IJwkParams;
 
 			const keyId = await jwkMemStore.insert(new Jwk(jwkParams));
 			const keyIdMemStore = new KeyIdMemStore();
@@ -590,8 +577,12 @@ export class IotaIdentityConnector implements IIdentityConnector {
 		Guards.stringValue(this.CLASS_NAME, nameof(credentialJwt), credentialJwt);
 
 		try {
-			const identityClient = await this.getIdentityClient();
-			const resolver = new Resolver({ client: identityClient });
+			const iotaClient = new IotaClient(this._config.clientOptions);
+			const identityClientReadOnly = await IdentityClientReadOnly.createWithPkgId(
+				iotaClient,
+				getIdentityPkgId(this._config)
+			);
+			const resolver = new Resolver({ client: identityClientReadOnly });
 			const jwt = new Jwt(credentialJwt);
 			const issuerDocumentId = JwtCredentialValidator.extractIssuerFromJwt(jwt);
 			const issuerDocument = await resolver.resolve(issuerDocumentId.toString());
@@ -658,9 +649,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 				document.insertService(service);
 			}
 
-			for (const index of credentialIndices) {
-				document.revokeCredentials("revocation", index);
-			}
+			document.revokeCredentials("revocation", credentialIndices);
 
 			const aliasId = this.extractAliasId(issuerDocumentId);
 			const identity = await identityClient.getIdentity(aliasId);
@@ -793,7 +782,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 			const didMethod = method.toJSON() as IDidDocumentVerificationMethod;
 
 			if (Is.undefined(didMethod.publicKeyJwk)) {
-				throw new GeneralError(this.CLASS_NAME, "publicKeyJwkMissing", {
+				throw new GeneralError(this.CLASS_NAME, "publicKeyJwkMethodMissing", {
 					method: verificationMethodId
 				});
 			}
@@ -1036,7 +1025,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 			const verificationMethodKey = await this._vaultConnector.getKey(keyId);
 
 			if (Is.undefined(verificationMethodKey)) {
-				throw new GeneralError(this.CLASS_NAME, "publicKeyJwkMissing", { keyId });
+				throw new GeneralError(this.CLASS_NAME, "privateKeyMissing", { keyId });
 			}
 
 			const unsignedProof = ProofHelper.createUnsignedProof(proofType, verificationMethodId);
@@ -1095,7 +1084,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 
 			const didMethod = method.toJSON() as IDidDocumentVerificationMethod;
 			if (Is.undefined(didMethod.publicKeyJwk)) {
-				throw new GeneralError(this.CLASS_NAME, "publicKeyJwkMissing", {
+				throw new GeneralError(this.CLASS_NAME, "publicKeyJwkMethodMissing", {
 					method: proof.verificationMethod
 				});
 			}
@@ -1147,6 +1136,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 	 * Get an identity client.
 	 * @param controller The controller to get the client for.
 	 * @returns The identity client.
+	 * @internal
 	 */
 	private async getIdentityClient(controller?: string): Promise<IdentityClient> {
 		if (this._identityClient) {
@@ -1160,7 +1150,21 @@ export class IotaIdentityConnector implements IIdentityConnector {
 		);
 
 		if (Is.undefined(controller)) {
-			throw new GeneralError(this.CLASS_NAME, "controllerMissing");
+			const jwkMemStore = new JwkMemStore();
+			const keyIdMemStore = new KeyIdMemStore();
+			const storage = new Storage(jwkMemStore, keyIdMemStore);
+			const placeholderJwkParams: IJwkParams = {
+				kty: JwkType.Okp,
+				crv: "Ed25519",
+				alg: JwsAlgorithm.EdDSA,
+				x: "",
+				d: ""
+			};
+			const placeholderJwk = new Jwk(placeholderJwkParams);
+			const signer = new StorageSigner(storage, "", placeholderJwk);
+			const identityClient = await IdentityClient.create(identityClientReadOnly, signer);
+			this._identityClient = identityClient;
+			return this._identityClient;
 		}
 
 		const seed = await Iota.getSeed(this._config, this._vaultConnector, controller);
@@ -1205,6 +1209,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 	 * @param documentId The document ID to extract from.
 	 * @returns The alias ID.
 	 * @throws GeneralError if the document ID format is invalid.
+	 * @internal
 	 */
 	private extractAliasId(documentId: string): string {
 		Guards.stringValue(this.CLASS_NAME, nameof(documentId), documentId);

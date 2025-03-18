@@ -1069,4 +1069,22 @@ describe("IotaIdentityConnector", () => {
 		const isValid = await identityConnector.verifyProof(unsecuredDocument, tamperedProof);
 		expect(isValid).toBeFalsy();
 	});
+
+	test("can handle methods without a controller", async () => {
+		const connectorWithoutController = new IotaIdentityConnector({
+			config: {
+				clientOptions: TEST_CLIENT_OPTIONS,
+				vaultMnemonicId: TEST_MNEMONIC_NAME,
+				network: TEST_NETWORK
+			}
+		});
+
+		expect(testVcJwt).toBeDefined();
+
+		const checkResult = await connectorWithoutController.checkVerifiableCredential(testVcJwt);
+
+		expect(checkResult).toBeDefined();
+		expect(checkResult.revoked).toBeFalsy();
+		expect(checkResult.verifiableCredential).toBeDefined();
+	});
 });
