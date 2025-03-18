@@ -31,6 +31,12 @@ export class IdentityResolverService implements IIdentityResolverComponent {
 	private readonly _defaultNamespace: string;
 
 	/**
+	 * Fallback connector type to use if the namespace connector is not available.
+	 * @internal
+	 */
+	private readonly _fallbackResolverConnectorType: string;
+
+	/**
 	 * Create a new instance of IdentityResolverService.
 	 * @param options The options for the service.
 	 */
@@ -41,6 +47,7 @@ export class IdentityResolverService implements IIdentityResolverComponent {
 		}
 
 		this._defaultNamespace = options?.config?.defaultNamespace ?? names[0];
+		this._fallbackResolverConnectorType = options?.fallbackResolverConnectorType ?? "universal";
 	}
 
 	/**
@@ -81,9 +88,10 @@ export class IdentityResolverService implements IIdentityResolverComponent {
 			IdentityResolverConnectorFactory.getIfExists<IIdentityResolverConnector>(namespaceMethod);
 
 		if (Is.empty(connector)) {
-			// Let's see if the 'universal' one is registered
-			connector =
-				IdentityResolverConnectorFactory.getIfExists<IIdentityResolverConnector>("universal");
+			// Let's see if a fallback 'universal' connector is registered
+			connector = IdentityResolverConnectorFactory.getIfExists<IIdentityResolverConnector>(
+				this._fallbackResolverConnectorType
+			);
 			if (Is.empty(connector)) {
 				throw new GeneralError(this.CLASS_NAME, "connectorNotFound", {
 					namespace: namespaceMethod

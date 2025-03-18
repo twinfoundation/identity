@@ -7,6 +7,12 @@ import type { IIdentityResolverServiceConfig } from "./IIdentityResolverServiceC
  */
 export interface IIdentityResolverServiceConstructorOptions {
 	/**
+	 * Fallback connector type to use if the namespace connector is not available.
+	 * @default universal
+	 */
+	fallbackResolverConnectorType?: string;
+
+	/**
 	 * The configuration for the identity service.
 	 */
 	config?: IIdentityResolverServiceConfig;
