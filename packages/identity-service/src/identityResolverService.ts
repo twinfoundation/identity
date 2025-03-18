@@ -53,7 +53,6 @@ export class IdentityResolverService implements IIdentityResolverComponent {
 
 		try {
 			const identityResolverConnector = this.getConnectorByUri(identity);
-
 			const document = await identityResolverConnector.resolveDocument(identity);
 
 			return document;
@@ -78,11 +77,18 @@ export class IdentityResolverService implements IIdentityResolverComponent {
 	private getConnectorByNamespace(namespace?: string): IIdentityResolverConnector {
 		const namespaceMethod = namespace ?? this._defaultNamespace;
 
-		const connector =
+		let connector =
 			IdentityResolverConnectorFactory.getIfExists<IIdentityResolverConnector>(namespaceMethod);
 
 		if (Is.empty(connector)) {
-			throw new GeneralError(this.CLASS_NAME, "connectorNotFound", { namespace: namespaceMethod });
+			// Let's see if the 'universal' one is registered
+			connector =
+				IdentityResolverConnectorFactory.getIfExists<IIdentityResolverConnector>("universal");
+			if (Is.empty(connector)) {
+				throw new GeneralError(this.CLASS_NAME, "connectorNotFound", {
+					namespace: namespaceMethod
+				});
+			}
 		}
 
 		return connector;
