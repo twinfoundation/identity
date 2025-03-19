@@ -1,6 +1,5 @@
 // Copyright 2024 IOTA Stiftung.
 // SPDX-License-Identifier: Apache-2.0.
-import { Utils } from "@iota/sdk-wasm/node/lib/index.js";
 import { Is, Urn } from "@twin.org/core";
 import type { IJsonLdNodeObject } from "@twin.org/data-json-ld";
 import type { MemoryEntityStorageConnector } from "@twin.org/entity-storage-connector-memory";
@@ -126,11 +125,11 @@ describe("IotaIdentityConnector", () => {
 
 		const didUrn = Urn.fromValidString(testDocument.id);
 		const didParts = didUrn.parts();
-		const docAddress = Utils.aliasIdToBech32(didParts[3], didParts[2]);
+		const objectId = didParts[3];
 
 		console.debug(
 			"DID Document",
-			`${process.env.TEST_EXPLORER_URL}address/${docAddress}?network=${TEST_NETWORK}`
+			`${process.env.TEST_EXPLORER_URL}object/${objectId}?network=${TEST_NETWORK}`
 		);
 	});
 
