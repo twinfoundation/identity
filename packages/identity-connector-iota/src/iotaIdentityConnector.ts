@@ -36,7 +36,7 @@ import {
 	type DIDUrl,
 	type ICredential,
 	type IPresentation
-} from "@iota/identity-wasm/node";
+} from "@iota/identity-wasm/node/index.js";
 import { IotaClient } from "@iota/iota-sdk/client";
 import {
 	GeneralError,
