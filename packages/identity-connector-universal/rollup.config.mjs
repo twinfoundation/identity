@@ -4,8 +4,7 @@ import packageDetails from './package.json' with { type: 'json' };
 
 const isEsm = process.env.MODULE === 'esm';
 
-const plugins = [
-];
+const plugins = [];
 
 const globs = {};
 if (packageDetails.dependencies) {
