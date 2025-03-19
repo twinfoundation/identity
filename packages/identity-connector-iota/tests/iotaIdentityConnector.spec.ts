@@ -125,11 +125,11 @@ describe("IotaIdentityConnector", () => {
 
 		const didUrn = Urn.fromValidString(testDocument.id);
 		const didParts = didUrn.parts();
-		const docAddress = didParts[3];
+		const objectId = didParts[3];
 
 		console.debug(
 			"DID Document",
-			`${process.env.TEST_EXPLORER_URL}address/${docAddress}?network=${TEST_NETWORK}`
+			`${process.env.TEST_EXPLORER_URL}object/${objectId}?network=${TEST_NETWORK}`
 		);
 	});
 
