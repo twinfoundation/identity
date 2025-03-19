@@ -21,6 +21,7 @@
 		"bech",
 		"Bitstring",
 		"cryptosuite",
+		"devnet",
 		"eddsa",
 		"Faucet",
 		"Multibase",

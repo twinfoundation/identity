@@ -39,6 +39,7 @@ if (!Is.stringValue(process.env.TEST_MNEMONIC)) {
 
 export const TEST_IDENTITY_ID = "test-identity";
 export const TEST_MNEMONIC_NAME = "test-mnemonic";
+export const TEST_FAUCET_ENDPOINT = process.env.TEST_FAUCET_ENDPOINT ?? "";
 
 initSchema();
 
@@ -101,5 +102,11 @@ export async function setupTestEnv(): Promise<void> {
 		"Identity Address",
 		`${process.env.TEST_EXPLORER_URL}address/${TEST_ADDRESS}?network=${TEST_NETWORK}`
 	);
-	await TEST_WALLET_CONNECTOR.ensureBalance(TEST_IDENTITY_ID, TEST_ADDRESS, 1000000000n);
+	console.debug(`Network: ${TEST_NETWORK}`);
+
+	await TEST_WALLET_CONNECTOR.ensureBalance(TEST_IDENTITY_ID, TEST_ADDRESS, 2000000000n);
+	const balance = await TEST_WALLET_CONNECTOR.getBalance(TEST_IDENTITY_ID, TEST_ADDRESS);
+
+	console.debug("Current balance:", balance);
+	console.debug("Test environment setup complete");
 }
