@@ -1,6 +1,10 @@
 // Copyright 2024 IOTA Stiftung.
 // SPDX-License-Identifier: Apache-2.0.
-import { IdentityClientReadOnly, type IotaDocument, Resolver } from "@iota/identity-wasm/node";
+import {
+	IdentityClientReadOnly,
+	type IotaDocument,
+	Resolver
+} from "@iota/identity-wasm/node/index.js";
 import { IotaClient } from "@iota/iota-sdk/client";
 import { GeneralError, Guards, Is, NotFoundError } from "@twin.org/core";
 import { Iota } from "@twin.org/dlt-iota";

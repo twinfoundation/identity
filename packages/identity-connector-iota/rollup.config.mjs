@@ -13,12 +13,6 @@ const plugins = [
 		targets: [
 			{
 				src: path
-					.join(npmRootDir, '@iota/sdk-wasm/node/wasm/iota_sdk_wasm_bg.wasm')
-					.replace(/\\/g, '/'),
-				dest: `./dist/${isEsm ? 'esm' : 'cjs'}`
-			},
-			{
-				src: path
 					.join(npmRootDir, '@iota/identity-wasm/node/identity_wasm_bg.wasm')
 					.replace(/\\/g, '/'),
 				dest: `./dist/${isEsm ? 'esm' : 'cjs'}`
