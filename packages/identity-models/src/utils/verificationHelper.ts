@@ -6,7 +6,7 @@ import { nameof } from "@twin.org/nameof";
 import { ProofHelper, type IDidDocument, type IProof } from "@twin.org/standards-w3c-did";
 import { Jwk, Jwt, type IJwtHeader, type IJwtPayload } from "@twin.org/web";
 import { DocumentHelper } from "./documentHelper";
-import type { IIdentityResolverConnector } from "../models/IIdentityResolverConnector";
+import type { IIdentityResolverComponent } from "../models/IIdentityResolverComponent";
 
 /**
  * Helper methods for verification.
@@ -24,13 +24,13 @@ export class VerificationHelper {
 	 * @returns The decoded payload.
 	 */
 	public static async verifyJwt<T extends IJwtHeader, U extends IJwtPayload>(
-		resolver: IIdentityResolverConnector,
+		resolver: IIdentityResolverComponent,
 		jwt: string
 	): Promise<{
 		header: T;
 		payload: U;
 	}> {
-		Guards.object<IIdentityResolverConnector>(
+		Guards.object<IIdentityResolverComponent>(
 			VerificationHelper.CLASS_NAME,
 			nameof(resolver),
 			resolver
@@ -47,13 +47,13 @@ export class VerificationHelper {
 			throw new GeneralError(VerificationHelper.CLASS_NAME, "jwtDecodeFailed");
 		}
 
-		const iss = jwtPayload?.iss;
-		const kid = jwtPayload?.kid;
+		const iss = jwtHeader?.iss;
+		const kid = jwtHeader?.kid;
 
 		Guards.stringValue(VerificationHelper.CLASS_NAME, nameof(iss), iss);
 		Guards.stringValue(VerificationHelper.CLASS_NAME, nameof(kid), kid);
 
-		const didDocument = await resolver.resolveDocument(iss);
+		const didDocument = await resolver.identityResolve(iss);
 
 		const jwk = DocumentHelper.getJwk(didDocument, kid);
 
@@ -69,10 +69,10 @@ export class VerificationHelper {
 	 * @returns True if the verification is successful.
 	 */
 	public static async verifyProof(
-		resolver: IIdentityResolverConnector,
+		resolver: IIdentityResolverComponent,
 		secureDocument: IJsonLdNodeObject
 	): Promise<boolean> {
-		Guards.object<IIdentityResolverConnector>(
+		Guards.object<IIdentityResolverComponent>(
 			VerificationHelper.CLASS_NAME,
 			nameof(resolver),
 			resolver
@@ -109,7 +109,7 @@ export class VerificationHelper {
 			if (documentCache[proofVerificationMethod.id]) {
 				document = documentCache[proofVerificationMethod.id];
 			} else {
-				document = await resolver.resolveDocument(proofVerificationMethod.id);
+				document = await resolver.identityResolve(proofVerificationMethod.id);
 				documentCache[proofVerificationMethod.id] = document;
 			}
 
