@@ -8,6 +8,7 @@ This mono-repository contains the packages to use with Identity in TWIN applicat
 - [identity-connector-entity-storage](packages/identity-connector-entity-storage/README.md) - Identity connector implementation using entity storage.
 - [identity-connector-iota](packages/identity-connector-iota/README.md) - Identity connector implementation using IOTA.
 - [identity-connector-iota-stardust](packages/identity-connector-iota-stardust/README.md) - Identity connector implementation using IOTA Stardust.
+- [identity-connector-universal](packages/identity-connector-universal/README.md) - Identity connector implementation of resolver using universal resolver.
 - [identity-service](packages/identity-service/README.md) - Identity contract implementation and REST endpoint definitions.
 - [identity-rest-client](packages/identity-rest-client/README.md) - Identity contract implementation which can connect to REST endpoints.
 
