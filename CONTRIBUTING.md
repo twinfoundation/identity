@@ -43,7 +43,7 @@ The `next` branch is where all PRs should be merged to, in preparation for a fin
 - When creating a branch for a bugfix use the format e.g. `bugfix/my-fix`
 - When creating a branch for a chore e.g. dependency update use the format e.g. `chore/my-chore`
 
-All of the possible prefixes are
+All of the possible prefixes are:
 
 - feature
 - bugfix
@@ -51,7 +51,13 @@ All of the possible prefixes are
 - release
 - chore
 
+## PR Naming
+
+When creating a PR from a branch the name of the PR should follow the same convention as the commit naming.
+
 ## Commit Naming
+
+All commits messages should be of the format `prefix: <message>`. The prefixes should be one of the following:
 
 All commits messages should be of the format `prefix: <message>`. The prefixes should be one of the following:
 
