@@ -1,6 +1,6 @@
 # Class: UniversalResolverConnector
 
-Class for performing identity operations on universal resolver.
+Class for performing identity operations on a universal resolver.
 
 ## Implements
 

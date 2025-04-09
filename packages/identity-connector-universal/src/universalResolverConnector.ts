@@ -10,7 +10,7 @@ import type { IUniversalResolverConnectorConfig } from "./models/IUniversalResol
 import type { IUniversalResolverConnectorConstructorOptions } from "./models/IUniversalResolverConnectorConstructorOptions";
 
 /**
- * Class for performing identity operations on universal resolver.
+ * Class for performing identity operations on a universal resolver.
  */
 export class UniversalResolverConnector implements IIdentityResolverConnector {
 	/**
