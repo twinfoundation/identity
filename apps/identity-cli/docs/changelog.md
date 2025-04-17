@@ -1,5 +1,21 @@
 # @twin.org/identity-cli - Changelog
 
+## [0.0.1-next.42](https://github.com/twinfoundation/identity/compare/identity-cli-v0.0.1-next.41...identity-cli-v0.0.1-next.42) (2025-04-17)
+
+
+### Features
+
+* use shared store mechanism ([#27](https://github.com/twinfoundation/identity/issues/27)) ([ce41f3f](https://github.com/twinfoundation/identity/commit/ce41f3fc3da1b206ec06da7ea5b2c968f788804d))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @twin.org/identity-models bumped from 0.0.1-next.41 to 0.0.1-next.42
+    * @twin.org/identity-connector-iota bumped from 0.0.1-next.41 to 0.0.1-next.42
+    * @twin.org/identity-connector-iota-stardust bumped from 0.0.1-next.41 to 0.0.1-next.42
+
 ## [0.0.1-next.41](https://github.com/twinfoundation/identity/compare/identity-cli-v0.0.1-next.40...identity-cli-v0.0.1-next.41) (2025-04-09)
 
 
