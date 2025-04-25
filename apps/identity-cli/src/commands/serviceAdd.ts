@@ -7,7 +7,7 @@ import {
 	CLIUtils,
 	type CliOutputOptions
 } from "@twin.org/cli-core";
-import { Converter, I18n, Is, StringHelper } from "@twin.org/core";
+import { Converter, I18n, Is, StringHelper, Urn } from "@twin.org/core";
 import { IotaStardustIdentityUtils } from "@twin.org/identity-connector-iota-stardust";
 import { VaultConnectorFactory } from "@twin.org/vault-models";
 import { setupWalletConnector } from "@twin.org/wallet-cli";
@@ -175,10 +175,20 @@ export async function actionCommandServiceAdd(
 		);
 	}
 
-	CLIDisplay.value(
-		I18n.formatMessage("commands.common.labels.explore"),
-		`${StringHelper.trimTrailingSlashes(explorerEndpoint)}/addr/${IotaStardustIdentityUtils.didToAddress(did)}?tab=DID`
-	);
+	if (opts.connector === IdentityConnectorTypes.Iota) {
+		const didUrn = Urn.fromValidString(did);
+		const didParts = didUrn.parts();
+		const objectId = didParts[3];
+		CLIDisplay.value(
+			I18n.formatMessage("commands.common.labels.explore"),
+			`${StringHelper.trimTrailingSlashes(explorerEndpoint)}/object/${objectId}?network=${network}`
+		);
+	} else {
+		CLIDisplay.value(
+			I18n.formatMessage("commands.common.labels.explore"),
+			`${StringHelper.trimTrailingSlashes(explorerEndpoint)}/addr/${IotaStardustIdentityUtils.didToAddress(did)}?tab=DID`
+		);
+	}
 
 	CLIDisplay.break();
 

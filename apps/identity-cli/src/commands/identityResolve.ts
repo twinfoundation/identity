@@ -7,15 +7,12 @@ import {
 	CLIUtils,
 	type CliOutputOptions
 } from "@twin.org/cli-core";
-import { I18n, Is, StringHelper } from "@twin.org/core";
-import {
-	IotaStardustIdentityResolverConnector,
-	IotaStardustIdentityUtils
-} from "@twin.org/identity-connector-iota-stardust";
+import { I18n, Is, StringHelper, Urn } from "@twin.org/core";
+import { IotaStardustIdentityUtils } from "@twin.org/identity-connector-iota-stardust";
 import { setupWalletConnector } from "@twin.org/wallet-cli";
 import { WalletConnectorFactory } from "@twin.org/wallet-models";
 import { Command, Option } from "commander";
-import { setupVault } from "./setupCommands";
+import { setupIdentityResolverConnector, setupVault } from "./setupCommands";
 import { IdentityConnectorTypes } from "../models/identityConnectorTypes";
 
 /**
@@ -109,21 +106,17 @@ export async function actionCommandIdentityResolve(
 	const walletConnector = setupWalletConnector({ nodeEndpoint, network }, opts.connector);
 	WalletConnectorFactory.register("wallet", () => walletConnector);
 
-	const iotaIdentityResolverConnector = new IotaStardustIdentityResolverConnector({
-		config: {
-			clientOptions: {
-				nodes: [nodeEndpoint],
-				localPow: true
-			}
-		}
-	});
+	const identityResolverConnector = setupIdentityResolverConnector(
+		{ nodeEndpoint, network },
+		opts.connector
+	);
 
 	CLIDisplay.task(I18n.formatMessage("commands.identity-resolve.progress.resolvingIdentity"));
 	CLIDisplay.break();
 
 	CLIDisplay.spinnerStart();
 
-	const document = await iotaIdentityResolverConnector.resolveDocument(did);
+	const document = await identityResolverConnector.resolveDocument(did);
 
 	CLIDisplay.spinnerStop();
 
@@ -138,10 +131,20 @@ export async function actionCommandIdentityResolve(
 		await CLIUtils.writeJsonFile(opts.json, document, opts.mergeJson);
 	}
 
-	CLIDisplay.value(
-		I18n.formatMessage("commands.common.labels.explore"),
-		`${StringHelper.trimTrailingSlashes(explorerEndpoint)}/addr/${IotaStardustIdentityUtils.didToAddress(document.id)}?tab=DID`
-	);
+	if (opts.connector === IdentityConnectorTypes.Iota) {
+		const didUrn = Urn.fromValidString(document.id);
+		const didParts = didUrn.parts();
+		const objectId = didParts[3];
+		CLIDisplay.value(
+			I18n.formatMessage("commands.common.labels.explore"),
+			`${StringHelper.trimTrailingSlashes(explorerEndpoint)}/object/${objectId}?network=${network}`
+		);
+	} else {
+		CLIDisplay.value(
+			I18n.formatMessage("commands.common.labels.explore"),
+			`${StringHelper.trimTrailingSlashes(explorerEndpoint)}/addr/${IotaStardustIdentityUtils.didToAddress(document.id)}?tab=DID`
+		);
+	}
 	CLIDisplay.break();
 
 	CLIDisplay.done();

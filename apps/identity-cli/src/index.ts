@@ -15,3 +15,4 @@ export * from "./commands/verifiableCredentialVerify";
 export * from "./commands/verificationMethodAdd";
 export * from "./commands/verificationMethodRemove";
 export * from "./models/identityConnectorTypes";
+export * from "./models/identityResolverConnectorTypes";
