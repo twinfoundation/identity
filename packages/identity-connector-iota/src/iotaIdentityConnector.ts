@@ -45,7 +45,9 @@ import {
 	NotFoundError,
 	Converter,
 	ObjectHelper,
-	BaseError
+	BaseError,
+	Url,
+	Urn
 } from "@twin.org/core";
 import type { IJsonLdContextDefinitionRoot, IJsonLdNodeObject } from "@twin.org/data-json-ld";
 import { Iota } from "@twin.org/dlt-iota";
@@ -514,6 +516,15 @@ export class IotaIdentityConnector implements IIdentityConnector {
 			await keyIdMemStore.insertKeyId(methodDigest, keyId);
 
 			const storage = new Storage(jwkMemStore, keyIdMemStore);
+
+			const subjectId = subjectClone.id;
+			if (
+				Is.stringValue(subjectId) &&
+				!Url.tryParseExact(subjectId) &&
+				!Urn.tryParseExact(subjectId)
+			) {
+				throw new GeneralError(this.CLASS_NAME, "invalidSubjectId", { subjectId });
+			}
 
 			const unsignedVc = new Credential({
 				issuer: idParts.id,
