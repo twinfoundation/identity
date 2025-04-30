@@ -29,7 +29,8 @@
 			"unrevokeVerifiableCredentialsFailed": "Unrevoking verifiable credentials failed",
 			"proofType": "The proof type must be DataIntegrityProof, it is currently {proofType}",
 			"integerNegative": "The value must be a positive integer, it is currently {value}",
-			"invalidDocumentIdFormat": "The document ID format is invalid, it is currently {documentId}"
+			"invalidDocumentIdFormat": "The document ID format is invalid, it is currently {documentId}",
+			"invalidSubjectId": "The subject id format is invalid it must be a Url or Urn, it is \"{subjectId}\""
 		}
 	}
 }
