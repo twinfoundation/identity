@@ -1,5 +1,19 @@
 # @twin.org/identity-connector-iota - Changelog
 
+## [0.0.1-next.44](https://github.com/twinfoundation/identity/compare/identity-connector-iota-v0.0.1-next.43...identity-connector-iota-v0.0.1-next.44) (2025-04-30)
+
+
+### Features
+
+* create vc validate subject id ([#30](https://github.com/twinfoundation/identity/issues/30)) ([6dccee9](https://github.com/twinfoundation/identity/commit/6dccee94cc83e537d46814f4051d3f30a0c1b509))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @twin.org/identity-models bumped from 0.0.1-next.43 to 0.0.1-next.44
+
 ## [0.0.1-next.43](https://github.com/twinfoundation/identity/compare/identity-connector-iota-v0.0.1-next.42...identity-connector-iota-v0.0.1-next.43) (2025-04-25)
 
 
