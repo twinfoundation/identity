@@ -4,7 +4,6 @@
 	"packages/identity-service": "0.0.1",
 	"packages/identity-rest-client": "0.0.1",
 	"packages/identity-connector-iota": "0.0.1",
-	"packages/identity-connector-iota-stardust": "0.0.1",
 	"packages/identity-connector-universal": "0.0.1",
 	"apps/identity-cli": "0.0.1"
 }

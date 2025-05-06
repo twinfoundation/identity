@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: Apache-2.0.
 import { CLIDisplay, CLIOptions, CLIParam } from "@twin.org/cli-core";
 import { Converter, I18n, Is, StringHelper, Urn } from "@twin.org/core";
-import { IotaStardustIdentityUtils } from "@twin.org/identity-connector-iota-stardust";
 import { DocumentHelper } from "@twin.org/identity-models";
 import { VaultConnectorFactory } from "@twin.org/vault-models";
 import { setupWalletConnector } from "@twin.org/wallet-cli";
@@ -138,11 +137,6 @@ export async function actionCommandServiceRemove(opts: {
 		CLIDisplay.value(
 			I18n.formatMessage("commands.common.labels.explore"),
 			`${StringHelper.trimTrailingSlashes(explorerEndpoint)}/object/${objectId}?network=${network}`
-		);
-	} else {
-		CLIDisplay.value(
-			I18n.formatMessage("commands.common.labels.explore"),
-			`${StringHelper.trimTrailingSlashes(explorerEndpoint)}/addr/${IotaStardustIdentityUtils.didToAddress(did)}?tab=DID`
 		);
 	}
 

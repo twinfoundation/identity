@@ -9,12 +9,7 @@ export const IdentityConnectorTypes = {
 	/**
 	 * IOTA.
 	 */
-	Iota: "iota",
-
-	/**
-	 * IOTA Stardust.
-	 */
-	IotaStardust: "iota-stardust"
+	Iota: "iota"
 } as const;
 
 /**

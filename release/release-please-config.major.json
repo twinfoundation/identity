@@ -32,11 +32,6 @@
 			"changelog-path": "docs/changelog.md",
 			"extra-files": ["src/index.ts"]
 		},
-		"packages/identity-connector-iota-stardust": {
-			"package-name": "identity-connector-iota-stardust",
-			"changelog-path": "docs/changelog.md",
-			"extra-files": ["src/index.ts"]
-		},
 		"packages/identity-connector-universal": {
 			"package-name": "identity-connector-universal",
 			"changelog-path": "docs/changelog.md",
@@ -59,7 +54,6 @@
 				"identity-service",
 				"identity-rest-client",
 				"identity-connector-iota",
-				"identity-connector-iota-stardust",
 				"identity-connector-universal",
 				"identity-cli"
 			]

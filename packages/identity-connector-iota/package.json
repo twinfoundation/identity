@@ -30,8 +30,8 @@
 		"prepare": "ts-patch install -s"
 	},
 	"dependencies": {
-		"@iota/identity-wasm": "1.6.0-alpha.5",
-		"@iota/iota-sdk": "0.6.0",
+		"@iota/identity-wasm": "1.6.0-alpha.7",
+		"@iota/iota-sdk": "1.0.0",
 		"@twin.org/core": "next",
 		"@twin.org/crypto": "next",
 		"@twin.org/data-json-ld": "next",

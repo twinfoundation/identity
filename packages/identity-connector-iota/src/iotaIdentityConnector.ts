@@ -154,7 +154,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 			const { output: identity } = await identityClient
 				.createIdentity(document)
 				.finish()
-				.execute(identityClient);
+				.buildAndExecute(identityClient);
 
 			const did: IotaDID = identity.didDocument().id();
 			identity.id();
@@ -244,10 +244,15 @@ export class IotaIdentityConnector implements IIdentityConnector {
 				document.insertMethod(method, MethodScope.CapabilityInvocation());
 			}
 
+			const controllerToken = await identityOnChain.getControllerToken(identityClient);
+			if (Is.empty(controllerToken)) {
+				throw new GeneralError(this.CLASS_NAME, "missingControllerToken");
+			}
+
 			await identityOnChain
-				.updateDidDocument(document.clone())
+				.updateDidDocument(document.clone(), controllerToken)
 				.withGasBudget(this._gasBudget)
-				.execute(identityClient);
+				.buildAndExecute(identityClient);
 
 			return method.toJSON() as IDidDocumentVerificationMethod;
 		} catch (error) {
@@ -306,10 +311,15 @@ export class IotaIdentityConnector implements IIdentityConnector {
 				throw new NotFoundError(this.CLASS_NAME, "identityNotFound", verificationMethodId);
 			}
 
+			const controllerToken = await identityOnChain.getControllerToken(identityClient);
+			if (Is.empty(controllerToken)) {
+				throw new GeneralError(this.CLASS_NAME, "missingControllerToken");
+			}
+
 			await identityOnChain
-				.updateDidDocument(document.clone())
+				.updateDidDocument(document.clone(), controllerToken)
 				.withGasBudget(this._gasBudget)
-				.execute(identityClient);
+				.buildAndExecute(identityClient);
 		} catch (error) {
 			throw new GeneralError(
 				this.CLASS_NAME,
@@ -364,10 +374,15 @@ export class IotaIdentityConnector implements IIdentityConnector {
 
 			document.insertService(service);
 
+			const controllerToken = await identityOnChain.getControllerToken(identityClient);
+			if (Is.empty(controllerToken)) {
+				throw new GeneralError(this.CLASS_NAME, "missingControllerToken");
+			}
+
 			await identityOnChain
-				.updateDidDocument(document.clone())
+				.updateDidDocument(document.clone(), controllerToken)
 				.withGasBudget(this._gasBudget)
-				.execute(identityClient);
+				.buildAndExecute(identityClient);
 
 			return service.toJSON() as unknown as IDidService;
 		} catch (error) {
@@ -419,10 +434,15 @@ export class IotaIdentityConnector implements IIdentityConnector {
 				throw new NotFoundError(this.CLASS_NAME, "identityNotFound", idParts.id);
 			}
 
+			const controllerToken = await identityOnChain.getControllerToken(identityClient);
+			if (Is.empty(controllerToken)) {
+				throw new GeneralError(this.CLASS_NAME, "missingControllerToken");
+			}
+
 			await identityOnChain
-				.updateDidDocument(document.clone())
+				.updateDidDocument(document.clone(), controllerToken)
 				.withGasBudget(this._gasBudget)
-				.execute(identityClient);
+				.buildAndExecute(identityClient);
 		} catch (error) {
 			throw new GeneralError(
 				this.CLASS_NAME,
@@ -663,10 +683,15 @@ export class IotaIdentityConnector implements IIdentityConnector {
 				throw new NotFoundError(this.CLASS_NAME, "identityNotFound", issuerDocumentId);
 			}
 
+			const controllerToken = await identityOnChain.getControllerToken(identityClient);
+			if (Is.empty(controllerToken)) {
+				throw new GeneralError(this.CLASS_NAME, "missingControllerToken");
+			}
+
 			await identityOnChain
-				.updateDidDocument(document.clone())
+				.updateDidDocument(document.clone(), controllerToken)
 				.withGasBudget(this._gasBudget)
-				.execute(identityClient);
+				.buildAndExecute(identityClient);
 		} catch (error) {
 			throw new GeneralError(this.CLASS_NAME, "revokeVerifiableCredentialsFailed", {
 				error: BaseError.fromError(error)
@@ -715,10 +740,15 @@ export class IotaIdentityConnector implements IIdentityConnector {
 				throw new NotFoundError(this.CLASS_NAME, "identityNotFound", issuerDocumentId);
 			}
 
+			const controllerToken = await identityOnChain.getControllerToken(identityClient);
+			if (Is.empty(controllerToken)) {
+				throw new GeneralError(this.CLASS_NAME, "missingControllerToken");
+			}
+
 			await identityOnChain
-				.updateDidDocument(document.clone())
+				.updateDidDocument(document.clone(), controllerToken)
 				.withGasBudget(this._gasBudget)
-				.execute(identityClient);
+				.buildAndExecute(identityClient);
 		} catch (error) {
 			throw new GeneralError(this.CLASS_NAME, "unrevokeVerifiableCredentialsFailed", {
 				error: BaseError.fromError(error)

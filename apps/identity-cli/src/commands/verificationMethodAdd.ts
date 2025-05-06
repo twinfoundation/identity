@@ -8,7 +8,6 @@ import {
 	type CliOutputOptions
 } from "@twin.org/cli-core";
 import { Converter, I18n, Is, StringHelper, Urn } from "@twin.org/core";
-import { IotaStardustIdentityUtils } from "@twin.org/identity-connector-iota-stardust";
 import { DocumentHelper } from "@twin.org/identity-models";
 import { DidVerificationMethodType } from "@twin.org/standards-w3c-did";
 import { VaultConnectorFactory } from "@twin.org/vault-models";
@@ -227,11 +226,6 @@ export async function actionCommandVerificationMethodAdd(
 		CLIDisplay.value(
 			I18n.formatMessage("commands.common.labels.explore"),
 			`${StringHelper.trimTrailingSlashes(explorerEndpoint)}/object/${objectId}?network=${network}`
-		);
-	} else {
-		CLIDisplay.value(
-			I18n.formatMessage("commands.common.labels.explore"),
-			`${StringHelper.trimTrailingSlashes(explorerEndpoint)}/addr/${IotaStardustIdentityUtils.didToAddress(did)}?tab=DID`
 		);
 	}
 

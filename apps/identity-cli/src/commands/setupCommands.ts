@@ -6,10 +6,6 @@ import {
 	IotaIdentityConnector,
 	IotaIdentityResolverConnector
 } from "@twin.org/identity-connector-iota";
-import {
-	IotaStardustIdentityConnector,
-	IotaStardustIdentityResolverConnector
-} from "@twin.org/identity-connector-iota-stardust";
 import type { IIdentityConnector, IIdentityResolverConnector } from "@twin.org/identity-models";
 import { nameof } from "@twin.org/nameof";
 import {
@@ -63,24 +59,12 @@ export function setupIdentityConnector(
 ): IIdentityConnector {
 	connector ??= IdentityConnectorTypes.Iota;
 
-	if (connector === IdentityConnectorTypes.Iota) {
-		return new IotaIdentityConnector({
-			config: {
-				clientOptions: {
-					url: options.nodeEndpoint
-				},
-				network: options.network ?? "",
-				vaultSeedId: options.vaultSeedId,
-				walletAddressIndex: options.addressIndex
-			}
-		});
-	}
-	return new IotaStardustIdentityConnector({
+	return new IotaIdentityConnector({
 		config: {
 			clientOptions: {
-				nodes: [options.nodeEndpoint],
-				localPow: true
+				url: options.nodeEndpoint
 			},
+			network: options.network ?? "",
 			vaultSeedId: options.vaultSeedId,
 			walletAddressIndex: options.addressIndex
 		}
@@ -101,22 +85,12 @@ export function setupIdentityResolverConnector(
 ): IIdentityResolverConnector {
 	connector ??= IdentityResolverConnectorTypes.Iota;
 
-	if (connector === IdentityResolverConnectorTypes.Iota) {
-		return new IotaIdentityResolverConnector({
-			config: {
-				clientOptions: {
-					url: options.nodeEndpoint
-				},
-				network: options.network ?? ""
-			}
-		});
-	}
-	return new IotaStardustIdentityResolverConnector({
+	return new IotaIdentityResolverConnector({
 		config: {
 			clientOptions: {
-				nodes: [options.nodeEndpoint],
-				localPow: true
-			}
+				url: options.nodeEndpoint
+			},
+			network: options.network ?? ""
 		}
 	});
 }
