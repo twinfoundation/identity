@@ -7,13 +7,13 @@ import { EntityStorageConnectorFactory } from "@twin.org/entity-storage-models";
 import {
 	DidContexts,
 	DidTypes,
-	type IDidVerifiableCredential,
-	type IProof,
 	ProofTypes,
 	type DidVerificationMethodType,
 	type IDataIntegrityProof,
 	type IDidService,
-	type IJsonWebSignature2020Proof
+	type IDidVerifiableCredential,
+	type IJsonWebSignature2020Proof,
+	type IProof
 } from "@twin.org/standards-w3c-did";
 import type { VaultSecret } from "@twin.org/vault-connector-entity-storage";
 import {

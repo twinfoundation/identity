@@ -501,10 +501,10 @@ export class IotaIdentityConnector implements IIdentityConnector {
 
 			const subjectClone = ObjectHelper.clone(subject);
 
-			const credContext = ObjectHelper.extractProperty(subjectClone, "@context", false);
+			const credContext = ObjectHelper.extractProperty(subjectClone, "@context", true);
 			const credType = ObjectHelper.extractProperty(subjectClone, ["@type", "type"], false);
 
-			const finalTypes = ["VerifiableCredential"];
+			const finalTypes = [];
 			if (Is.stringValue(credType)) {
 				finalTypes.push(credType);
 			}
@@ -551,7 +551,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 				credentialSubject: subjectClone,
 				type: finalTypes,
 				id,
-				context: credContext as IPresentation["context"]
+				context: credContext as ICredential["context"]
 			});
 
 			if (!Is.undefined(revocationIndex)) {
