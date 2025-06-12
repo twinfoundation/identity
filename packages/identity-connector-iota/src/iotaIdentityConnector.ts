@@ -210,7 +210,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 				throw new NotFoundError(this.CLASS_NAME, "identityNotFound", identityOnChain);
 			}
 
-			const tempKeyId = `${controller}:temp-vm-${Date.now()}`;
+			const tempKeyId = `${controller}/temp-vm-${Date.now()}`;
 			const verificationPublicKey = await this._vaultConnector.createKey(
 				tempKeyId,
 				VaultKeyType.Ed25519
@@ -220,7 +220,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 			const jwk = new Jwk(jwkParams as IJwkParams);
 			const methodId = `#${verificationMethodId ?? Converter.bytesToBase64Url(verificationPublicKey)}`;
 
-			await this._vaultConnector.renameKey(tempKeyId, `${controller}:${methodId.slice(1)}`);
+			await this._vaultConnector.renameKey(tempKeyId, `${controller}/${methodId.slice(1)}`);
 
 			const method = VerificationMethod.newFromJwk(document.id(), jwk, methodId);
 			const methods = document.methods();
@@ -510,7 +510,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 			}
 
 			const verificationMethodKey = await this._vaultConnector.getKey(
-				`${controller}:${idParts.fragment}`
+				`${controller}/${idParts.fragment}`
 			);
 
 			if (Is.undefined(verificationMethodKey)) {
@@ -845,7 +845,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 			});
 
 			const verificationMethodKey = await this._vaultConnector.getKey(
-				`${controller}:${idParts.fragment}`
+				`${controller}/${idParts.fragment}`
 			);
 
 			if (Is.undefined(verificationMethodKey)) {
@@ -1054,7 +1054,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 				throw new GeneralError(this.CLASS_NAME, "methodMissing", { method: verificationMethodId });
 			}
 
-			const keyId = `${controller}:${idParts.fragment}`;
+			const keyId = `${controller}/${idParts.fragment}`;
 			const verificationMethodKey = await this._vaultConnector.getKey(keyId);
 
 			if (Is.undefined(verificationMethodKey)) {

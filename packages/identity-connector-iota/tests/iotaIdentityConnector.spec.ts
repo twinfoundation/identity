@@ -214,7 +214,7 @@ describe("IotaIdentityConnector", () => {
 				"vault-key"
 			).getStore();
 
-		expect(keyStore?.[0].id).toEqual(`${TEST_IDENTITY_ID}:${verificationMethodId}`);
+		expect(keyStore?.[0].id).toEqual(`${TEST_IDENTITY_ID}/${verificationMethodId}`);
 	});
 
 	test("can verify verification methods in a resolved document", async () => {
