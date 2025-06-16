@@ -66,6 +66,11 @@ export const TEST_NETWORK = process.env.TEST_NETWORK;
 export const TEST_SEED = Bip39.mnemonicToSeed(process.env.TEST_MNEMONIC);
 export const TEST_COIN_TYPE = Number.parseInt(process.env.TEST_COIN_TYPE, 10);
 
+// Gas station environment variables for testing
+export const GAS_STATION_URL = process.env.GAS_STATION_URL ?? "http://localhost:9527";
+export const GAS_STATION_AUTH_TOKEN =
+	process.env.GAS_STATION_AUTH_TOKEN ?? "qEyCL6d9BKKFl/tfDGAKeGFkhUlf7FkqiGV7Xw4JUsI=";
+
 export const TEST_FAUCET_CONNECTOR = new IotaFaucetConnector({
 	config: {
 		clientOptions: TEST_CLIENT_OPTIONS,

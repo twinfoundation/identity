@@ -106,7 +106,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 	 * Gas budget for transactions.
 	 * @internal
 	 */
-	private readonly _gasBudget: bigint;
+	private readonly _gasBudget: number;
 
 	/**
 	 * Create a new instance of IotaIdentityConnector.
@@ -128,7 +128,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 
 		this._config = options.config;
 
-		this._gasBudget = this._config.gasBudget ?? 1000000000n;
+		this._gasBudget = this._config.gasBudget ?? 1_000_000_000;
 		this._walletAddressIndex = options.config.walletAddressIndex ?? 0;
 
 		Iota.populateConfig(this._config);
@@ -151,17 +151,76 @@ export class IotaIdentityConnector implements IIdentityConnector {
 			const revocationServiceId = document.id().join("#revocation");
 			document.insertService(revocationBitmap.toService(revocationServiceId));
 
-			const { output: identity } = await identityClient
-				.createIdentity(document)
-				.finish()
-				.buildAndExecute(identityClient);
+			// Use conditional execution based on gas station config
+			const executionResult = await this.executeIdentityTransaction(
+				controller,
+				identityClient.createIdentity(document)
+			);
 
-			const did: IotaDID = identity.didDocument().id();
-			identity.id();
+			// eslint-disable-next-line no-console
+			console.log("🔍 Identity creation result:", executionResult);
 
-			const resolved = await identityClient.resolveDid(did);
+			// Handle different result types: regular vs gas station
+			let did: IotaDID;
 
-			const doc = resolved.toJSON() as { doc: IDidDocument };
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			if ((executionResult as any)?.output?.didDocument) {
+				// Regular execution: identity object with didDocument method
+				// eslint-disable-next-line @typescript-eslint/no-explicit-any
+				const identity = (executionResult as any).output;
+				did = identity.didDocument().id();
+				// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			} else if ((executionResult as any)?.output?.effects?.created) {
+				// Gas station execution: transaction effects with created objects
+				// eslint-disable-next-line @typescript-eslint/no-explicit-any
+				const txEffects = (executionResult as any).output;
+
+				// Find the identity object from created objects
+				// According to IOTA Identity spec, the Identity object is a SHARED object, not owned
+				const createdObjects = txEffects.effects.created || [];
+
+				// eslint-disable-next-line @typescript-eslint/no-explicit-any
+				const identityObject = createdObjects.find(
+					// eslint-disable-next-line @typescript-eslint/no-explicit-any
+					(obj: any) => obj.owner?.Shared !== undefined // Look for shared objects
+				);
+
+				if (!identityObject) {
+					throw new GeneralError(this.CLASS_NAME, "identityObjectNotFound", {
+						createdObjects: createdObjects.length,
+						// eslint-disable-next-line @typescript-eslint/no-explicit-any
+						owners: createdObjects.map((obj: any) => obj.owner)
+					});
+				}
+
+				// Extract the object ID and create the DID
+				const objectId = identityObject.reference?.objectId || identityObject.reference?.object_id;
+				if (!objectId) {
+					throw new GeneralError(this.CLASS_NAME, "objectIdNotFound", identityObject);
+				}
+
+				// Create DID from the object ID (IOTA Identity format: did:iota:{network}:{aliasId})
+				const aliasId = objectId;
+				did = IotaDID.parse(`did:iota:${networkHrp}:${aliasId}`);
+			} else {
+				throw new GeneralError(this.CLASS_NAME, "unexpectedExecutionResult", {
+					resultType: typeof executionResult,
+					// eslint-disable-next-line @typescript-eslint/no-explicit-any
+					hasOutput: Boolean((executionResult as any)?.output),
+					// eslint-disable-next-line @typescript-eslint/no-explicit-any
+					outputType: typeof (executionResult as any)?.output
+				});
+			}
+
+			// Resolve the DID document from the blockchain (works for both regular and gas station)
+			// For gas station transactions, we may need to wait for the transaction to be fully confirmed
+			const resolved = await this.resolveDIDWithRetry(identityClient, did);
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			const doc = (resolved as any).toJSON() as { doc: IDidDocument };
+
+			// eslint-disable-next-line no-console
+			console.log("Final resolved document ID:", doc.doc.id);
+
 			return doc.doc;
 		} catch (error) {
 			throw new GeneralError(
@@ -251,7 +310,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 
 			await identityOnChain
 				.updateDidDocument(document.clone(), controllerToken)
-				.withGasBudget(this._gasBudget)
+				.withGasBudget(BigInt(this._gasBudget))
 				.buildAndExecute(identityClient);
 
 			return method.toJSON() as IDidDocumentVerificationMethod;
@@ -318,7 +377,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 
 			await identityOnChain
 				.updateDidDocument(document.clone(), controllerToken)
-				.withGasBudget(this._gasBudget)
+				.withGasBudget(BigInt(this._gasBudget))
 				.buildAndExecute(identityClient);
 		} catch (error) {
 			throw new GeneralError(
@@ -381,7 +440,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 
 			await identityOnChain
 				.updateDidDocument(document.clone(), controllerToken)
-				.withGasBudget(this._gasBudget)
+				.withGasBudget(BigInt(this._gasBudget))
 				.buildAndExecute(identityClient);
 
 			return service.toJSON() as unknown as IDidService;
@@ -441,7 +500,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 
 			await identityOnChain
 				.updateDidDocument(document.clone(), controllerToken)
-				.withGasBudget(this._gasBudget)
+				.withGasBudget(BigInt(this._gasBudget))
 				.buildAndExecute(identityClient);
 		} catch (error) {
 			throw new GeneralError(
@@ -690,7 +749,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 
 			await identityOnChain
 				.updateDidDocument(document.clone(), controllerToken)
-				.withGasBudget(this._gasBudget)
+				.withGasBudget(BigInt(this._gasBudget))
 				.buildAndExecute(identityClient);
 		} catch (error) {
 			throw new GeneralError(this.CLASS_NAME, "revokeVerifiableCredentialsFailed", {
@@ -747,7 +806,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 
 			await identityOnChain
 				.updateDidDocument(document.clone(), controllerToken)
-				.withGasBudget(this._gasBudget)
+				.withGasBudget(BigInt(this._gasBudget))
 				.buildAndExecute(identityClient);
 		} catch (error) {
 			throw new GeneralError(this.CLASS_NAME, "unrevokeVerifiableCredentialsFailed", {
@@ -1222,5 +1281,290 @@ export class IotaIdentityConnector implements IIdentityConnector {
 		}
 
 		return parts[3];
+	}
+
+	/**
+	 * Execute identity transaction with conditional gas station support.
+	 * @param controller The controller identity.
+	 * @param transactionBuilder The identity transaction builder.
+	 * @returns The execution result.
+	 * @internal
+	 */
+	private async executeIdentityTransaction(
+		controller: string,
+		transactionBuilder: unknown
+	): Promise<unknown> {
+		// Check if gas station is configured
+		if (this._config.gasStation) {
+			return this.executeIdentityTransactionWithGasStation(controller, transactionBuilder);
+		}
+
+		// Regular execution
+		const identityClient = await this.getIdentityClient(controller);
+		// eslint-disable-next-line no-console
+		console.log("🔧 Regular execution - calling finish().buildAndExecute()");
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		return (transactionBuilder as any).finish().buildAndExecute(identityClient);
+	}
+
+	/**
+	 * Execute identity transaction with gas station sponsoring.
+	 * @param controller The controller identity.
+	 * @param transactionBuilder The identity transaction builder.
+	 * @returns The execution result.
+	 * @internal
+	 */
+	private async executeIdentityTransactionWithGasStation(
+		controller: string,
+		transactionBuilder: unknown
+	): Promise<unknown> {
+		try {
+			// eslint-disable-next-line no-console
+			console.log("Gas station execution starting for controller:", controller);
+			const identityClient = await this.getIdentityClient(controller);
+
+			// Get user address for gas station - this is essential as the user remains the sender
+			const seed = await Iota.getSeed(this._config, this._vaultConnector, controller);
+			const addresses = Iota.getAddresses(
+				seed,
+				this._config.coinType ?? Iota.DEFAULT_COIN_TYPE,
+				0, // account index
+				this._walletAddressIndex, // address index
+				1, // count
+				false // is internal
+			);
+			const userAddress = addresses[0]; // User address is needed as the transaction sender
+			// eslint-disable-next-line no-console
+			console.log("User address:", userAddress);
+
+			// Reserve gas from station
+			const gasBudget = this._config.gasBudget ?? this._gasBudget;
+			const gasReservation = await Iota.reserveGas(this._config, gasBudget);
+			// eslint-disable-next-line no-console
+			console.log("Gas reservation ID:", gasReservation.reservation_id);
+			// eslint-disable-next-line no-console
+			console.log("Gas coins count:", gasReservation.gas_coins.length);
+
+			// Convert gas_coins version values from number to string for Identity SDK WASM compatibility
+			const gasCoinsWithStringVersions = gasReservation.gas_coins.map(coin => ({
+				objectId: coin.objectId,
+				version: String(coin.version), // Convert number to string
+				digest: coin.digest
+			}));
+			// eslint-disable-next-line no-console
+			console.log("Converted gas coins versions to strings for WASM compatibility");
+
+			// Build transaction with gas sponsor parameters using the confirmed available methods
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			const finishedBuilder = (transactionBuilder as any).finish();
+			// eslint-disable-next-line no-console
+			console.log("Finished builder obtained, attempting to configure gas parameters...");
+
+			// Use the withGas* methods that are confirmed to be available
+			try {
+				const gasConfiguredBuilder = finishedBuilder
+					.withSender(userAddress)
+					.withGasBudget(BigInt(gasBudget))
+					.withGasOwner(gasReservation.sponsor_address)
+					.withGasPayment(gasCoinsWithStringVersions)
+					.withGasPrice(BigInt(1000)); // Standard gas price
+
+				// eslint-disable-next-line no-console
+				console.log("Gas parameters configured, building transaction...");
+
+				// Build transaction to get byte array for gas station submission
+				const buildResult = await gasConfiguredBuilder.build(identityClient);
+				// eslint-disable-next-line no-console
+				console.log("Build completed, checking result format...");
+
+				if (
+					Array.isArray(buildResult) &&
+					buildResult.length === 3 &&
+					buildResult[0] instanceof Uint8Array
+				) {
+					const [txBytes, signatures] = buildResult;
+					// eslint-disable-next-line no-console
+					console.log("Transaction bytes length:", txBytes.length);
+
+					// Execute via gas station
+					// eslint-disable-next-line no-console
+					console.log("Submitting to gas station...");
+
+					// Log detailed request information for debugging
+					// eslint-disable-next-line no-console
+					console.log("🔍 GAS STATION DEBUG - Request Details:");
+					// eslint-disable-next-line no-console
+					console.log(`  - Reservation ID: ${gasReservation.reservation_id}`);
+					// eslint-disable-next-line no-console
+					console.log(`  - Transaction bytes length: ${txBytes.length}`);
+					// eslint-disable-next-line no-console
+					console.log(
+						`  - First 100 bytes (hex): ${Array.from(txBytes.slice(0, 100))
+							.map(b => b.toString(16).padStart(2, "0"))
+							.join("")}`
+					);
+					// eslint-disable-next-line no-console
+					console.log(`  - Signature: ${signatures[0].slice(0, 50)}...`);
+					// eslint-disable-next-line no-console
+					console.log(`  - Gas station URL: ${this._config.gasStation?.gasStationUrl}`);
+
+					// Add timeout handling for gas station execution
+					const gasStationPromise = Iota.executeGasStationTransaction(
+						this._config,
+						gasReservation.reservation_id,
+						txBytes,
+						signatures[0] // Use the first signature
+					);
+
+					// Set a reasonable timeout for gas station response (15 seconds)
+					const timeoutPromise = new Promise((resolve, reject) => {
+						setTimeout(
+							() =>
+								reject(
+									new GeneralError(this.CLASS_NAME, "gasStationTimeout", {
+										message: "Gas station request timed out after 15 seconds"
+									})
+								),
+							15000
+						);
+					});
+
+					// eslint-disable-next-line no-console
+					console.log("Waiting for gas station response (15s timeout)...");
+
+					try {
+						const txEffects = await Promise.race([gasStationPromise, timeoutPromise]);
+
+						// eslint-disable-next-line no-console
+						console.log("Gas station response received successfully!");
+						// eslint-disable-next-line no-console
+						console.log("Transaction effects type:", typeof txEffects);
+
+						// For gas station transactions, we need to process the txEffects differently
+						// The identity document is created as an object in the transaction effects
+						// We need to return a structure that mimics the regular Identity SDK result
+						return {
+							output: txEffects,
+							didDocument: undefined, // Gas station doesn't return the document directly
+							// eslint-disable-next-line @typescript-eslint/no-explicit-any
+							txEffects: txEffects as any // Store the raw effects for potential future processing
+						};
+					} catch (gasStationError: unknown) {
+						// Enhanced error logging
+						// eslint-disable-next-line no-console
+						console.log("🔍 GAS STATION DEBUG - Error Details:");
+						// eslint-disable-next-line no-console
+						console.log(`  - Error type: ${typeof gasStationError}`);
+						// eslint-disable-next-line no-console, @typescript-eslint/no-explicit-any
+						console.log(`  - Error message: ${(gasStationError as any)?.message ?? "unknown"}`);
+						// eslint-disable-next-line no-console, @typescript-eslint/no-explicit-any
+						console.log(`  - Error source: ${(gasStationError as any)?.source ?? "unknown"}`);
+						// eslint-disable-next-line no-console, @typescript-eslint/no-explicit-any
+						console.log("  - Error properties:", (gasStationError as any)?.properties || "none");
+						// eslint-disable-next-line no-console
+						console.log("  - Full error object:", JSON.stringify(gasStationError, null, 2));
+
+						throw gasStationError; // Re-throw for handling
+					}
+				}
+
+				throw new GeneralError(this.CLASS_NAME, "gasStationTransactionBuildFailed", {
+					message: "Build result doesn't match expected [Uint8Array, signatures] pattern",
+					buildResultType: typeof buildResult,
+					isArray: Array.isArray(buildResult),
+					length: Array.isArray(buildResult) ? buildResult.length : "not array"
+				});
+			} catch (gasConfigError) {
+				// eslint-disable-next-line no-console
+				console.log("Error in gas configuration or build:", gasConfigError);
+				throw gasConfigError;
+			}
+		} catch (error) {
+			// eslint-disable-next-line no-console
+			console.log("Gas station transaction failed with error:", error);
+			throw new GeneralError(
+				this.CLASS_NAME,
+				"gasStationTransactionFailed",
+				undefined,
+				Iota.extractPayloadError(error)
+			);
+		}
+	}
+
+	/**
+	 * Get user address for the given controller.
+	 * @param controller The controller to get the address for.
+	 * @returns The user address.
+	 * @internal
+	 */
+	private async getUserAddress(controller: string): Promise<string> {
+		const seed = await Iota.getSeed(this._config, this._vaultConnector, controller);
+		const addresses = Iota.getAddresses(
+			seed,
+			this._config.coinType ?? Iota.DEFAULT_COIN_TYPE,
+			0, // account index
+			this._walletAddressIndex, // address index
+			1, // count
+			false // is internal
+		);
+		return addresses[0];
+	}
+
+	/**
+	 * Resolve DID with retry mechanism for newly created identities.
+	 * @param identityClient The identity client.
+	 * @param did The DID to resolve.
+	 * @param maxRetries Maximum number of retry attempts.
+	 * @param baseDelay Base delay in milliseconds.
+	 * @returns The resolved DID document.
+	 * @internal
+	 */
+	private async resolveDIDWithRetry(
+		identityClient: unknown,
+		did: unknown,
+		maxRetries: number = 5,
+		baseDelay: number = 1000
+	): Promise<unknown> {
+		for (let attempt = 0; attempt <= maxRetries; attempt++) {
+			try {
+				// eslint-disable-next-line no-console
+				console.log(
+					`🔍 DID resolution attempt ${attempt + 1}/${maxRetries + 1} for:`,
+					// eslint-disable-next-line @typescript-eslint/no-explicit-any
+					(did as any).toString()
+				);
+
+				// eslint-disable-next-line @typescript-eslint/no-explicit-any
+				const resolved = await (identityClient as any).resolveDid(did);
+
+				if (resolved) {
+					// eslint-disable-next-line no-console
+					console.log("✅ DID resolution successful!");
+					return resolved;
+				}
+
+				throw new GeneralError(this.CLASS_NAME, "didResolutionFailed", {
+					message: "Resolved document is null/undefined"
+				});
+			} catch (error) {
+				// eslint-disable-next-line no-console
+				console.log(`❌ DID resolution attempt ${attempt + 1} failed:`, (error as Error).message);
+
+				if (attempt === maxRetries) {
+					// Final attempt failed
+					throw error;
+				}
+
+				// Calculate exponential backoff delay
+				const delay = baseDelay * Math.pow(2, attempt);
+				// eslint-disable-next-line no-console
+				console.log(`⏳ Waiting ${delay}ms before retry ${attempt + 2}...`);
+
+				// Wait before next attempt
+				await new Promise(resolve => setTimeout(resolve, delay));
+			}
+		}
+
+		throw new GeneralError(this.CLASS_NAME, "didResolutionFailedAllRetries");
 	}
 }

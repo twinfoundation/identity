@@ -21,7 +21,9 @@ import {
 	TEST_CLIENT_OPTIONS,
 	TEST_IDENTITY_ID,
 	TEST_MNEMONIC_NAME,
-	TEST_NETWORK
+	TEST_NETWORK,
+	GAS_STATION_URL,
+	GAS_STATION_AUTH_TOKEN
 } from "./setupTestEnv";
 import { IotaIdentityConnector } from "../src/iotaIdentityConnector";
 import { IotaIdentityResolverConnector } from "../src/iotaIdentityResolverConnector";
@@ -1101,5 +1103,61 @@ describe("IotaIdentityConnector", () => {
 		expect(checkResult).toBeDefined();
 		expect(checkResult.revoked).toBeFalsy();
 		expect(checkResult.verifiableCredential).toBeDefined();
+	});
+
+	describe("Gas Station Integration", () => {
+		test("Should create identity connector with gas station configuration", () => {
+			const gasStationConfig: IIotaIdentityConnectorConfig = {
+				clientOptions: TEST_CLIENT_OPTIONS,
+				network: TEST_NETWORK,
+				gasStation: {
+					gasStationUrl: GAS_STATION_URL,
+					gasStationAuthToken: GAS_STATION_AUTH_TOKEN
+				}
+			};
+
+			const connector = new IotaIdentityConnector({
+				config: gasStationConfig
+			});
+
+			expect(connector).toBeDefined();
+			expect(connector.CLASS_NAME).toBe("IotaIdentityConnector");
+		});
+
+		test("Should create identity connector without gas station configuration", () => {
+			const regularConfig: IIotaIdentityConnectorConfig = {
+				clientOptions: TEST_CLIENT_OPTIONS,
+				network: TEST_NETWORK
+			};
+
+			const connector = new IotaIdentityConnector({
+				config: regularConfig
+			});
+
+			expect(connector).toBeDefined();
+			expect(connector.CLASS_NAME).toBe("IotaIdentityConnector");
+		});
+
+		// Note: This test would require a running gas station instance
+		// and will be skipped in normal CI/CD environments
+		test.skip("Should create document using gas station sponsoring", async () => {
+			const gasStationConfig: IIotaIdentityConnectorConfig = {
+				clientOptions: TEST_CLIENT_OPTIONS,
+				network: TEST_NETWORK,
+				gasStation: {
+					gasStationUrl: GAS_STATION_URL,
+					gasStationAuthToken: GAS_STATION_AUTH_TOKEN
+				}
+			};
+
+			const connector = new IotaIdentityConnector({
+				config: gasStationConfig
+			});
+
+			// This would test the actual gas station integration
+			// when a gas station instance is available
+			const document = await connector.createDocument(TEST_IDENTITY_ID);
+			expect(document.id).toContain("did:iota:");
+		});
 	});
 });

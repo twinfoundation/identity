@@ -56,5 +56,8 @@
 		"packages/identity-connector-universal",
 		"apps/identity-cli"
 	],
-	"type": "module"
+	"type": "module",
+	"dependencies": {
+		"@iota/identity-wasm": "^1.6.0-beta.2"
+	}
 }
