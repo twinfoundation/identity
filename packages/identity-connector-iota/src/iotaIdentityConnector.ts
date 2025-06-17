@@ -1,51 +1,49 @@
 // Copyright 2024 IOTA Stiftung.
 // SPDX-License-Identifier: Apache-2.0.
 import {
-	IotaDocument,
+	Credential,
 	Duration,
-	IdentityClientReadOnly,
-	JwsAlgorithm,
-	KeyIdMemStore,
+	EdDSAJwsVerifier,
+	FailFast,
+	IdentityClient,
+	IotaDID,
+	IotaDocument,
+	Jwk,
 	JwkMemStore,
+	JwkType,
+	JwsAlgorithm,
+	JwsSignatureOptions,
+	Jwt,
+	JwtCredentialValidationOptions,
+	JwtCredentialValidator,
 	JwtPresentationOptions,
 	JwtPresentationValidationOptions,
 	JwtPresentationValidator,
-	Storage,
-	VerificationMethod,
+	KeyIdMemStore,
+	MethodDigest,
 	MethodScope,
-	RevocationBitmap,
-	IotaDID,
-	IdentityClient,
-	StorageSigner,
 	Presentation,
 	Resolver,
+	RevocationBitmap,
 	Service,
-	Credential,
-	JwsSignatureOptions,
+	Storage,
+	StorageSigner,
 	SubjectHolderRelationship,
 	Timestamp,
-	JwtCredentialValidator,
-	JwtCredentialValidationOptions,
-	FailFast,
-	Jwk,
-	MethodDigest,
-	EdDSAJwsVerifier,
-	JwkType,
-	Jwt,
-	type IJwkParams,
+	VerificationMethod,
 	type DIDUrl,
 	type ICredential,
+	type IJwkParams,
 	type IPresentation
 } from "@iota/identity-wasm/node/index.js";
-import { IotaClient } from "@iota/iota-sdk/client";
 import {
+	BaseError,
+	Converter,
 	GeneralError,
 	Guards,
 	Is,
 	NotFoundError,
-	Converter,
 	ObjectHelper,
-	BaseError,
 	Url,
 	Urn
 } from "@twin.org/core";
@@ -55,20 +53,20 @@ import { DocumentHelper, type IIdentityConnector } from "@twin.org/identity-mode
 import { nameof } from "@twin.org/nameof";
 import {
 	DidVerificationMethodType,
+	ProofHelper,
+	ProofTypes,
 	type IDidDocument,
 	type IDidDocumentVerificationMethod,
-	type IProof,
 	type IDidService,
 	type IDidVerifiableCredential,
 	type IDidVerifiablePresentation,
-	ProofTypes,
-	ProofHelper
+	type IProof
 } from "@twin.org/standards-w3c-did";
-import { VaultConnectorFactory, type IVaultConnector, VaultKeyType } from "@twin.org/vault-models";
+import { VaultConnectorFactory, VaultKeyType, type IVaultConnector } from "@twin.org/vault-models";
 import { Jwk as JwkHelper } from "@twin.org/web";
 import type { IIotaIdentityConnectorConfig } from "./models/IIotaIdentityConnectorConfig";
 import type { IIotaIdentityConnectorConstructorOptions } from "./models/IIotaIdentityConnectorConstructorOptions";
-import { getIdentityPkgId } from "./utils/iotaIdentityUtils";
+import { IotaIdentityUtils } from "./utils/iotaIdentityUtils";
 
 /**
  * Class for performing identity operations on IOTA.
@@ -602,11 +600,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 		Guards.stringValue(this.CLASS_NAME, nameof(credentialJwt), credentialJwt);
 
 		try {
-			const iotaClient = new IotaClient(this._config.clientOptions);
-			const identityClientReadOnly = await IdentityClientReadOnly.createWithPkgId(
-				iotaClient,
-				getIdentityPkgId(this._config)
-			);
+			const identityClientReadOnly = await IotaIdentityUtils.createClient(this._config);
 			const resolver = new Resolver({ client: identityClientReadOnly });
 			const jwt = new Jwt(credentialJwt);
 			const issuerDocumentId = JwtCredentialValidator.extractIssuerFromJwt(jwt);
@@ -923,11 +917,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 		Guards.stringValue(this.CLASS_NAME, nameof(presentationJwt), presentationJwt);
 
 		try {
-			const iotaClient = new IotaClient(this._config.clientOptions);
-			const identityClientReadOnly = await IdentityClientReadOnly.createWithPkgId(
-				iotaClient,
-				getIdentityPkgId(this._config)
-			);
+			const identityClientReadOnly = await IotaIdentityUtils.createClient(this._config);
 			const resolver = new Resolver<IotaDocument>({ client: identityClientReadOnly });
 			const jwt = new Jwt(presentationJwt);
 			const holderId = JwtPresentationValidator.extractHolder(jwt);
@@ -1140,11 +1130,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 	 * @internal
 	 */
 	private async getIdentityClient(controller?: string): Promise<IdentityClient> {
-		const iotaClient = new IotaClient(this._config.clientOptions);
-		const identityClientReadOnly = await IdentityClientReadOnly.createWithPkgId(
-			iotaClient,
-			getIdentityPkgId(this._config)
-		);
+		const identityClientReadOnly = await IotaIdentityUtils.createClient(this._config);
 
 		if (Is.undefined(controller)) {
 			const jwkMemStore = new JwkMemStore();
