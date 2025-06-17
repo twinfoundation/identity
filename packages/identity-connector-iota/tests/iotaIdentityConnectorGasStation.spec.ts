@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0.
 import { Is, GeneralError } from "@twin.org/core";
 import { describe, expect, test, beforeAll } from "vitest";
+import { DidVerificationMethodType } from "@twin.org/standards-w3c-did";
 import {
 	setupTestEnv,
 	TEST_CLIENT_OPTIONS,
@@ -9,7 +10,8 @@ import {
 	TEST_MNEMONIC_NAME,
 	TEST_NETWORK,
 	GAS_STATION_URL,
-	GAS_STATION_AUTH_TOKEN
+	GAS_STATION_AUTH_TOKEN,
+	GAS_BUDGET
 } from "./setupTestEnv";
 import { IotaIdentityConnector } from "../src/iotaIdentityConnector";
 import type { IIotaIdentityConnectorConfig } from "../src/models/IIotaIdentityConnectorConfig";
@@ -25,7 +27,7 @@ describe("IotaIdentityConnector with Gas Station", () => {
 			clientOptions: TEST_CLIENT_OPTIONS,
 			vaultMnemonicId: TEST_MNEMONIC_NAME,
 			network: TEST_NETWORK,
-			gasBudget: 50000000,
+			gasBudget: GAS_BUDGET,
 			gasStation: {
 				gasStationUrl: GAS_STATION_URL,
 				gasStationAuthToken: GAS_STATION_AUTH_TOKEN
@@ -61,70 +63,25 @@ describe("IotaIdentityConnector with Gas Station", () => {
 
 	describe("Gas Station Integration", () => {
 		test("Should test gas station connectivity before attempting identity operations", async () => {
-			console.log("Testing gas station connectivity...");
-
-			try {
-				const response = await fetch(GAS_STATION_URL, {
-					method: "GET"
-				});
-
-				console.log(`Gas station status: ${response.status}`);
-				expect(response.ok).toBe(true);
-			} catch (error) {
-				console.error("❌ Gas station not accessible:", error);
-				throw new GeneralError("GasStationTest", "gasStationNotAvailable", {
-					url: GAS_STATION_URL,
-					message: "Please ensure Docker containers are running"
-				});
-			}
+			await expect(fetch(GAS_STATION_URL, { method: "GET" })).resolves.toMatchObject({
+				ok: true
+			});
 		}, 10000);
 
-		test("Should create identity document using gas station (if supported by Identity SDK)", async () => {
-			console.log("Testing identity document creation with gas station...");
-
+		test("Should create identity document using gas station", async () => {
 			const connector = new IotaIdentityConnector({
 				config: gasStationConfig
 			});
 
-			try {
-				console.log("Creating identity document with gas station configuration...");
+			const document = await connector.createDocument(TEST_IDENTITY_ID);
 
-				const document = await connector.createDocument(TEST_IDENTITY_ID);
-
-				console.log("✅ Identity document created successfully!");
-				console.log(`📋 Document ID: ${document.id}`);
-
-				expect(document).toBeDefined();
-				expect(document.id).toBeDefined();
-				expect(Is.stringValue(document.id)).toBe(true);
-				expect(document.id.includes("did:iota:")).toBe(true);
-			} catch (error) {
-				console.error("❌ Identity document creation failed:", error);
-
-				// Check if this is a known limitation with the Identity SDK
-				if (error instanceof Error && error.message.includes("withGasData")) {
-					console.log(
-						"ℹ️ This appears to be a limitation with the IOTA Identity SDK not supporting gas station API"
-					);
-					console.log(
-						"ℹ️ The error suggests that .withGasData() method is not available on the identity transaction builder"
-					);
-					console.log(
-						"ℹ️ This is expected and means we need to implement gas station integration differently"
-					);
-
-					// For now, expect this specific error
-					expect(error.message).toContain("withGasData");
-				} else {
-					// Re-throw unexpected errors
-					throw error;
-				}
-			}
+			expect(document).toBeDefined();
+			expect(document.id).toBeDefined();
+			expect(Is.stringValue(document.id)).toBe(true);
+			expect(document.id.includes("did:iota:")).toBe(true);
 		}, 30000);
 
 		test("Should compare regular vs gas station transaction attempts", async () => {
-			console.log("🔄 Comparing regular vs gas station identity creation...");
-
 			const regularConnector = new IotaIdentityConnector({
 				config: regularConfig
 			});
@@ -133,46 +90,123 @@ describe("IotaIdentityConnector with Gas Station", () => {
 				config: gasStationConfig
 			});
 
-			try {
-				// Try regular creation first
-				console.log("📝 Creating identity with regular connector...");
-				const regularDocument = await regularConnector.createDocument(TEST_IDENTITY_ID);
-				console.log("✅ Regular identity creation successful!");
-				console.log(`📋 Regular Document ID: ${regularDocument.id}`);
+			// Regular creation first
+			const regularDocument = await regularConnector.createDocument(TEST_IDENTITY_ID);
 
-				// Now try with gas station
-				console.log("📝 Creating identity with gas station connector...");
-				const gasStationDocument = await gasStationConnector.createDocument(TEST_IDENTITY_ID);
-				console.log("✅ Gas station identity creation successful!");
-				console.log(`📋 Gas Station Document ID: ${gasStationDocument.id}`);
+			// Gas station creation
+			const gasStationDocument = await gasStationConnector.createDocument(TEST_IDENTITY_ID);
 
-				// Both should succeed and create valid documents
-				expect(regularDocument).toBeDefined();
-				expect(gasStationDocument).toBeDefined();
-				expect(regularDocument.id).toBeDefined();
-				expect(gasStationDocument.id).toBeDefined();
+			expect(regularDocument).toBeDefined();
+			expect(gasStationDocument).toBeDefined();
+			expect(regularDocument.id).toBeDefined();
+			expect(gasStationDocument.id).toBeDefined();
 
-				// Documents should be different (different identities)
-				expect(regularDocument.id).not.toBe(gasStationDocument.id);
-			} catch (error) {
-				console.error("❌ Comparison test failed:", error);
-
-				// Log the error details for debugging
-				if (error instanceof Error) {
-					console.log("🔍 Error details:");
-					console.log(`   Message: ${error.message}`);
-					console.log(`   Stack: ${error.stack}`);
-				}
-
-				throw error;
-			}
+			expect(regularDocument.id).not.toBe(gasStationDocument.id);
 		}, 60000);
+	});
+
+	describe("Document Update Operations with Gas Station", () => {
+		let testDocument: any;
+		let testDocumentId: string;
+
+		test("Should create a test document for update operations", async () => {
+			const connector = new IotaIdentityConnector({
+				config: gasStationConfig
+			});
+
+			testDocument = await connector.createDocument(TEST_IDENTITY_ID);
+			testDocumentId = testDocument.id;
+
+			expect(testDocument).toBeDefined();
+			expect(testDocumentId).toBeDefined();
+			expect(testDocumentId.includes("did:iota:")).toBe(true);
+		}, 30000);
+
+		test("Should add verification method using gas station", async () => {
+			const connector = new IotaIdentityConnector({
+				config: gasStationConfig
+			});
+
+			const verificationMethodType = "authentication";
+			const verificationMethodId = "gasStationTestVerificationMethod";
+
+			const addedMethod = await connector.addVerificationMethod(
+				TEST_IDENTITY_ID,
+				testDocumentId,
+				verificationMethodType,
+				verificationMethodId
+			);
+
+			expect(addedMethod).toBeDefined();
+			expect(addedMethod.id).toEqual(`${testDocumentId}#${verificationMethodId}`);
+			expect(addedMethod.type).toEqual("JsonWebKey2020");
+		}, 60000);
+
+		test("Should remove verification method using gas station", async () => {
+			const connector = new IotaIdentityConnector({
+				config: gasStationConfig
+			});
+
+			await expect(
+				connector.removeVerificationMethod(
+					TEST_IDENTITY_ID,
+					`${testDocumentId}#gasStationTestVerificationMethod`
+				)
+			).resolves.toBeUndefined();
+		}, 30000);
+
+		test("Should add service using gas station", async () => {
+			const connector = new IotaIdentityConnector({
+				config: gasStationConfig
+			});
+
+			await expect(
+				connector.addService(
+					TEST_IDENTITY_ID,
+					testDocumentId,
+					"testService",
+					"LinkedDomains",
+					"https://example.com"
+				)
+			).resolves.toBeDefined();
+		}, 30000);
+
+		test("Should remove service using gas station", async () => {
+			const connector = new IotaIdentityConnector({
+				config: gasStationConfig
+			});
+
+			await expect(
+				connector.removeService(TEST_IDENTITY_ID, `${testDocumentId}#testService`)
+			).resolves.toBeUndefined();
+		}, 30000);
+
+		test("Should revoke verifiable credentials using gas station", async () => {
+			const connector = new IotaIdentityConnector({
+				config: gasStationConfig
+			});
+
+			await expect(
+				connector.revokeVerifiableCredentials(TEST_IDENTITY_ID, testDocumentId, [1, 2])
+			).resolves.toBeUndefined();
+		}, 30000);
+
+		test("Should unrevoke verifiable credentials using gas station", async () => {
+			const connector = new IotaIdentityConnector({
+				config: gasStationConfig
+			});
+
+			await expect(
+				connector.unrevokeVerifiableCredentials(TEST_IDENTITY_ID, testDocumentId, [1, 2])
+			).resolves.toBeUndefined();
+		}, 30000);
 	});
 
 	describe("Gas Station Error Handling", () => {
 		test("Should handle gas station unavailable gracefully", async () => {
 			const invalidGasStationConfig: IIotaIdentityConnectorConfig = {
 				clientOptions: TEST_CLIENT_OPTIONS,
+				vaultMnemonicId: TEST_MNEMONIC_NAME,
 				network: TEST_NETWORK,
 				gasStation: {
 					gasStationUrl: "http://localhost:9999", // Invalid port
@@ -184,21 +218,16 @@ describe("IotaIdentityConnector with Gas Station", () => {
 				config: invalidGasStationConfig
 			});
 
-			try {
-				await connector.createDocument(TEST_IDENTITY_ID);
-				// If we get here, the test should fail because we expect an error
-				expect(true).toBe(false);
-			} catch (error) {
-				console.log("✅ Correctly handled gas station unavailable error");
-				expect(error).toBeDefined();
-				// Should be a network/connection error
-				expect(error instanceof Error).toBe(true);
-			}
+			await expect(connector.createDocument(TEST_IDENTITY_ID)).rejects.toMatchObject({
+				name: "GeneralError",
+				message: "iotaIdentityConnector.createDocumentFailed"
+			});
 		}, 20000);
 
 		test("Should handle invalid gas station auth token", async () => {
 			const invalidAuthConfig: IIotaIdentityConnectorConfig = {
 				clientOptions: TEST_CLIENT_OPTIONS,
+				vaultMnemonicId: TEST_MNEMONIC_NAME,
 				network: TEST_NETWORK,
 				gasStation: {
 					gasStationUrl: GAS_STATION_URL,
@@ -210,16 +239,29 @@ describe("IotaIdentityConnector with Gas Station", () => {
 				config: invalidAuthConfig
 			});
 
-			try {
-				await connector.createDocument(TEST_IDENTITY_ID);
-				// If we get here, the test should fail because we expect an error
-				expect(true).toBe(false);
-			} catch (error) {
-				console.log("✅ Correctly handled invalid auth token error");
-				expect(error).toBeDefined();
-				// Should be an authentication error
-				expect(error instanceof Error).toBe(true);
-			}
+			await expect(connector.createDocument(TEST_IDENTITY_ID)).rejects.toMatchObject({
+				name: "GeneralError",
+				message: "iotaIdentityConnector.createDocumentFailed"
+			});
+		}, 20000);
+
+		test("Should handle document update errors with gas station", async () => {
+			const connector = new IotaIdentityConnector({
+				config: gasStationConfig
+			});
+
+			// Test with invalid document ID
+			await expect(
+				connector.addVerificationMethod(
+					TEST_IDENTITY_ID,
+					"invalid:document:id",
+					DidVerificationMethodType.AssertionMethod,
+					"testMethod"
+				)
+			).rejects.toMatchObject({
+				name: "GeneralError",
+				message: "iotaIdentityConnector.addVerificationMethodFailed"
+			});
 		}, 20000);
 	});
 });

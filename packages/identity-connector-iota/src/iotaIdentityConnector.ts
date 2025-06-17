@@ -32,11 +32,17 @@ import {
 	EdDSAJwsVerifier,
 	JwkType,
 	Jwt,
+	type CreateProposal,
+	type UpdateDid,
+	type OnChainIdentity,
+	type ControllerToken,
 	type IJwkParams,
 	type DIDUrl,
 	type ICredential,
 	type IPresentation
 } from "@iota/identity-wasm/node/index.js";
+
+import type { TransactionBuilder } from "@iota/iota-interaction-ts/node/transaction_internal.js";
 import { IotaClient } from "@iota/iota-sdk/client";
 import {
 	GeneralError,
@@ -66,6 +72,10 @@ import {
 } from "@twin.org/standards-w3c-did";
 import { VaultConnectorFactory, type IVaultConnector, VaultKeyType } from "@twin.org/vault-models";
 import { Jwk as JwkHelper } from "@twin.org/web";
+import type { IGasStationCreatedObject } from "./models/IGasStationCreatedObject";
+import type { IGasStationTransactionResult } from "./models/IGasStationTransactionResult";
+import type { IIdentityBuilder } from "./models/IIdentityBuilder";
+import type { IIdentityTransactionResult } from "./models/IIdentityTransactionResult";
 import type { IIotaIdentityConnectorConfig } from "./models/IIotaIdentityConnectorConfig";
 import type { IIotaIdentityConnectorConstructorOptions } from "./models/IIotaIdentityConnectorConstructorOptions";
 import { getIdentityPkgId } from "./utils/iotaIdentityUtils";
@@ -151,77 +161,19 @@ export class IotaIdentityConnector implements IIdentityConnector {
 			const revocationServiceId = document.id().join("#revocation");
 			document.insertService(revocationBitmap.toService(revocationServiceId));
 
-			// Use conditional execution based on gas station config
 			const executionResult = await this.executeIdentityTransaction(
 				controller,
 				identityClient.createIdentity(document)
 			);
 
-			// eslint-disable-next-line no-console
-			console.log("🔍 Identity creation result:", executionResult);
+			const did = this.extractDidFromExecutionResult(executionResult, networkHrp);
 
-			// Handle different result types: regular vs gas station
-			let did: IotaDID;
-
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
-			if ((executionResult as any)?.output?.didDocument) {
-				// Regular execution: identity object with didDocument method
-				// eslint-disable-next-line @typescript-eslint/no-explicit-any
-				const identity = (executionResult as any).output;
-				did = identity.didDocument().id();
-				// eslint-disable-next-line @typescript-eslint/no-explicit-any
-			} else if ((executionResult as any)?.output?.effects?.created) {
-				// Gas station execution: transaction effects with created objects
-				// eslint-disable-next-line @typescript-eslint/no-explicit-any
-				const txEffects = (executionResult as any).output;
-
-				// Find the identity object from created objects
-				// According to IOTA Identity spec, the Identity object is a SHARED object, not owned
-				const createdObjects = txEffects.effects.created || [];
-
-				// eslint-disable-next-line @typescript-eslint/no-explicit-any
-				const identityObject = createdObjects.find(
-					// eslint-disable-next-line @typescript-eslint/no-explicit-any
-					(obj: any) => obj.owner?.Shared !== undefined // Look for shared objects
-				);
-
-				if (!identityObject) {
-					throw new GeneralError(this.CLASS_NAME, "identityObjectNotFound", {
-						createdObjects: createdObjects.length,
-						// eslint-disable-next-line @typescript-eslint/no-explicit-any
-						owners: createdObjects.map((obj: any) => obj.owner)
-					});
-				}
-
-				// Extract the object ID and create the DID
-				const objectId = identityObject.reference?.objectId || identityObject.reference?.object_id;
-				if (!objectId) {
-					throw new GeneralError(this.CLASS_NAME, "objectIdNotFound", identityObject);
-				}
-
-				// Create DID from the object ID (IOTA Identity format: did:iota:{network}:{aliasId})
-				const aliasId = objectId;
-				did = IotaDID.parse(`did:iota:${networkHrp}:${aliasId}`);
-			} else {
-				throw new GeneralError(this.CLASS_NAME, "unexpectedExecutionResult", {
-					resultType: typeof executionResult,
-					// eslint-disable-next-line @typescript-eslint/no-explicit-any
-					hasOutput: Boolean((executionResult as any)?.output),
-					// eslint-disable-next-line @typescript-eslint/no-explicit-any
-					outputType: typeof (executionResult as any)?.output
-				});
-			}
-
-			// Resolve the DID document from the blockchain (works for both regular and gas station)
-			// For gas station transactions, we may need to wait for the transaction to be fully confirmed
+			// Resolve the DID document from the blockchain, for gas station transactions, we may need to wait for the transaction to be fully confirmed
 			const resolved = await this.resolveDIDWithRetry(identityClient, did);
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
-			const doc = (resolved as any).toJSON() as { doc: IDidDocument };
 
-			// eslint-disable-next-line no-console
-			console.log("Final resolved document ID:", doc.doc.id);
+			const docJson = resolved.toJSON() as { doc: IDidDocument };
 
-			return doc.doc;
+			return docJson.doc;
 		} catch (error) {
 			throw new GeneralError(
 				this.CLASS_NAME,
@@ -308,10 +260,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 				throw new GeneralError(this.CLASS_NAME, "missingControllerToken");
 			}
 
-			await identityOnChain
-				.updateDidDocument(document.clone(), controllerToken)
-				.withGasBudget(BigInt(this._gasBudget))
-				.buildAndExecute(identityClient);
+			await this.executeDocumentUpdate(controller, identityOnChain, document, controllerToken);
 
 			return method.toJSON() as IDidDocumentVerificationMethod;
 		} catch (error) {
@@ -375,10 +324,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 				throw new GeneralError(this.CLASS_NAME, "missingControllerToken");
 			}
 
-			await identityOnChain
-				.updateDidDocument(document.clone(), controllerToken)
-				.withGasBudget(BigInt(this._gasBudget))
-				.buildAndExecute(identityClient);
+			await this.executeDocumentUpdate(controller, identityOnChain, document, controllerToken);
 		} catch (error) {
 			throw new GeneralError(
 				this.CLASS_NAME,
@@ -438,10 +384,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 				throw new GeneralError(this.CLASS_NAME, "missingControllerToken");
 			}
 
-			await identityOnChain
-				.updateDidDocument(document.clone(), controllerToken)
-				.withGasBudget(BigInt(this._gasBudget))
-				.buildAndExecute(identityClient);
+			await this.executeDocumentUpdate(controller, identityOnChain, document, controllerToken);
 
 			return service.toJSON() as unknown as IDidService;
 		} catch (error) {
@@ -498,10 +441,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 				throw new GeneralError(this.CLASS_NAME, "missingControllerToken");
 			}
 
-			await identityOnChain
-				.updateDidDocument(document.clone(), controllerToken)
-				.withGasBudget(BigInt(this._gasBudget))
-				.buildAndExecute(identityClient);
+			await this.executeDocumentUpdate(controller, identityOnChain, document, controllerToken);
 		} catch (error) {
 			throw new GeneralError(
 				this.CLASS_NAME,
@@ -747,10 +687,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 				throw new GeneralError(this.CLASS_NAME, "missingControllerToken");
 			}
 
-			await identityOnChain
-				.updateDidDocument(document.clone(), controllerToken)
-				.withGasBudget(BigInt(this._gasBudget))
-				.buildAndExecute(identityClient);
+			await this.executeDocumentUpdate(controller, identityOnChain, document, controllerToken);
 		} catch (error) {
 			throw new GeneralError(this.CLASS_NAME, "revokeVerifiableCredentialsFailed", {
 				error: BaseError.fromError(error)
@@ -804,10 +741,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 				throw new GeneralError(this.CLASS_NAME, "missingControllerToken");
 			}
 
-			await identityOnChain
-				.updateDidDocument(document.clone(), controllerToken)
-				.withGasBudget(BigInt(this._gasBudget))
-				.buildAndExecute(identityClient);
+			await this.executeDocumentUpdate(controller, identityOnChain, document, controllerToken);
 		} catch (error) {
 			throw new GeneralError(this.CLASS_NAME, "unrevokeVerifiableCredentialsFailed", {
 				error: BaseError.fromError(error)
@@ -1258,6 +1192,109 @@ export class IotaIdentityConnector implements IIdentityConnector {
 	}
 
 	/**
+	 * Extract DID from execution result, handling both regular and gas station transaction formats.
+	 * @param executionResult The transaction execution result.
+	 * @param networkHrp The network HRP for DID construction.
+	 * @returns The extracted DID.
+	 * @throws GeneralError if the execution result format is unexpected.
+	 * @internal
+	 */
+	private extractDidFromExecutionResult(
+		executionResult: IIdentityTransactionResult,
+		networkHrp: string
+	): IotaDID {
+		const regularDid = this.tryExtractDidFromRegularTransaction(executionResult);
+		if (regularDid) {
+			return regularDid;
+		}
+
+		return this.extractDidFromGasStationTransaction(executionResult, networkHrp);
+	}
+
+	/**
+	 * Attempts to extract DID from a regular transaction result.
+	 * @param executionResult The execution result.
+	 * @returns The DID if found, undefined otherwise.
+	 * @internal
+	 */
+	private tryExtractDidFromRegularTransaction(
+		executionResult: IIdentityTransactionResult
+	): IotaDID | undefined {
+		if (
+			executionResult.output?.didDocument &&
+			typeof executionResult.output.didDocument === "function"
+		) {
+			return executionResult.output.didDocument().id();
+		}
+		return undefined;
+	}
+
+	/**
+	 * Extracts DID from gas station transaction result.
+	 * @param executionResult The execution result.
+	 * @param networkHrp The network HRP for constructing the DID.
+	 * @returns The extracted DID.
+	 * @throws GeneralError if the DID cannot be extracted.
+	 * @internal
+	 */
+	private extractDidFromGasStationTransaction(
+		executionResult: IIdentityTransactionResult,
+		networkHrp: string
+	): IotaDID {
+		const gasStationResult = executionResult as unknown as IGasStationTransactionResult;
+
+		const did = this.tryExtractDidFromGasStationEffects(
+			gasStationResult.effects?.created,
+			networkHrp
+		);
+
+		if (did) {
+			return did;
+		}
+
+		throw new GeneralError(this.CLASS_NAME, "unexpectedExecutionResult", {
+			resultType: typeof executionResult,
+			availableKeys: Object.keys(executionResult ?? {}),
+			effectsKeys: Object.keys(gasStationResult.effects ?? {})
+		});
+	}
+
+	/**
+	 * Attempts to extract DID from gas station transaction effects.
+	 * @param createdObjects The created objects from transaction effects.
+	 * @param networkHrp The network HRP for constructing the DID.
+	 * @returns The DID if found, undefined otherwise.
+	 * @internal
+	 */
+	private tryExtractDidFromGasStationEffects(
+		createdObjects: IGasStationCreatedObject[] | undefined,
+		networkHrp: string
+	): IotaDID | undefined {
+		if (!Is.arrayValue(createdObjects)) {
+			return undefined;
+		}
+
+		// Identity object is a SHARED object on IOTA
+		const identityObject = createdObjects.find(
+			obj => Is.object(obj.owner) && Is.object(obj.owner.Shared)
+		);
+
+		if (Is.undefined(identityObject)) {
+			return undefined;
+		}
+
+		const objectId = ObjectHelper.propertyGet<string>(identityObject, "reference.objectId");
+
+		if (Is.empty(objectId)) {
+			throw new GeneralError(this.CLASS_NAME, "objectIdNotFound", {
+				identityObject: JSON.stringify(identityObject)
+			});
+		}
+
+		return IotaDID.parse(`did:iota:${networkHrp}:${objectId}`);
+	}
+
+	/**
 	 * Extracts the alias ID from a document ID.
 	 * @param documentId The document ID to extract from.
 	 * @returns The alias ID.
@@ -1286,202 +1323,85 @@ export class IotaIdentityConnector implements IIdentityConnector {
 	/**
 	 * Execute identity transaction with conditional gas station support.
 	 * @param controller The controller identity.
-	 * @param transactionBuilder The identity transaction builder.
+	 * @param identityBuilder The identity builder from createIdentity().
 	 * @returns The execution result.
 	 * @internal
 	 */
 	private async executeIdentityTransaction(
 		controller: string,
-		transactionBuilder: unknown
-	): Promise<unknown> {
-		// Check if gas station is configured
-		if (this._config.gasStation) {
-			return this.executeIdentityTransactionWithGasStation(controller, transactionBuilder);
+		identityBuilder: IIdentityBuilder
+	): Promise<IIdentityTransactionResult> {
+		if (Is.object(this._config.gasStation)) {
+			return this.executeIdentityTransactionWithGasStation(controller, identityBuilder);
 		}
 
-		// Regular execution
 		const identityClient = await this.getIdentityClient(controller);
-		// eslint-disable-next-line no-console
-		console.log("🔧 Regular execution - calling finish().buildAndExecute()");
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		return (transactionBuilder as any).finish().buildAndExecute(identityClient);
+		return identityBuilder.finish().buildAndExecute(identityClient);
 	}
 
 	/**
 	 * Execute identity transaction with gas station sponsoring.
 	 * @param controller The controller identity.
-	 * @param transactionBuilder The identity transaction builder.
+	 * @param identityBuilder The identity builder from createIdentity().
 	 * @returns The execution result.
 	 * @internal
 	 */
 	private async executeIdentityTransactionWithGasStation(
 		controller: string,
-		transactionBuilder: unknown
-	): Promise<unknown> {
+		identityBuilder: IIdentityBuilder
+	): Promise<IIdentityTransactionResult> {
 		try {
-			// eslint-disable-next-line no-console
-			console.log("Gas station execution starting for controller:", controller);
 			const identityClient = await this.getIdentityClient(controller);
 
-			// Get user address for gas station - this is essential as the user remains the sender
-			const seed = await Iota.getSeed(this._config, this._vaultConnector, controller);
-			const addresses = Iota.getAddresses(
-				seed,
-				this._config.coinType ?? Iota.DEFAULT_COIN_TYPE,
-				0, // account index
-				this._walletAddressIndex, // address index
-				1, // count
-				false // is internal
-			);
-			const userAddress = addresses[0]; // User address is needed as the transaction sender
-			// eslint-disable-next-line no-console
-			console.log("User address:", userAddress);
+			// Get user address for gas station, as the user remains the sender
+			const userAddress = await this.getUserAddress(controller);
 
-			// Reserve gas from station
 			const gasBudget = this._config.gasBudget ?? this._gasBudget;
 			const gasReservation = await Iota.reserveGas(this._config, gasBudget);
-			// eslint-disable-next-line no-console
-			console.log("Gas reservation ID:", gasReservation.reservation_id);
-			// eslint-disable-next-line no-console
-			console.log("Gas coins count:", gasReservation.gas_coins.length);
 
-			// Convert gas_coins version values from number to string for Identity SDK WASM compatibility
 			const gasCoinsWithStringVersions = gasReservation.gas_coins.map(coin => ({
 				objectId: coin.objectId,
-				version: String(coin.version), // Convert number to string
+				version: String(coin.version),
 				digest: coin.digest
 			}));
-			// eslint-disable-next-line no-console
-			console.log("Converted gas coins versions to strings for WASM compatibility");
 
-			// Build transaction with gas sponsor parameters using the confirmed available methods
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
-			const finishedBuilder = (transactionBuilder as any).finish();
-			// eslint-disable-next-line no-console
-			console.log("Finished builder obtained, attempting to configure gas parameters...");
+			const finishedBuilder = identityBuilder.finish();
 
-			// Use the withGas* methods that are confirmed to be available
-			try {
-				const gasConfiguredBuilder = finishedBuilder
-					.withSender(userAddress)
-					.withGasBudget(BigInt(gasBudget))
-					.withGasOwner(gasReservation.sponsor_address)
-					.withGasPayment(gasCoinsWithStringVersions)
-					.withGasPrice(BigInt(1000)); // Standard gas price
+			const standardGasPrice = BigInt(1000);
 
-				// eslint-disable-next-line no-console
-				console.log("Gas parameters configured, building transaction...");
+			const gasConfiguredBuilder = finishedBuilder
+				.withSender(userAddress)
+				.withGasBudget(BigInt(gasBudget))
+				.withGasOwner(gasReservation.sponsor_address)
+				.withGasPayment(gasCoinsWithStringVersions)
+				.withGasPrice(standardGasPrice);
 
-				// Build transaction to get byte array for gas station submission
-				const buildResult = await gasConfiguredBuilder.build(identityClient);
-				// eslint-disable-next-line no-console
-				console.log("Build completed, checking result format...");
+			const buildResult = await gasConfiguredBuilder.build(identityClient);
 
-				if (
-					Array.isArray(buildResult) &&
-					buildResult.length === 3 &&
-					buildResult[0] instanceof Uint8Array
-				) {
-					const [txBytes, signatures] = buildResult;
-					// eslint-disable-next-line no-console
-					console.log("Transaction bytes length:", txBytes.length);
+			if (Is.arrayValue(buildResult) && buildResult.length === 3 && Is.uint8Array(buildResult[0])) {
+				const [txBytes, signatures] = buildResult;
 
-					// Execute via gas station
-					// eslint-disable-next-line no-console
-					console.log("Submitting to gas station...");
+				const txEffects = await Iota.executeGasStationTransaction(
+					this._config,
+					gasReservation.reservation_id,
+					txBytes,
+					signatures[0]
+				);
 
-					// Log detailed request information for debugging
-					// eslint-disable-next-line no-console
-					console.log("🔍 GAS STATION DEBUG - Request Details:");
-					// eslint-disable-next-line no-console
-					console.log(`  - Reservation ID: ${gasReservation.reservation_id}`);
-					// eslint-disable-next-line no-console
-					console.log(`  - Transaction bytes length: ${txBytes.length}`);
-					// eslint-disable-next-line no-console
-					console.log(
-						`  - First 100 bytes (hex): ${Array.from(txBytes.slice(0, 100))
-							.map(b => b.toString(16).padStart(2, "0"))
-							.join("")}`
-					);
-					// eslint-disable-next-line no-console
-					console.log(`  - Signature: ${signatures[0].slice(0, 50)}...`);
-					// eslint-disable-next-line no-console
-					console.log(`  - Gas station URL: ${this._config.gasStation?.gasStationUrl}`);
-
-					// Add timeout handling for gas station execution
-					const gasStationPromise = Iota.executeGasStationTransaction(
-						this._config,
-						gasReservation.reservation_id,
-						txBytes,
-						signatures[0] // Use the first signature
-					);
-
-					// Set a reasonable timeout for gas station response (15 seconds)
-					const timeoutPromise = new Promise((resolve, reject) => {
-						setTimeout(
-							() =>
-								reject(
-									new GeneralError(this.CLASS_NAME, "gasStationTimeout", {
-										message: "Gas station request timed out after 15 seconds"
-									})
-								),
-							15000
-						);
-					});
-
-					// eslint-disable-next-line no-console
-					console.log("Waiting for gas station response (15s timeout)...");
-
-					try {
-						const txEffects = await Promise.race([gasStationPromise, timeoutPromise]);
-
-						// eslint-disable-next-line no-console
-						console.log("Gas station response received successfully!");
-						// eslint-disable-next-line no-console
-						console.log("Transaction effects type:", typeof txEffects);
-
-						// For gas station transactions, we need to process the txEffects differently
-						// The identity document is created as an object in the transaction effects
-						// We need to return a structure that mimics the regular Identity SDK result
-						return {
-							output: txEffects,
-							didDocument: undefined, // Gas station doesn't return the document directly
-							// eslint-disable-next-line @typescript-eslint/no-explicit-any
-							txEffects: txEffects as any // Store the raw effects for potential future processing
-						};
-					} catch (gasStationError: unknown) {
-						// Enhanced error logging
-						// eslint-disable-next-line no-console
-						console.log("🔍 GAS STATION DEBUG - Error Details:");
-						// eslint-disable-next-line no-console
-						console.log(`  - Error type: ${typeof gasStationError}`);
-						// eslint-disable-next-line no-console, @typescript-eslint/no-explicit-any
-						console.log(`  - Error message: ${(gasStationError as any)?.message ?? "unknown"}`);
-						// eslint-disable-next-line no-console, @typescript-eslint/no-explicit-any
-						console.log(`  - Error source: ${(gasStationError as any)?.source ?? "unknown"}`);
-						// eslint-disable-next-line no-console, @typescript-eslint/no-explicit-any
-						console.log("  - Error properties:", (gasStationError as any)?.properties || "none");
-						// eslint-disable-next-line no-console
-						console.log("  - Full error object:", JSON.stringify(gasStationError, null, 2));
-
-						throw gasStationError; // Re-throw for handling
-					}
-				}
-
-				throw new GeneralError(this.CLASS_NAME, "gasStationTransactionBuildFailed", {
-					message: "Build result doesn't match expected [Uint8Array, signatures] pattern",
-					buildResultType: typeof buildResult,
-					isArray: Array.isArray(buildResult),
-					length: Array.isArray(buildResult) ? buildResult.length : "not array"
-				});
-			} catch (gasConfigError) {
-				// eslint-disable-next-line no-console
-				console.log("Error in gas configuration or build:", gasConfigError);
-				throw gasConfigError;
+				return txEffects as unknown as IIdentityTransactionResult;
 			}
+
+			throw new GeneralError(
+				this.CLASS_NAME,
+				"gasStationTransactionBuildFailed",
+				{
+					buildResultType: typeof buildResult,
+					isArray: Is.arrayValue(buildResult),
+					length: Is.arrayValue(buildResult) ? buildResult.length : "not array"
+				},
+				Iota.extractPayloadError(buildResult)
+			);
 		} catch (error) {
-			// eslint-disable-next-line no-console
-			console.log("Gas station transaction failed with error:", error);
 			throw new GeneralError(
 				this.CLASS_NAME,
 				"gasStationTransactionFailed",
@@ -1502,10 +1422,10 @@ export class IotaIdentityConnector implements IIdentityConnector {
 		const addresses = Iota.getAddresses(
 			seed,
 			this._config.coinType ?? Iota.DEFAULT_COIN_TYPE,
-			0, // account index
-			this._walletAddressIndex, // address index
-			1, // count
-			false // is internal
+			0,
+			this._walletAddressIndex,
+			1,
+			false
 		);
 		return addresses[0];
 	}
@@ -1520,51 +1440,134 @@ export class IotaIdentityConnector implements IIdentityConnector {
 	 * @internal
 	 */
 	private async resolveDIDWithRetry(
-		identityClient: unknown,
-		did: unknown,
+		identityClient: IdentityClient,
+		did: IotaDID,
 		maxRetries: number = 5,
 		baseDelay: number = 1000
-	): Promise<unknown> {
+	): Promise<IotaDocument> {
 		for (let attempt = 0; attempt <= maxRetries; attempt++) {
 			try {
-				// eslint-disable-next-line no-console
-				console.log(
-					`🔍 DID resolution attempt ${attempt + 1}/${maxRetries + 1} for:`,
-					// eslint-disable-next-line @typescript-eslint/no-explicit-any
-					(did as any).toString()
-				);
+				const resolved = await identityClient.resolveDid(did);
 
-				// eslint-disable-next-line @typescript-eslint/no-explicit-any
-				const resolved = await (identityClient as any).resolveDid(did);
-
-				if (resolved) {
-					// eslint-disable-next-line no-console
-					console.log("✅ DID resolution successful!");
+				if (Is.notEmpty(resolved)) {
 					return resolved;
 				}
 
-				throw new GeneralError(this.CLASS_NAME, "didResolutionFailed", {
-					message: "Resolved document is null/undefined"
-				});
+				throw new GeneralError(this.CLASS_NAME, "didResolutionFailed");
 			} catch (error) {
-				// eslint-disable-next-line no-console
-				console.log(`❌ DID resolution attempt ${attempt + 1} failed:`, (error as Error).message);
-
 				if (attempt === maxRetries) {
-					// Final attempt failed
 					throw error;
 				}
-
 				// Calculate exponential backoff delay
 				const delay = baseDelay * Math.pow(2, attempt);
-				// eslint-disable-next-line no-console
-				console.log(`⏳ Waiting ${delay}ms before retry ${attempt + 2}...`);
-
 				// Wait before next attempt
 				await new Promise(resolve => setTimeout(resolve, delay));
 			}
 		}
 
-		throw new GeneralError(this.CLASS_NAME, "didResolutionFailedAllRetries");
+		throw new GeneralError(this.CLASS_NAME, "didResolutionFailedAllRetries", {
+			did: did.toString()
+		});
+	}
+
+	/**
+	 * Execute document update transaction with conditional gas station support.
+	 * @param controller The controller identity.
+	 * @param identityOnChain The on-chain identity to update.
+	 * @param document The document to update.
+	 * @param controllerToken The controller token.
+	 * @returns The execution result.
+	 * @internal
+	 */
+	private async executeDocumentUpdate(
+		controller: string,
+		identityOnChain: OnChainIdentity,
+		document: IotaDocument,
+		controllerToken: ControllerToken
+	): Promise<IIdentityTransactionResult> {
+		const updateBuilder = identityOnChain
+			.updateDidDocument(document.clone(), controllerToken)
+			.withGasBudget(BigInt(this._gasBudget));
+
+		if (Is.object(this._config.gasStation)) {
+			return this.executeDocumentUpdateWithGasStation(controller, updateBuilder);
+		}
+
+		const identityClient = await this.getIdentityClient(controller);
+		return updateBuilder.buildAndExecute(identityClient) as unknown as IIdentityTransactionResult;
+	}
+
+	/**
+	 * Execute document update transaction with gas station sponsoring.
+	 * @param controller The controller identity.
+	 * @param updateBuilder The document update builder.
+	 * @returns The execution result.
+	 * @internal
+	 */
+	// eslint-disable-next-line no-console
+	private async executeDocumentUpdateWithGasStation(
+		controller: string,
+		updateBuilder: TransactionBuilder<CreateProposal<UpdateDid>>
+	): Promise<IIdentityTransactionResult> {
+		try {
+			const identityClient = await this.getIdentityClient(controller);
+
+			// Get user address for gas station, as the user remains the sender
+			const userAddress = await this.getUserAddress(controller);
+
+			const gasBudget = this._config.gasBudget ?? this._gasBudget;
+			const gasReservation = await Iota.reserveGas(this._config, gasBudget);
+
+			const gasCoinsWithStringVersions = gasReservation.gas_coins.map(coin => ({
+				objectId: coin.objectId,
+				version: String(coin.version),
+				digest: coin.digest
+			}));
+
+			const standardGasPrice = BigInt(1000);
+
+			const gasConfiguredBuilder = updateBuilder
+				.withSender(userAddress)
+				.withGasBudget(BigInt(gasBudget))
+				.withGasOwner(gasReservation.sponsor_address)
+				.withGasPayment(gasCoinsWithStringVersions)
+				.withGasPrice(standardGasPrice);
+
+			const buildResult = await gasConfiguredBuilder.build(identityClient);
+
+			if (Is.arrayValue(buildResult) && buildResult.length === 3 && Is.uint8Array(buildResult[0])) {
+				const [txBytes, signatures] = buildResult as [Uint8Array, string[], unknown];
+
+				const txEffects = await Iota.executeGasStationTransaction(
+					this._config,
+					gasReservation.reservation_id,
+					txBytes,
+					signatures[0]
+				);
+
+				return txEffects as unknown as IIdentityTransactionResult;
+			}
+
+			throw new GeneralError(this.CLASS_NAME, "gasStationTransactionBuildFailed", {
+				buildResultType: typeof buildResult,
+				isArray: Is.arrayValue(buildResult),
+				length: Is.arrayValue(buildResult) ? buildResult.length : "not array"
+			});
+		} catch (error) {
+			throw new GeneralError(
+				this.CLASS_NAME,
+				"gasStationDocumentUpdateFailed",
+				undefined,
+				Iota.extractPayloadError(error)
+			);
+		}
 	}
 }
+
+// TODO:
+// - Test the docker gas station for the DLT
+// - Add docker gas station for the identity package git
+// - Add tests for the NFT package to use the gas station
+// - Add docker gas station for the NFT package git
+// - Add tests for the Verifiable Storage package to use the gas station
+// - Add docker gas station for the Verifiable Storage package git
