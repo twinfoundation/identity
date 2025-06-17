@@ -1,5 +1,19 @@
 # @twin.org/identity-connector-Universal - Changelog
 
+## [0.0.1-next.48](https://github.com/twinfoundation/identity/compare/identity-connector-universal-v0.0.1-next.47...identity-connector-universal-v0.0.1-next.48) (2025-06-17)
+
+
+### Features
+
+* add mainnet support ([af56a38](https://github.com/twinfoundation/identity/commit/af56a382837896cd4e13d5814c0924c46658b99c))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @twin.org/identity-models bumped from 0.0.1-next.47 to 0.0.1-next.48
+
 ## [0.0.1-next.47](https://github.com/twinfoundation/identity/compare/identity-connector-universal-v0.0.1-next.46...identity-connector-universal-v0.0.1-next.47) (2025-06-12)
 
 
