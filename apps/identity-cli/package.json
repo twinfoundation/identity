@@ -47,6 +47,7 @@
 		"@twin.org/wallet-cli": "next",
 		"@twin.org/wallet-connector-iota": "next",
 		"@twin.org/wallet-models": "next",
+		"@twin.org/web": "next",
 		"commander": "14.0.0"
 	},
 	"devDependencies": {
