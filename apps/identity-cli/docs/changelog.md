@@ -1,5 +1,20 @@
 # @twin.org/identity-cli - Changelog
 
+## [0.0.1-next.49](https://github.com/twinfoundation/identity/compare/identity-cli-v0.0.1-next.48...identity-cli-v0.0.1-next.49) (2025-06-18)
+
+
+### Features
+
+* verification method output JWK and hex on CLI ([49db9da](https://github.com/twinfoundation/identity/commit/49db9da2371eafdcd7176ce44303961b9b8b8380))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @twin.org/identity-models bumped from 0.0.1-next.48 to 0.0.1-next.49
+    * @twin.org/identity-connector-iota bumped from 0.0.1-next.48 to 0.0.1-next.49
+
 ## [0.0.1-next.48](https://github.com/twinfoundation/identity/compare/identity-cli-v0.0.1-next.47...identity-cli-v0.0.1-next.48) (2025-06-17)
 
 
