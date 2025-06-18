@@ -39,7 +39,9 @@
 			"gasStationTransactionFailed": "Gas station transaction failed",
 			"gasStationDocumentUpdateFailed": "Gas station document update failed",
 			"didResolutionFailed": "DID resolution failed",
-			"didResolutionFailedAllRetries": "DID resolution failed after all retries"
+			"didResolutionFailedAllRetries": "DID resolution failed after all retries",
+			"invalidMaxRetries": "The maximum number of retries must be a positive integer, it is currently {maxRetries}",
+			"invalidBaseDelay": "The base delay must be a positive integer, it is currently {baseDelay}"
 		}
 	}
 }

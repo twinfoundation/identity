@@ -1,8 +1,8 @@
 // Copyright 2024 IOTA Stiftung.
 // SPDX-License-Identifier: Apache-2.0.
-import { Is, GeneralError } from "@twin.org/core";
+import { Is } from "@twin.org/core";
+import { DidVerificationMethodType, type IDidDocument } from "@twin.org/standards-w3c-did";
 import { describe, expect, test, beforeAll } from "vitest";
-import { DidVerificationMethodType } from "@twin.org/standards-w3c-did";
 import {
 	setupTestEnv,
 	TEST_CLIENT_OPTIONS,
@@ -106,7 +106,7 @@ describe("IotaIdentityConnector with Gas Station", () => {
 	});
 
 	describe("Document Update Operations with Gas Station", () => {
-		let testDocument: any;
+		let testDocument: IDidDocument;
 		let testDocumentId: string;
 
 		test("Should create a test document for update operations", async () => {

@@ -168,7 +168,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 
 			const did = this.extractDidFromExecutionResult(executionResult, networkHrp);
 
-			// Resolve the DID document from the blockchain, for gas station transactions, we may need to wait for the transaction to be fully confirmed
+			// For gas station transactions, we may need to wait for the transaction to be fully confirmed
 			const resolved = await this.resolveDIDWithRetry(identityClient, did);
 
 			const docJson = resolved.toJSON() as { doc: IDidDocument };
@@ -1418,6 +1418,8 @@ export class IotaIdentityConnector implements IIdentityConnector {
 	 * @internal
 	 */
 	private async getUserAddress(controller: string): Promise<string> {
+		Guards.stringValue(this.CLASS_NAME, nameof(controller), controller);
+
 		const seed = await Iota.getSeed(this._config, this._vaultConnector, controller);
 		const addresses = Iota.getAddresses(
 			seed,
@@ -1445,6 +1447,18 @@ export class IotaIdentityConnector implements IIdentityConnector {
 		maxRetries: number = 5,
 		baseDelay: number = 1000
 	): Promise<IotaDocument> {
+		Guards.object(this.CLASS_NAME, nameof(identityClient), identityClient);
+		Guards.object(this.CLASS_NAME, nameof(did), did);
+		Guards.integer(this.CLASS_NAME, nameof(maxRetries), maxRetries);
+		Guards.integer(this.CLASS_NAME, nameof(baseDelay), baseDelay);
+
+		if (maxRetries < 0) {
+			throw new GeneralError(this.CLASS_NAME, "invalidMaxRetries", { maxRetries });
+		}
+		if (baseDelay < 0) {
+			throw new GeneralError(this.CLASS_NAME, "invalidBaseDelay", { baseDelay });
+		}
+
 		for (let attempt = 0; attempt <= maxRetries; attempt++) {
 			try {
 				const resolved = await identityClient.resolveDid(did);
@@ -1485,6 +1499,11 @@ export class IotaIdentityConnector implements IIdentityConnector {
 		document: IotaDocument,
 		controllerToken: ControllerToken
 	): Promise<IIdentityTransactionResult> {
+		Guards.stringValue(this.CLASS_NAME, nameof(controller), controller);
+		Guards.object(this.CLASS_NAME, nameof(identityOnChain), identityOnChain);
+		Guards.object(this.CLASS_NAME, nameof(document), document);
+		Guards.object(this.CLASS_NAME, nameof(controllerToken), controllerToken);
+
 		const updateBuilder = identityOnChain
 			.updateDidDocument(document.clone(), controllerToken)
 			.withGasBudget(BigInt(this._gasBudget));
@@ -1509,6 +1528,9 @@ export class IotaIdentityConnector implements IIdentityConnector {
 		controller: string,
 		updateBuilder: TransactionBuilder<CreateProposal<UpdateDid>>
 	): Promise<IIdentityTransactionResult> {
+		Guards.stringValue(this.CLASS_NAME, nameof(controller), controller);
+		Guards.object(this.CLASS_NAME, nameof(updateBuilder), updateBuilder);
+
 		try {
 			const identityClient = await this.getIdentityClient(controller);
 
