@@ -31,33 +31,31 @@ docker pull iotaledger/gas-station:latest
 docker pull iotaledger/uni-resolver-driver-iota:v0.2.0-alpha
 
 # Start Redis
-docker run -d --name identity-redis -p 6379:6379 redis:7-alpine
+docker run -d --name twin-identity-redis -p 6379:6379 redis:7-alpine
 
 # Start Universal Resolver for Identity testing
-docker run -d --name universal-resolver -p 8080:8080 -e NETWORK=testnet iotaledger/uni-resolver-driver-iota:v0.2.0-alpha
+docker run -d --name twin-identity-universal-resolver -p 8080:8080 -e NETWORK=testnet iotaledger/uni-resolver-driver-iota:v0.2.0-alpha
 
 # Create gas station config file
-cat > gas-station-config.yaml << EOF
-signer-config:
-  local:
-    keypair: AKT1Ghtd+yNbI9fFCQin3FpiGx8xoUdJMe7iAhoFUm4f
-rpc-host-ip: 0.0.0.0
-rpc-port: 9527
-metrics-port: 9184
-storage-config:
-  redis:
-    redis_url: "redis://127.0.0.1:6379"
-fullnode-url: "https://api.testnet.iota.cafe"
-coin-init-config:
-  target-init-balance: 100000000
-  refresh-interval-sec: 86400
-daily-gas-usage-cap: 1500000000000
-access-controller:
-  access-policy: disabled
-EOF
+echo "signer-config:" > gas-station-config.yaml
+echo "  local:" >> gas-station-config.yaml
+echo "    keypair: AKT1Ghtd+yNbI9fFCQin3FpiGx8xoUdJMe7iAhoFUm4f" >> gas-station-config.yaml
+echo "rpc-host-ip: 0.0.0.0" >> gas-station-config.yaml
+echo "rpc-port: 9527" >> gas-station-config.yaml
+echo "metrics-port: 9184" >> gas-station-config.yaml
+echo "storage-config:" >> gas-station-config.yaml
+echo "  redis:" >> gas-station-config.yaml
+echo "    redis_url: \"redis://127.0.0.1:6379\"" >> gas-station-config.yaml
+echo "fullnode-url: \"https://api.testnet.iota.cafe\"" >> gas-station-config.yaml
+echo "coin-init-config:" >> gas-station-config.yaml
+echo "  target-init-balance: 100000000" >> gas-station-config.yaml
+echo "  refresh-interval-sec: 86400" >> gas-station-config.yaml
+echo "daily-gas-usage-cap: 1500000000000" >> gas-station-config.yaml
+echo "access-controller:" >> gas-station-config.yaml
+echo "  access-policy: disabled" >> gas-station-config.yaml
 
 # Start IOTA Gas Station
-docker run -d --name gas-station \
+docker run -d --name twin-identity-gas-station \
   -p 9527:9527 -p 9184:9184 \
   -v $(pwd)/gas-station-config.yaml:/config/config.yaml \
   --network host \
@@ -75,7 +73,7 @@ If you have the IOTA gas station repository cloned locally:
 git clone https://github.com/iotaledger/gas-station.git
 
 # Start Universal Resolver for Identity testing
-docker run -d --name universal-resolver -p 8080:8080 -e NETWORK=testnet iotaledger/uni-resolver-driver-iota:v0.2.0-alpha
+docker run -d --name twin-identity-universal-resolver -p 8080:8080 -e NETWORK=testnet iotaledger/uni-resolver-driver-iota:v0.2.0-alpha
 
 # Navigate to the gas station docker directory
 cd gas-station/docker
@@ -121,12 +119,12 @@ To stop the services when finished:
 
 ```shell
 # If using Option 1 (Standalone Docker Images)
-docker stop identity-redis gas-station universal-resolver
-docker rm identity-redis gas-station universal-resolver
+docker stop twin-identity-redis twin-identity-gas-station twin-identity-universal-resolver
+docker rm twin-identity-redis twin-identity-gas-station twin-identity-universal-resolver
 
 # If using Option 2 (Docker Compose from gas-station/docker directory)
 cd gas-station/docker && docker-compose down
-docker stop universal-resolver && docker rm universal-resolver
+docker stop twin-identity-universal-resolver && docker rm twin-identity-universal-resolver
 ```
 
 ## Examples

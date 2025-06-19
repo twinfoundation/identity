@@ -16,6 +16,10 @@ inputs:
   gas-station-auth:
     description: 'Gas station authentication token'
     required: true
+  package-name:
+    description: 'Package name to determine which services to start (use "all" to start all services)'
+    required: false
+    default: 'all'
 
 outputs:
   gas-station-url:
@@ -32,44 +36,46 @@ runs:
   using: 'composite'
   steps:
     - name: Start Redis
+      if: inputs.package-name == 'all' || contains(inputs.package-name, 'identity-connector-iota')
       shell: bash
       run: |
-        docker run -d --name redis -p 6379:6379 redis:7-alpine
+        docker run -d --name twin-identity-redis -p 6379:6379 redis:7-alpine
 
     - name: Start Universal Resolver
+      if: inputs.package-name == 'all' || contains(inputs.package-name, 'identity-connector-universal')
       shell: bash
       run: |
-        docker run -d --name universal-resolver -p 8080:8080 -e NETWORK=testnet \
+        docker run -d --name twin-identity-universal-resolver -p 8080:8080 -e NETWORK=testnet \
           iotaledger/uni-resolver-driver-iota:v0.2.0-alpha
         # Wait for the service to be ready
         sleep 5
 
     - name: Create gas station config
+      if: inputs.package-name == 'all' || contains(inputs.package-name, 'identity-connector-iota')
       shell: bash
       run: |
-        cat > gas-station-config.yaml << EOF
-        signer-config:
-          local:
-            keypair: AKT1Ghtd+yNbI9fFCQin3FpiGx8xoUdJMe7iAhoFUm4f
-        rpc-host-ip: 0.0.0.0
-        rpc-port: 9527
-        metrics-port: 9184
-        storage-config:
-          redis:
-            redis_url: "redis://127.0.0.1:6379"
-        fullnode-url: "${{ inputs.test-node-endpoint }}"
-        coin-init-config:
-          target-init-balance: 100000000
-          refresh-interval-sec: 86400
-        daily-gas-usage-cap: 1500000000000
-        access-controller:
-          access-policy: disabled
-        EOF
+        echo "signer-config:" > gas-station-config.yaml
+        echo "  local:" >> gas-station-config.yaml
+        echo "    keypair: AKT1Ghtd+yNbI9fFCQin3FpiGx8xoUdJMe7iAhoFUm4f" >> gas-station-config.yaml
+        echo "rpc-host-ip: 0.0.0.0" >> gas-station-config.yaml
+        echo "rpc-port: 9527" >> gas-station-config.yaml
+        echo "metrics-port: 9184" >> gas-station-config.yaml
+        echo "storage-config:" >> gas-station-config.yaml
+        echo "  redis:" >> gas-station-config.yaml
+        echo "    redis_url: \"redis://127.0.0.1:6379\"" >> gas-station-config.yaml
+        echo "fullnode-url: \"${{ inputs.test-node-endpoint }}\"" >> gas-station-config.yaml
+        echo "coin-init-config:" >> gas-station-config.yaml
+        echo "  target-init-balance: 100000000" >> gas-station-config.yaml
+        echo "  refresh-interval-sec: 86400" >> gas-station-config.yaml
+        echo "daily-gas-usage-cap: 1500000000000" >> gas-station-config.yaml
+        echo "access-controller:" >> gas-station-config.yaml
+        echo "  access-policy: disabled" >> gas-station-config.yaml
 
     - name: Start IOTA Gas Station
+      if: inputs.package-name == 'all' || contains(inputs.package-name, 'identity-connector-iota')
       shell: bash
       run: |
-        docker run -d --name gas-station \
+        docker run -d --name twin-identity-gas-station \
           -p 9527:9527 -p 9184:9184 \
           -v $(pwd)/gas-station-config.yaml:/config/config.yaml \
           --network host \
@@ -78,6 +84,7 @@ runs:
           --config-path /config/config.yaml
 
     - name: Wait for Gas Station
+      if: inputs.package-name == 'all' || contains(inputs.package-name, 'identity-connector-iota')
       shell: bash
       run: |
         echo "Waiting for gas station to start..."
@@ -91,6 +98,7 @@ runs:
         done
 
     - name: Fund Gas Station Sponsor
+      if: inputs.package-name == 'all' || contains(inputs.package-name, 'identity-connector-iota')
       shell: bash
       run: |
         echo "Getting sponsor address from gas station..."
