@@ -1,5 +1,19 @@
 # @twin.org/identity-connector-Universal - Changelog
 
+## [0.0.1-next.51](https://github.com/twinfoundation/identity/compare/identity-connector-universal-v0.0.1-next.50...identity-connector-universal-v0.0.1-next.51) (2025-06-19)
+
+
+### Miscellaneous Chores
+
+* **identity-connector-universal:** Synchronize repo versions
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @twin.org/identity-models bumped from 0.0.1-next.50 to 0.0.1-next.51
+
 ## [0.0.1-next.50](https://github.com/twinfoundation/identity/compare/identity-connector-universal-v0.0.1-next.49...identity-connector-universal-v0.0.1-next.50) (2025-06-19)
 
 

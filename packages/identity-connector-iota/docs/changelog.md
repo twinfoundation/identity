@@ -1,5 +1,19 @@
 # @twin.org/identity-connector-iota - Changelog
 
+## [0.0.1-next.51](https://github.com/twinfoundation/identity/compare/identity-connector-iota-v0.0.1-next.50...identity-connector-iota-v0.0.1-next.51) (2025-06-19)
+
+
+### Features
+
+* support mainnet for alias extraction ([1114e0f](https://github.com/twinfoundation/identity/commit/1114e0f518070ef930d7d6ed73a616cce647206c))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @twin.org/identity-models bumped from 0.0.1-next.50 to 0.0.1-next.51
+
 ## [0.0.1-next.50](https://github.com/twinfoundation/identity/compare/identity-connector-iota-v0.0.1-next.49...identity-connector-iota-v0.0.1-next.50) (2025-06-19)
 
 
