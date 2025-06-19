@@ -78,7 +78,8 @@
 				"privateKeyBase64": "Private Key Base64",
 				"publicKeyBase64": "Public Key Base64",
 				"privateKeyHex": "Private Key Hex",
-				"publicKeyHex": "Public Key Hex"
+				"publicKeyHex": "Public Key Hex",
+				"kid": "Key Id"
 			}
 		},
 		"verification-method-remove": {

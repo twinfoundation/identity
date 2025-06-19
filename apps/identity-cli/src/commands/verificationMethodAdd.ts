@@ -188,12 +188,16 @@ export async function actionCommandVerificationMethodAdd(
 		? Converter.bytesToHex(keyPair.publicKey, true)
 		: "";
 
+	const jwk = await Jwk.fromEd25519Private(keyPair.privateKey);
+	const kid = await Jwk.generateKid(jwk);
+
 	if (opts.console) {
 		CLIDisplay.value(
 			I18n.formatMessage("commands.verification-method-add.labels.verificationMethodId"),
 			verificationMethod.id
 		);
 
+		CLIDisplay.value(I18n.formatMessage("commands.verification-method-add.labels.kid"), kid);
 		CLIDisplay.value(
 			I18n.formatMessage("commands.verification-method-add.labels.privateKeyBase64"),
 			privateKeyBase64
@@ -216,8 +220,6 @@ export async function actionCommandVerificationMethodAdd(
 	}
 
 	if (Is.stringValue(opts?.json)) {
-		const jwk = await Jwk.fromEd25519Private(keyPair.privateKey);
-		const kid = await Jwk.generateKid(jwk);
 		await CLIUtils.writeJsonFile(
 			opts.json,
 			{
@@ -232,6 +234,7 @@ export async function actionCommandVerificationMethodAdd(
 			opts.env,
 			[
 				`DID_VERIFICATION_METHOD_ID="${verificationMethod.id}"`,
+				`DID_VERIFICATION_METHOD_KID="${kid}"`,
 				`DID_VERIFICATION_METHOD_PRIVATE_KEY="${privateKeyHex}"`,
 				`DID_VERIFICATION_METHOD_PUBLIC_KEY="${publicKeyHex}"`
 			],

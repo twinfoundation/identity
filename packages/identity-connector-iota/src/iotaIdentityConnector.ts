@@ -41,6 +41,7 @@ import {
 	Converter,
 	GeneralError,
 	Guards,
+	HexHelper,
 	Is,
 	NotFoundError,
 	ObjectHelper,
@@ -1196,18 +1197,19 @@ export class IotaIdentityConnector implements IIdentityConnector {
 		Guards.stringValue(this.CLASS_NAME, nameof(documentId), documentId);
 
 		const parts = documentId.split(":");
-		if (parts.length !== 4) {
-			throw new GeneralError(this.CLASS_NAME, "invalidDocumentIdFormat", {
-				documentId
-			});
+
+		if (parts[0] === "did" && parts[1] === "iota") {
+			if (parts.length === 3 && HexHelper.isHex(parts[2], true)) {
+				return parts[2];
+			}
+
+			if (parts.length === 4 && HexHelper.isHex(parts[3], true)) {
+				return parts[3];
+			}
 		}
 
-		if (parts[0] !== "did") {
-			throw new GeneralError(this.CLASS_NAME, "invalidDocumentIdFormat", {
-				documentId
-			});
-		}
-
-		return parts[3];
+		throw new GeneralError(this.CLASS_NAME, "invalidDocumentIdFormat", {
+			documentId: documentId ?? ""
+		});
 	}
 }
