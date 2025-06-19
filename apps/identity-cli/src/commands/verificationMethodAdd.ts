@@ -13,6 +13,7 @@ import { DidVerificationMethodType } from "@twin.org/standards-w3c-did";
 import { VaultConnectorFactory } from "@twin.org/vault-models";
 import { setupWalletConnector } from "@twin.org/wallet-cli";
 import { WalletConnectorFactory } from "@twin.org/wallet-models";
+import { Jwk } from "@twin.org/web";
 import { Command, Option } from "commander";
 import { setupIdentityConnector, setupVault } from "./setupCommands";
 import { IdentityConnectorTypes } from "../models/identityConnectorTypes";
@@ -177,10 +178,18 @@ export async function actionCommandVerificationMethodAdd(
 	const keyParts = DocumentHelper.parseId(verificationMethod.id);
 
 	const keyPair = await vaultConnector.getKey(`${localIdentity}/${keyParts.fragment}`);
-	const privateKey = Converter.bytesToBase64(keyPair.privateKey);
-	const publicKey = Is.uint8Array(keyPair.publicKey)
-		? Converter.bytesToBase64(keyPair.publicKey)
+	const privateKeyBase64 = Converter.bytesToBase64Url(keyPair.privateKey);
+	const publicKeyBase64 = Is.uint8Array(keyPair.publicKey)
+		? Converter.bytesToBase64Url(keyPair.publicKey)
 		: "";
+
+	const privateKeyHex = Converter.bytesToHex(keyPair.privateKey, true);
+	const publicKeyHex = Is.uint8Array(keyPair.publicKey)
+		? Converter.bytesToHex(keyPair.publicKey, true)
+		: "";
+
+	const jwk = await Jwk.fromEd25519Private(keyPair.privateKey);
+	const kid = await Jwk.generateKid(jwk);
 
 	if (opts.console) {
 		CLIDisplay.value(
@@ -188,13 +197,23 @@ export async function actionCommandVerificationMethodAdd(
 			verificationMethod.id
 		);
 
+		CLIDisplay.value(I18n.formatMessage("commands.verification-method-add.labels.kid"), kid);
 		CLIDisplay.value(
-			I18n.formatMessage("commands.verification-method-add.labels.privateKey"),
-			privateKey
+			I18n.formatMessage("commands.verification-method-add.labels.privateKeyBase64"),
+			privateKeyBase64
 		);
 		CLIDisplay.value(
-			I18n.formatMessage("commands.verification-method-add.labels.publicKey"),
-			publicKey
+			I18n.formatMessage("commands.verification-method-add.labels.publicKeyBase64"),
+			publicKeyBase64
+		);
+
+		CLIDisplay.value(
+			I18n.formatMessage("commands.verification-method-add.labels.privateKeyHex"),
+			privateKeyHex
+		);
+		CLIDisplay.value(
+			I18n.formatMessage("commands.verification-method-add.labels.publicKeyHex"),
+			publicKeyHex
 		);
 
 		CLIDisplay.break();
@@ -203,7 +222,10 @@ export async function actionCommandVerificationMethodAdd(
 	if (Is.stringValue(opts?.json)) {
 		await CLIUtils.writeJsonFile(
 			opts.json,
-			{ verificationMethodId: verificationMethod.id, privateKey, publicKey },
+			{
+				kid,
+				...jwk
+			},
 			opts.mergeJson
 		);
 	}
@@ -212,8 +234,9 @@ export async function actionCommandVerificationMethodAdd(
 			opts.env,
 			[
 				`DID_VERIFICATION_METHOD_ID="${verificationMethod.id}"`,
-				`DID_VERIFICATION_METHOD_PRIVATE_KEY="${privateKey}"`,
-				`DID_VERIFICATION_METHOD_PUBLIC_KEY="${publicKey}"`
+				`DID_VERIFICATION_METHOD_KID="${kid}"`,
+				`DID_VERIFICATION_METHOD_PRIVATE_KEY="${privateKeyHex}"`,
+				`DID_VERIFICATION_METHOD_PUBLIC_KEY="${publicKeyHex}"`
 			],
 			opts.mergeEnv
 		);

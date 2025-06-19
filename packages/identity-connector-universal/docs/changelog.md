@@ -1,5 +1,61 @@
 # @twin.org/identity-connector-Universal - Changelog
 
+## [0.0.1-next.51](https://github.com/twinfoundation/identity/compare/identity-connector-universal-v0.0.1-next.50...identity-connector-universal-v0.0.1-next.51) (2025-06-19)
+
+
+### Miscellaneous Chores
+
+* **identity-connector-universal:** Synchronize repo versions
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @twin.org/identity-models bumped from 0.0.1-next.50 to 0.0.1-next.51
+
+## [0.0.1-next.50](https://github.com/twinfoundation/identity/compare/identity-connector-universal-v0.0.1-next.49...identity-connector-universal-v0.0.1-next.50) (2025-06-19)
+
+
+### Miscellaneous Chores
+
+* **identity-connector-universal:** Synchronize repo versions
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @twin.org/identity-models bumped from 0.0.1-next.49 to 0.0.1-next.50
+
+## [0.0.1-next.49](https://github.com/twinfoundation/identity/compare/identity-connector-universal-v0.0.1-next.48...identity-connector-universal-v0.0.1-next.49) (2025-06-18)
+
+
+### Miscellaneous Chores
+
+* **identity-connector-universal:** Synchronize repo versions
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @twin.org/identity-models bumped from 0.0.1-next.48 to 0.0.1-next.49
+
+## [0.0.1-next.48](https://github.com/twinfoundation/identity/compare/identity-connector-universal-v0.0.1-next.47...identity-connector-universal-v0.0.1-next.48) (2025-06-17)
+
+
+### Features
+
+* add mainnet support ([af56a38](https://github.com/twinfoundation/identity/commit/af56a382837896cd4e13d5814c0924c46658b99c))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @twin.org/identity-models bumped from 0.0.1-next.47 to 0.0.1-next.48
+
 ## [0.0.1-next.47](https://github.com/twinfoundation/identity/compare/identity-connector-universal-v0.0.1-next.46...identity-connector-universal-v0.0.1-next.47) (2025-06-12)
 
 

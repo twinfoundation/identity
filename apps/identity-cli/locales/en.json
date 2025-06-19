@@ -75,8 +75,11 @@
 			"labels": {
 				"verificationMethodType": "Verification Method Type",
 				"verificationMethodId": "Verification Method Id",
-				"privateKey": "Private Key",
-				"publicKey": "Public Key"
+				"privateKeyBase64": "Private Key Base64",
+				"publicKeyBase64": "Public Key Base64",
+				"privateKeyHex": "Private Key Hex",
+				"publicKeyHex": "Public Key Hex",
+				"kid": "Key Id"
 			}
 		},
 		"verification-method-remove": {

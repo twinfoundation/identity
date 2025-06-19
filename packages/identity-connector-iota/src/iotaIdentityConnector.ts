@@ -1,27 +1,25 @@
 // Copyright 2024 IOTA Stiftung.
 // SPDX-License-Identifier: Apache-2.0.
 import {
-	IotaDocument,
+	Credential,
 	Duration,
-	IdentityClientReadOnly,
-	JwsAlgorithm,
-	KeyIdMemStore,
+	IdentityClient,
+	IotaDID,
+	IotaDocument,
 	JwkMemStore,
+	JwsAlgorithm,
+	JwsSignatureOptions,
 	JwtPresentationOptions,
 	JwtPresentationValidationOptions,
 	JwtPresentationValidator,
-	Storage,
-	VerificationMethod,
+	KeyIdMemStore,
 	MethodScope,
-	RevocationBitmap,
-	IotaDID,
-	IdentityClient,
-	StorageSigner,
 	Presentation,
 	Resolver,
+	RevocationBitmap,
 	Service,
-	Credential,
-	JwsSignatureOptions,
+	Storage,
+	StorageSigner,
 	SubjectHolderRelationship,
 	Timestamp,
 	JwtCredentialValidator,
@@ -36,22 +34,22 @@ import {
 	type UpdateDid,
 	type OnChainIdentity,
 	type ControllerToken,
-	type IJwkParams,
+	VerificationMethod,
 	type DIDUrl,
 	type ICredential,
+	type IJwkParams,
 	type IPresentation
 } from "@iota/identity-wasm/node/index.js";
-
 import type { TransactionBuilder } from "@iota/iota-interaction-ts/node/transaction_internal.js";
-import { IotaClient } from "@iota/iota-sdk/client";
 import {
+	BaseError,
+	Converter,
 	GeneralError,
 	Guards,
+	HexHelper,
 	Is,
 	NotFoundError,
-	Converter,
 	ObjectHelper,
-	BaseError,
 	Url,
 	Urn
 } from "@twin.org/core";
@@ -61,16 +59,16 @@ import { DocumentHelper, type IIdentityConnector } from "@twin.org/identity-mode
 import { nameof } from "@twin.org/nameof";
 import {
 	DidVerificationMethodType,
+	ProofHelper,
+	ProofTypes,
 	type IDidDocument,
 	type IDidDocumentVerificationMethod,
-	type IProof,
 	type IDidService,
 	type IDidVerifiableCredential,
 	type IDidVerifiablePresentation,
-	ProofTypes,
-	ProofHelper
+	type IProof
 } from "@twin.org/standards-w3c-did";
-import { VaultConnectorFactory, type IVaultConnector, VaultKeyType } from "@twin.org/vault-models";
+import { VaultConnectorFactory, VaultKeyType, type IVaultConnector } from "@twin.org/vault-models";
 import { Jwk as JwkHelper } from "@twin.org/web";
 import type { IGasStationCreatedObject } from "./models/IGasStationCreatedObject";
 import type { IGasStationTransactionResult } from "./models/IGasStationTransactionResult";
@@ -78,7 +76,7 @@ import type { IIdentityBuilder } from "./models/IIdentityBuilder";
 import type { IIdentityTransactionResult } from "./models/IIdentityTransactionResult";
 import type { IIotaIdentityConnectorConfig } from "./models/IIotaIdentityConnectorConfig";
 import type { IIotaIdentityConnectorConstructorOptions } from "./models/IIotaIdentityConnectorConstructorOptions";
-import { getIdentityPkgId } from "./utils/iotaIdentityUtils";
+import { IotaIdentityUtils } from "./utils/iotaIdentityUtils";
 
 /**
  * Class for performing identity operations on IOTA.
@@ -229,7 +227,8 @@ export class IotaIdentityConnector implements IIdentityConnector {
 
 			const jwkParams = await JwkHelper.fromEd25519Public(verificationPublicKey);
 			const jwk = new Jwk(jwkParams as IJwkParams);
-			const methodId = `#${verificationMethodId ?? Converter.bytesToBase64Url(verificationPublicKey)}`;
+
+			const methodId = `#${verificationMethodId ?? (await JwkHelper.generateKid(jwkParams))}`;
 
 			await this._vaultConnector.renameKey(tempKeyId, `${controller}/${methodId.slice(1)}`);
 
@@ -601,11 +600,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 		Guards.stringValue(this.CLASS_NAME, nameof(credentialJwt), credentialJwt);
 
 		try {
-			const iotaClient = new IotaClient(this._config.clientOptions);
-			const identityClientReadOnly = await IdentityClientReadOnly.createWithPkgId(
-				iotaClient,
-				getIdentityPkgId(this._config)
-			);
+			const identityClientReadOnly = await IotaIdentityUtils.createClient(this._config);
 			const resolver = new Resolver({ client: identityClientReadOnly });
 			const jwt = new Jwt(credentialJwt);
 			const issuerDocumentId = JwtCredentialValidator.extractIssuerFromJwt(jwt);
@@ -916,11 +911,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 		Guards.stringValue(this.CLASS_NAME, nameof(presentationJwt), presentationJwt);
 
 		try {
-			const iotaClient = new IotaClient(this._config.clientOptions);
-			const identityClientReadOnly = await IdentityClientReadOnly.createWithPkgId(
-				iotaClient,
-				getIdentityPkgId(this._config)
-			);
+			const identityClientReadOnly = await IotaIdentityUtils.createClient(this._config);
 			const resolver = new Resolver<IotaDocument>({ client: identityClientReadOnly });
 			const jwt = new Jwt(presentationJwt);
 			const holderId = JwtPresentationValidator.extractHolder(jwt);
@@ -1133,11 +1124,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 	 * @internal
 	 */
 	private async getIdentityClient(controller?: string): Promise<IdentityClient> {
-		const iotaClient = new IotaClient(this._config.clientOptions);
-		const identityClientReadOnly = await IdentityClientReadOnly.createWithPkgId(
-			iotaClient,
-			getIdentityPkgId(this._config)
-		);
+		const identityClientReadOnly = await IotaIdentityUtils.createClient(this._config);
 
 		if (Is.undefined(controller)) {
 			const jwkMemStore = new JwkMemStore();
@@ -1305,19 +1292,20 @@ export class IotaIdentityConnector implements IIdentityConnector {
 		Guards.stringValue(this.CLASS_NAME, nameof(documentId), documentId);
 
 		const parts = documentId.split(":");
-		if (parts.length !== 4) {
-			throw new GeneralError(this.CLASS_NAME, "invalidDocumentIdFormat", {
-				documentId
-			});
+
+		if (parts[0] === "did" && parts[1] === "iota") {
+			if (parts.length === 3 && HexHelper.isHex(parts[2], true)) {
+				return parts[2];
+			}
+
+			if (parts.length === 4 && HexHelper.isHex(parts[3], true)) {
+				return parts[3];
+			}
 		}
 
-		if (parts[0] !== "did") {
-			throw new GeneralError(this.CLASS_NAME, "invalidDocumentIdFormat", {
-				documentId
-			});
-		}
-
-		return parts[3];
+		throw new GeneralError(this.CLASS_NAME, "invalidDocumentIdFormat", {
+			documentId: documentId ?? ""
+		});
 	}
 
 	/**

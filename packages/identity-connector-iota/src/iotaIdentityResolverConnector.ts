@@ -1,11 +1,6 @@
 // Copyright 2024 IOTA Stiftung.
 // SPDX-License-Identifier: Apache-2.0.
-import {
-	IdentityClientReadOnly,
-	type IotaDocument,
-	Resolver
-} from "@iota/identity-wasm/node/index.js";
-import { IotaClient } from "@iota/iota-sdk/client";
+import { type IotaDocument, Resolver } from "@iota/identity-wasm/node/index.js";
 import { GeneralError, Guards, Is, NotFoundError } from "@twin.org/core";
 import { Iota } from "@twin.org/dlt-iota";
 import type { IIdentityResolverConnector } from "@twin.org/identity-models";
@@ -14,7 +9,7 @@ import type { IDidDocument } from "@twin.org/standards-w3c-did";
 import type { IIotaIdentityConnectorConfig } from "./models/IIotaIdentityConnectorConfig";
 import type { IIotaIdentityResolverConnectorConfig } from "./models/IIotaIdentityResolverConnectorConfig";
 import type { IIotaIdentityResolverConnectorConstructorOptions } from "./models/IIotaIdentityResolverConnectorConstructorOptions";
-import { getIdentityPkgId } from "./utils/iotaIdentityUtils";
+import { IotaIdentityUtils } from "./utils/iotaIdentityUtils";
 
 /**
  * Class for performing identity operations on IOTA.
@@ -66,11 +61,7 @@ export class IotaIdentityResolverConnector implements IIdentityResolverConnector
 		Guards.stringValue(this.CLASS_NAME, nameof(documentId), documentId);
 
 		try {
-			const iotaClient = new IotaClient(this._config.clientOptions);
-			const identityClientReadOnly = await IdentityClientReadOnly.createWithPkgId(
-				iotaClient,
-				getIdentityPkgId(this._config)
-			);
+			const identityClientReadOnly = await IotaIdentityUtils.createClient(this._config);
 			const resolver = new Resolver<IotaDocument>({
 				client: identityClientReadOnly
 			});
