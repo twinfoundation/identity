@@ -19,10 +19,4 @@ export interface IIotaIdentityConnectorConfig extends IIotaConfig {
 	 * For devnet: "0x03242ae6b87406bd0eb5d669fbe874ed4003694c0be9c6a9ee7c315e6461a553"
 	 */
 	identityPkgId?: string;
-
-	/**
-	 * The gas budget for the identity contract on the network.
-	 * @default 10000000000n
-	 */
-	gasBudget?: bigint;
 }

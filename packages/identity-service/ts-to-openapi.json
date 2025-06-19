@@ -12,6 +12,11 @@
 		}
 	],
 	"externalReferences": {
-		"IJsonLd(.*)": "https://schema.twindev.org/json-ld/JsonLd$1"
+		"IJsonLd(.*)": "https://schema.twindev.org/json-ld/JsonLd$1",
+		"Did(.*?)": "https://schema.twindev.org/did/Did$1",
+		"ProofTypes": "https://schema.twindev.org/did/ProofTypes",
+		"Proof": "https://schema.twindev.org/did/Proof",
+		"DataIntegrityProof": "https://schema.twindev.org/did/DataIntegrityProof",
+		"JsonWebSignature2020Proof": "https://schema.twindev.org/did/JsonWebSignature2020Proof"
 	}
 }

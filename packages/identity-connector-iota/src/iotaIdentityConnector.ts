@@ -126,7 +126,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 
 		this._config = options.config;
 
-		this._gasBudget = this._config.gasBudget ?? 1000000000n;
+		this._gasBudget = 1000000000n;
 		this._walletAddressIndex = options.config.walletAddressIndex ?? 0;
 
 		Iota.populateConfig(this._config);
@@ -216,7 +216,8 @@ export class IotaIdentityConnector implements IIdentityConnector {
 
 			const jwkParams = await JwkHelper.fromEd25519Public(verificationPublicKey);
 			const jwk = new Jwk(jwkParams as IJwkParams);
-			const methodId = `#${verificationMethodId ?? Converter.bytesToBase64Url(verificationPublicKey)}`;
+
+			const methodId = `#${verificationMethodId ?? (await JwkHelper.generateKid(jwkParams))}`;
 
 			await this._vaultConnector.renameKey(tempKeyId, `${controller}/${methodId.slice(1)}`);
 

@@ -14,7 +14,6 @@ import {
 	ObjectHelper,
 	RandomHelper
 } from "@twin.org/core";
-import { Sha256 } from "@twin.org/crypto";
 import {
 	JsonLdProcessor,
 	type IJsonLdContextDefinitionRoot,
@@ -218,9 +217,7 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 				x: Converter.bytesToBase64Url(verificationPublicKey)
 			};
 
-			const kid = Converter.bytesToBase64Url(
-				Sha256.sum256(Converter.utf8ToBytes(JSON.stringify(jwkParams)))
-			);
+			const kid = await Jwk.generateKid(jwkParams);
 
 			const methodId = `${documentId}#${verificationMethodId ?? kid}`;
 

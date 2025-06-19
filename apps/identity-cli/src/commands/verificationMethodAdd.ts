@@ -216,9 +216,14 @@ export async function actionCommandVerificationMethodAdd(
 	}
 
 	if (Is.stringValue(opts?.json)) {
+		const jwk = await Jwk.fromEd25519Private(keyPair.privateKey);
+		const kid = await Jwk.generateKid(jwk);
 		await CLIUtils.writeJsonFile(
 			opts.json,
-			await Jwk.fromEd25519Private(keyPair.privateKey),
+			{
+				kid,
+				...jwk
+			},
 			opts.mergeJson
 		);
 	}
