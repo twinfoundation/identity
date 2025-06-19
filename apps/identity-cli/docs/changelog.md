@@ -1,5 +1,20 @@
 # @twin.org/identity-cli - Changelog
 
+## [0.0.1-next.50](https://github.com/twinfoundation/identity/compare/identity-cli-v0.0.1-next.49...identity-cli-v0.0.1-next.50) (2025-06-19)
+
+
+### Features
+
+* use new generateKid method ([f0fe779](https://github.com/twinfoundation/identity/commit/f0fe779323b675575bb9f80aa74f1957dc57a094))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @twin.org/identity-models bumped from 0.0.1-next.49 to 0.0.1-next.50
+    * @twin.org/identity-connector-iota bumped from 0.0.1-next.49 to 0.0.1-next.50
+
 ## [0.0.1-next.49](https://github.com/twinfoundation/identity/compare/identity-cli-v0.0.1-next.48...identity-cli-v0.0.1-next.49) (2025-06-18)
 
 
