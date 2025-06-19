@@ -54,22 +54,27 @@ runs:
       if: inputs.package-name == 'all' || contains(inputs.package-name, 'identity-connector-iota')
       shell: bash
       run: |
-        echo "signer-config:" > gas-station-config.yaml
-        echo "  local:" >> gas-station-config.yaml
-        echo "    keypair: AKT1Ghtd+yNbI9fFCQin3FpiGx8xoUdJMe7iAhoFUm4f" >> gas-station-config.yaml
-        echo "rpc-host-ip: 0.0.0.0" >> gas-station-config.yaml
-        echo "rpc-port: 9527" >> gas-station-config.yaml
-        echo "metrics-port: 9184" >> gas-station-config.yaml
-        echo "storage-config:" >> gas-station-config.yaml
-        echo "  redis:" >> gas-station-config.yaml
-        echo "    redis_url: \"redis://127.0.0.1:6379\"" >> gas-station-config.yaml
-        echo "fullnode-url: \"${{ inputs.test-node-endpoint }}\"" >> gas-station-config.yaml
-        echo "coin-init-config:" >> gas-station-config.yaml
-        echo "  target-init-balance: 100000000" >> gas-station-config.yaml
-        echo "  refresh-interval-sec: 86400" >> gas-station-config.yaml
-        echo "daily-gas-usage-cap: 1500000000000" >> gas-station-config.yaml
-        echo "access-controller:" >> gas-station-config.yaml
-        echo "  access-policy: disabled" >> gas-station-config.yaml
+        node -e "
+        const fs = require('fs');
+        const config = \`signer-config:
+          local:
+            keypair: AKT1Ghtd+yNbI9fFCQin3FpiGx8xoUdJMe7iAhoFUm4f
+        rpc-host-ip: 0.0.0.0
+        rpc-port: 9527
+        metrics-port: 9184
+        storage-config:
+          redis:
+            redis_url: \"redis://127.0.0.1:6379\"
+        fullnode-url: \"${{ inputs.test-node-endpoint }}\"
+        coin-init-config:
+          target-init-balance: 100000000
+          refresh-interval-sec: 86400
+        daily-gas-usage-cap: 1500000000000
+        access-controller:
+          access-policy: disabled
+        \`;
+        fs.writeFileSync('gas-station-config.yaml', config);
+        "
 
     - name: Start IOTA Gas Station
       if: inputs.package-name == 'all' || contains(inputs.package-name, 'identity-connector-iota')
