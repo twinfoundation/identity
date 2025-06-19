@@ -39,10 +39,10 @@ runs:
     - name: Start Universal Resolver
       shell: bash
       run: |
-        docker run -d --name universal-resolver -p 8080:8080 -e NETWORK=testnet 
+        docker run -d --name universal-resolver -p 8080:8080 -e NETWORK=testnet \
           iotaledger/uni-resolver-driver-iota:v0.2.0-alpha
-          # Wait for the service to be ready
-          sleep 5
+        # Wait for the service to be ready
+        sleep 5
 
     - name: Create gas station config
       shell: bash
