@@ -1359,7 +1359,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 			const gasBudget = this._config.gasBudget ?? this._gasBudget;
 			const gasReservation = await Iota.reserveGas(this._config, gasBudget);
 
-			const gasCoinsWithStringVersions = gasReservation.gas_coins.map(coin => ({
+			const gasCoinsWithStringVersions = gasReservation.gasCoins.map(coin => ({
 				objectId: coin.objectId,
 				version: String(coin.version),
 				digest: coin.digest
@@ -1372,7 +1372,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 			const gasConfiguredBuilder = finishedBuilder
 				.withSender(userAddress)
 				.withGasBudget(BigInt(gasBudget))
-				.withGasOwner(gasReservation.sponsor_address)
+				.withGasOwner(gasReservation.sponsorAddress)
 				.withGasPayment(gasCoinsWithStringVersions)
 				.withGasPrice(standardGasPrice);
 
@@ -1383,7 +1383,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 
 				const txEffects = await Iota.executeGasStationTransaction(
 					this._config,
-					gasReservation.reservation_id,
+					gasReservation.reservationId,
 					txBytes,
 					signatures[0]
 				);
@@ -1540,7 +1540,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 			const gasBudget = this._config.gasBudget ?? this._gasBudget;
 			const gasReservation = await Iota.reserveGas(this._config, gasBudget);
 
-			const gasCoinsWithStringVersions = gasReservation.gas_coins.map(coin => ({
+			const gasCoinsWithStringVersions = gasReservation.gasCoins.map(coin => ({
 				objectId: coin.objectId,
 				version: String(coin.version),
 				digest: coin.digest
@@ -1551,18 +1551,18 @@ export class IotaIdentityConnector implements IIdentityConnector {
 			const gasConfiguredBuilder = updateBuilder
 				.withSender(userAddress)
 				.withGasBudget(BigInt(gasBudget))
-				.withGasOwner(gasReservation.sponsor_address)
+				.withGasOwner(gasReservation.sponsorAddress)
 				.withGasPayment(gasCoinsWithStringVersions)
 				.withGasPrice(standardGasPrice);
 
 			const buildResult = await gasConfiguredBuilder.build(identityClient);
 
 			if (Is.arrayValue(buildResult) && buildResult.length === 3 && Is.uint8Array(buildResult[0])) {
-				const [txBytes, signatures] = buildResult as [Uint8Array, string[], unknown];
+				const [txBytes, signatures] = buildResult;
 
 				const txEffects = await Iota.executeGasStationTransaction(
 					this._config,
-					gasReservation.reservation_id,
+					gasReservation.reservationId,
 					txBytes,
 					signatures[0]
 				);
@@ -1570,11 +1570,16 @@ export class IotaIdentityConnector implements IIdentityConnector {
 				return txEffects as unknown as IIdentityTransactionResult;
 			}
 
-			throw new GeneralError(this.CLASS_NAME, "gasStationTransactionBuildFailed", {
-				buildResultType: typeof buildResult,
-				isArray: Is.arrayValue(buildResult),
-				length: Is.arrayValue(buildResult) ? buildResult.length : "not array"
-			});
+			throw new GeneralError(
+				this.CLASS_NAME,
+				"gasStationTransactionBuildFailed",
+				{
+					buildResultType: typeof buildResult,
+					isArray: Is.arrayValue(buildResult),
+					length: Is.arrayValue(buildResult) ? buildResult.length : "not array"
+				},
+				Iota.extractPayloadError(buildResult)
+			);
 		} catch (error) {
 			throw new GeneralError(
 				this.CLASS_NAME,
@@ -1585,11 +1590,3 @@ export class IotaIdentityConnector implements IIdentityConnector {
 		}
 	}
 }
-
-// TODO:
-// - Test the docker gas station for the DLT
-// - Add docker gas station for the identity package git
-// - Add tests for the NFT package to use the gas station
-// - Add docker gas station for the NFT package git
-// - Add tests for the Verifiable Storage package to use the gas station
-// - Add docker gas station for the Verifiable Storage package git

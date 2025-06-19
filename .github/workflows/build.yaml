@@ -15,8 +15,9 @@ jobs:
     # Add env vars for tests
     env:
       TEST_MNEMONIC: ${{ secrets.TEST_MNEMONIC }}
-      TEST_2_MNEMONIC: ${{ secrets.TEST_2_MNEMONIC }}
-      TEST_NODE_MNEMONIC: ${{ secrets.TEST_NODE_MNEMONIC }}
+      TEST_NODE_ENDPOINT: https://api.testnet.iota.cafe
+      TEST_FAUCET_ENDPOINT: https://faucet.testnet.iota.cafe/gas
+      TEST_NETWORK: testnet
 
     steps:
       # Get the code
@@ -33,13 +34,15 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # Setup any services required for tests here
-      - name: Start Universal Resolver
-        run: |
-          docker run -d --name universal-resolver -p 8080:8080 -e NETWORK=testnet iotaledger/uni-resolver-driver-iota:v0.2.0-alpha
-          # Wait for the service to be ready
-          sleep 5
-      # End setup for tests
+      # Setup Identity infrastructure for tests using composite action
+      - name: Setup Identity Testing Environment
+        uses: ./.github/workflows/composites
+        with:
+          test-mnemonic: ${{ secrets.TEST_MNEMONIC }}
+          test-node-endpoint: ${{ env.TEST_NODE_ENDPOINT }}
+          test-faucet-endpoint: ${{ env.TEST_FAUCET_ENDPOINT }}
+          gas-station-auth: 'qEyCL6d9BKKFl/tfDGAKeGFkhUlf7FkqiGV7Xw4JUsI='
+
       # Run Lint and Dist
       - name: Run Lint and Dist
         run: |

@@ -2376,10 +2376,12 @@
 				"properties": {
 					"conflicts": {
 						"type": "array",
-						"items": {
-							"type": "string"
-						},
-						"description": "The conflicting items."
+						"description": "The conflicting items.",
+						"prefixItems": [
+							{
+								"type": "string"
+							}
+						]
 					},
 					"name": {
 						"type": "string",
@@ -2425,13 +2427,13 @@
 							{
 								"type": "array",
 								"minItems": 1,
-								"items": [
+								"prefixItems": [
 									{
 										"type": "string",
 										"const": "https://www.w3.org/ns/credentials/v2"
 									}
 								],
-								"additionalItems": {
+								"items": {
 									"$ref": "https://schema.twindev.org/json-ld/JsonLdContextDefinitionElement"
 								}
 							}
@@ -2485,9 +2487,11 @@
 							},
 							{
 								"type": "array",
-								"items": {
-									"type": "string"
-								}
+								"prefixItems": [
+									{
+										"type": "string"
+									}
+								]
 							}
 						],
 						"description": "One or more security domains in which the proof is meant to be used."
@@ -2499,9 +2503,11 @@
 							},
 							{
 								"type": "array",
-								"items": {
-									"type": "string"
-								}
+								"prefixItems": [
+									{
+										"type": "string"
+									}
+								]
 							}
 						],
 						"description": "Provided to mitigate replay attacks on domains."
@@ -2590,13 +2596,13 @@
 							{
 								"type": "array",
 								"minItems": 1,
-								"items": [
+								"prefixItems": [
 									{
 										"type": "string",
 										"const": "https://www.w3.org/ns/did/v1"
 									}
 								],
-								"additionalItems": {
+								"items": {
 									"$ref": "https://schema.twindev.org/json-ld/JsonLdContextDefinitionElement"
 								}
 							}
@@ -2614,9 +2620,11 @@
 							},
 							{
 								"type": "array",
-								"items": {
-									"type": "string"
-								}
+								"prefixItems": [
+									{
+										"type": "string"
+									}
+								]
 							}
 						],
 						"description": "Aliases for the document."
@@ -2628,103 +2636,119 @@
 							},
 							{
 								"type": "array",
-								"items": {
-									"type": "string"
-								}
+								"prefixItems": [
+									{
+										"type": "string"
+									}
+								]
 							}
 						],
 						"description": "The controller for the document."
 					},
 					"verificationMethod": {
 						"type": "array",
-						"items": {
-							"anyOf": [
-								{
-									"type": "string"
-								},
-								{
-									"$ref": "#/components/schemas/DidDocumentVerificationMethod"
-								}
-							]
-						},
-						"description": "The verification methods."
+						"description": "The verification methods.",
+						"prefixItems": [
+							{
+								"anyOf": [
+									{
+										"type": "string"
+									},
+									{
+										"$ref": "#/components/schemas/DidDocumentVerificationMethod"
+									}
+								]
+							}
+						]
 					},
 					"authentication": {
 						"type": "array",
-						"items": {
-							"anyOf": [
-								{
-									"type": "string"
-								},
-								{
-									"$ref": "#/components/schemas/DidDocumentVerificationMethod"
-								}
-							]
-						},
-						"description": "The authentication methods."
+						"description": "The authentication methods.",
+						"prefixItems": [
+							{
+								"anyOf": [
+									{
+										"type": "string"
+									},
+									{
+										"$ref": "#/components/schemas/DidDocumentVerificationMethod"
+									}
+								]
+							}
+						]
 					},
 					"assertionMethod": {
 						"type": "array",
-						"items": {
-							"anyOf": [
-								{
-									"type": "string"
-								},
-								{
-									"$ref": "#/components/schemas/DidDocumentVerificationMethod"
-								}
-							]
-						},
-						"description": "The assertion methods."
+						"description": "The assertion methods.",
+						"prefixItems": [
+							{
+								"anyOf": [
+									{
+										"type": "string"
+									},
+									{
+										"$ref": "#/components/schemas/DidDocumentVerificationMethod"
+									}
+								]
+							}
+						]
 					},
 					"keyAgreement": {
 						"type": "array",
-						"items": {
-							"anyOf": [
-								{
-									"type": "string"
-								},
-								{
-									"$ref": "#/components/schemas/DidDocumentVerificationMethod"
-								}
-							]
-						},
-						"description": "The key agreements."
+						"description": "The key agreements.",
+						"prefixItems": [
+							{
+								"anyOf": [
+									{
+										"type": "string"
+									},
+									{
+										"$ref": "#/components/schemas/DidDocumentVerificationMethod"
+									}
+								]
+							}
+						]
 					},
 					"capabilityInvocation": {
 						"type": "array",
-						"items": {
-							"anyOf": [
-								{
-									"type": "string"
-								},
-								{
-									"$ref": "#/components/schemas/DidDocumentVerificationMethod"
-								}
-							]
-						},
-						"description": "The capability invocations."
+						"description": "The capability invocations.",
+						"prefixItems": [
+							{
+								"anyOf": [
+									{
+										"type": "string"
+									},
+									{
+										"$ref": "#/components/schemas/DidDocumentVerificationMethod"
+									}
+								]
+							}
+						]
 					},
 					"capabilityDelegation": {
 						"type": "array",
-						"items": {
-							"anyOf": [
-								{
-									"type": "string"
-								},
-								{
-									"$ref": "#/components/schemas/DidDocumentVerificationMethod"
-								}
-							]
-						},
-						"description": "The capability delegations."
+						"description": "The capability delegations.",
+						"prefixItems": [
+							{
+								"anyOf": [
+									{
+										"type": "string"
+									},
+									{
+										"$ref": "#/components/schemas/DidDocumentVerificationMethod"
+									}
+								]
+							}
+						]
 					},
 					"service": {
 						"type": "array",
-						"items": {
-							"$ref": "#/components/schemas/DidService"
-						},
-						"description": "The services."
+						"description": "The services.",
+						"prefixItems": [
+							{
+								"$ref": "#/components/schemas/DidService"
+							}
+						]
 					}
 				},
 				"required": [
@@ -2747,9 +2771,11 @@
 							},
 							{
 								"type": "array",
-								"items": {
-									"type": "string"
-								}
+								"prefixItems": [
+									{
+										"type": "string"
+									}
+								]
 							}
 						]
 					},
@@ -2763,9 +2789,11 @@
 							},
 							{
 								"type": "array",
-								"items": {
-									"$ref": "https://schema.twindev.org/json-ld/JsonLdNodeObject"
-								}
+								"prefixItems": [
+									{
+										"$ref": "https://schema.twindev.org/json-ld/JsonLdNodeObject"
+									}
+								]
 							}
 						]
 					},
@@ -2776,9 +2804,11 @@
 							},
 							{
 								"type": "array",
-								"items": {
-									"$ref": "https://schema.twindev.org/json-ld/JsonLdJsonObject"
-								}
+								"prefixItems": [
+									{
+										"$ref": "https://schema.twindev.org/json-ld/JsonLdJsonObject"
+									}
+								]
 							}
 						]
 					},
@@ -2789,9 +2819,11 @@
 							},
 							{
 								"type": "array",
-								"items": {
-									"type": "string"
-								}
+								"prefixItems": [
+									{
+										"type": "string"
+									}
+								]
 							}
 						]
 					},
@@ -2858,9 +2890,11 @@
 									},
 									{
 										"type": "array",
-										"items": {
-											"type": "string"
-										}
+										"prefixItems": [
+											{
+												"type": "string"
+											}
+										]
 									}
 								]
 							},
@@ -2874,9 +2908,11 @@
 									},
 									{
 										"type": "array",
-										"items": {
-											"$ref": "https://schema.twindev.org/json-ld/JsonLdNodeObject"
-										}
+										"prefixItems": [
+											{
+												"$ref": "https://schema.twindev.org/json-ld/JsonLdNodeObject"
+											}
+										]
 									}
 								]
 							},
@@ -2887,9 +2923,11 @@
 									},
 									{
 										"type": "array",
-										"items": {
-											"$ref": "https://schema.twindev.org/json-ld/JsonLdJsonObject"
-										}
+										"prefixItems": [
+											{
+												"$ref": "https://schema.twindev.org/json-ld/JsonLdJsonObject"
+											}
+										]
 									}
 								]
 							},
@@ -2900,9 +2938,11 @@
 									},
 									{
 										"type": "array",
-										"items": {
-											"type": "string"
-										}
+										"prefixItems": [
+											{
+												"type": "string"
+											}
+										]
 									}
 								]
 							},
@@ -2925,10 +2965,12 @@
 							},
 							"key_ops": {
 								"type": "array",
-								"items": {
-									"type": "string"
-								},
-								"description": "JWK \"key_ops\" (Key Operations) Parameter"
+								"description": "JWK \"key_ops\" (Key Operations) Parameter",
+								"prefixItems": [
+									{
+										"type": "string"
+									}
+								]
 							},
 							"ext": {
 								"type": "boolean",
@@ -2940,10 +2982,12 @@
 							},
 							"x5c": {
 								"type": "array",
-								"items": {
-									"type": "string"
-								},
-								"description": "JWK \"x5c\" (X.509 Certificate Chain) Parameter"
+								"description": "JWK \"x5c\" (X.509 Certificate Chain) Parameter",
+								"prefixItems": [
+									{
+										"type": "string"
+									}
+								]
 							},
 							"x5t": {
 								"type": "string",
@@ -3086,9 +3130,11 @@
 							},
 							{
 								"type": "array",
-								"items": {
-									"type": "string"
-								}
+								"prefixItems": [
+									{
+										"type": "string"
+									}
+								]
 							}
 						],
 						"description": "The type of the service."
@@ -3100,9 +3146,11 @@
 							},
 							{
 								"type": "array",
-								"items": {
-									"type": "string"
-								}
+								"prefixItems": [
+									{
+										"type": "string"
+									}
+								]
 							}
 						],
 						"description": "The endpoint for the service."
@@ -3132,26 +3180,26 @@
 							{
 								"type": "array",
 								"minItems": 1,
-								"items": [
+								"prefixItems": [
 									{
 										"type": "string",
 										"const": "https://www.w3.org/2018/credentials/v1"
 									}
 								],
-								"additionalItems": {
+								"items": {
 									"$ref": "https://schema.twindev.org/json-ld/JsonLdContextDefinitionElement"
 								}
 							},
 							{
 								"type": "array",
 								"minItems": 1,
-								"items": [
+								"prefixItems": [
 									{
 										"type": "string",
 										"const": "https://www.w3.org/ns/credentials/v2"
 									}
 								],
-								"additionalItems": {
+								"items": {
 									"$ref": "https://schema.twindev.org/json-ld/JsonLdContextDefinitionElement"
 								}
 							}
@@ -3169,9 +3217,11 @@
 							},
 							{
 								"type": "array",
-								"items": {
-									"type": "string"
-								}
+								"prefixItems": [
+									{
+										"type": "string"
+									}
+								]
 							}
 						],
 						"description": "The types of the data stored in the verifiable credential."
@@ -3183,9 +3233,11 @@
 							},
 							{
 								"type": "array",
-								"items": {
-									"$ref": "https://schema.twindev.org/json-ld/JsonLdNodeObject"
-								}
+								"prefixItems": [
+									{
+										"$ref": "https://schema.twindev.org/json-ld/JsonLdNodeObject"
+									}
+								]
 							}
 						],
 						"description": "The data for the verifiable credential."
@@ -3197,9 +3249,11 @@
 							},
 							{
 								"type": "array",
-								"items": {
-									"$ref": "#/components/schemas/DidCredentialStatus"
-								}
+								"prefixItems": [
+									{
+										"$ref": "#/components/schemas/DidCredentialStatus"
+									}
+								]
 							}
 						],
 						"description": "Used to discover information about the current status of the verifiable credential, such as whether it is suspended or revoked."
@@ -3211,9 +3265,11 @@
 							},
 							{
 								"type": "array",
-								"items": {
-									"$ref": "#/components/schemas/DidCredentialSchema"
-								}
+								"prefixItems": [
+									{
+										"$ref": "#/components/schemas/DidCredentialSchema"
+									}
+								]
 							}
 						],
 						"description": "Annotate type definitions or lock them to specific versions of the vocabulary."
@@ -3236,9 +3292,11 @@
 											},
 											{
 												"type": "array",
-												"items": {
-													"$ref": "#/components/schemas/DidLabel"
-												}
+												"prefixItems": [
+													{
+														"$ref": "#/components/schemas/DidLabel"
+													}
+												]
 											}
 										]
 									},
@@ -3249,9 +3307,11 @@
 											},
 											{
 												"type": "array",
-												"items": {
-													"$ref": "#/components/schemas/DidLabel"
-												}
+												"prefixItems": [
+													{
+														"$ref": "#/components/schemas/DidLabel"
+													}
+												]
 											}
 										]
 									}
@@ -3275,9 +3335,11 @@
 							},
 							{
 								"type": "array",
-								"items": {
-									"$ref": "#/components/schemas/DidLabel"
-								}
+								"prefixItems": [
+									{
+										"$ref": "#/components/schemas/DidLabel"
+									}
+								]
 							}
 						],
 						"description": "The name of the credential."
@@ -3289,9 +3351,11 @@
 							},
 							{
 								"type": "array",
-								"items": {
-									"$ref": "#/components/schemas/DidLabel"
-								}
+								"prefixItems": [
+									{
+										"$ref": "#/components/schemas/DidLabel"
+									}
+								]
 							}
 						],
 						"description": "The description of the credential."
@@ -3311,9 +3375,11 @@
 							},
 							{
 								"type": "array",
-								"items": {
-									"$ref": "https://schema.twindev.org/json-ld/JsonLdNodeObject"
-								}
+								"prefixItems": [
+									{
+										"$ref": "https://schema.twindev.org/json-ld/JsonLdNodeObject"
+									}
+								]
 							}
 						],
 						"description": "Evidence associated with the Credential."
@@ -3325,9 +3391,11 @@
 							},
 							{
 								"type": "array",
-								"items": {
-									"$ref": "#/components/schemas/Proof"
-								}
+								"prefixItems": [
+									{
+										"$ref": "#/components/schemas/Proof"
+									}
+								]
 							}
 						],
 						"description": "Proofs that the verifiable credential is valid. Optional if a different proof method is used, such as JWT."
@@ -3352,13 +3420,13 @@
 							{
 								"type": "array",
 								"minItems": 1,
-								"items": [
+								"prefixItems": [
 									{
 										"type": "string",
 										"const": "https://www.w3.org/ns/credentials/v2"
 									}
 								],
-								"additionalItems": {
+								"items": {
 									"$ref": "https://schema.twindev.org/json-ld/JsonLdContextDefinitionElement"
 								}
 							}
@@ -3376,26 +3444,30 @@
 							},
 							{
 								"type": "array",
-								"items": {
-									"type": "string"
-								}
+								"prefixItems": [
+									{
+										"type": "string"
+									}
+								]
 							}
 						],
 						"description": "The types of the data stored in the verifiable credential."
 					},
 					"verifiableCredential": {
 						"type": "array",
-						"items": {
-							"anyOf": [
-								{
-									"type": "string"
-								},
-								{
-									"$ref": "#/components/schemas/DidVerifiableCredential"
-								}
-							]
-						},
-						"description": "The data for the verifiable credentials."
+						"description": "The data for the verifiable credentials.",
+						"prefixItems": [
+							{
+								"anyOf": [
+									{
+										"type": "string"
+									},
+									{
+										"$ref": "#/components/schemas/DidVerifiableCredential"
+									}
+								]
+							}
+						]
 					},
 					"holder": {
 						"type": "string",
@@ -3408,9 +3480,11 @@
 							},
 							{
 								"type": "array",
-								"items": {
-									"$ref": "#/components/schemas/Proof"
-								}
+								"prefixItems": [
+									{
+										"$ref": "#/components/schemas/Proof"
+									}
+								]
 							}
 						],
 						"description": "Proofs that the verifiable presentation is valid. Optional if a different proof method is used, such as JWT."
@@ -3519,23 +3593,25 @@
 				"properties": {
 					"items": {
 						"type": "array",
-						"items": {
-							"type": "object",
-							"properties": {
-								"identity": {
-									"type": "string",
-									"description": "The identity."
+						"description": "The identities.",
+						"prefixItems": [
+							{
+								"type": "object",
+								"properties": {
+									"identity": {
+										"type": "string",
+										"description": "The identity."
+									},
+									"publicProfile": {
+										"$ref": "https://schema.twindev.org/json-ld/JsonLdDocument"
+									}
 								},
-								"publicProfile": {
-									"$ref": "https://schema.twindev.org/json-ld/JsonLdDocument"
-								}
-							},
-							"required": [
-								"identity"
-							],
-							"additionalProperties": false
-						},
-						"description": "The identities."
+								"required": [
+									"identity"
+								],
+								"additionalProperties": false
+							}
+						]
 					},
 					"cursor": {
 						"type": "string",
@@ -3622,9 +3698,11 @@
 							},
 							{
 								"type": "array",
-								"items": {
-									"type": "string"
-								}
+								"prefixItems": [
+									{
+										"type": "string"
+									}
+								]
 							}
 						],
 						"description": "The type of the service."
@@ -3636,9 +3714,11 @@
 							},
 							{
 								"type": "array",
-								"items": {
-									"type": "string"
-								}
+								"prefixItems": [
+									{
+										"type": "string"
+									}
+								]
 							}
 						],
 						"description": "The endpoint for the service."
@@ -3725,26 +3805,30 @@
 							},
 							{
 								"type": "array",
-								"items": {
-									"type": "string"
-								}
+								"prefixItems": [
+									{
+										"type": "string"
+									}
+								]
 							}
 						],
 						"description": "The types of the presentation."
 					},
 					"verifiableCredentials": {
 						"type": "array",
-						"items": {
-							"anyOf": [
-								{
-									"type": "string"
-								},
-								{
-									"$ref": "#/components/schemas/DidVerifiableCredential"
-								}
-							]
-						},
-						"description": "The verifiable credentials to include in the presentation."
+						"description": "The verifiable credentials to include in the presentation.",
+						"prefixItems": [
+							{
+								"anyOf": [
+									{
+										"type": "string"
+									},
+									{
+										"$ref": "#/components/schemas/DidVerifiableCredential"
+									}
+								]
+							}
+						]
 					},
 					"expiresInMinutes": {
 						"type": "number",
@@ -3787,10 +3871,12 @@
 					},
 					"issuers": {
 						"type": "array",
-						"items": {
-							"$ref": "#/components/schemas/DidDocument"
-						},
-						"description": "The issuers of the presentation."
+						"description": "The issuers of the presentation.",
+						"prefixItems": [
+							{
+								"$ref": "#/components/schemas/DidDocument"
+							}
+						]
 					}
 				},
 				"required": [
@@ -3828,13 +3914,13 @@
 							{
 								"type": "array",
 								"minItems": 1,
-								"items": [
+								"prefixItems": [
 									{
 										"type": "string",
 										"const": "https://w3id.org/security/suites/jws-2020/v1"
 									}
 								],
-								"additionalItems": {
+								"items": {
 									"$ref": "https://schema.twindev.org/json-ld/JsonLdContextDefinitionElement"
 								}
 							}
