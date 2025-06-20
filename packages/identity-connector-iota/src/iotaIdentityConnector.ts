@@ -1506,7 +1506,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 				const [txBytes, signatures] = buildResult;
 				const iotaClient = this.getIotaClient();
 
-				const confirmedResponse = await Iota.executePreBuiltGasStationTransaction(
+				const confirmedResponse = await Iota.executeAndConfirmGasStationTransaction(
 					this._config,
 					iotaClient,
 					gasReservation.reservationId,
