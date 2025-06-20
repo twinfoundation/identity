@@ -1,5 +1,12 @@
 # @twin.org/identity-service-models - Changelog
 
+## [0.0.1-next.52](https://github.com/twinfoundation/identity/compare/identity-models-v0.0.1-next.51...identity-models-v0.0.1-next.52) (2025-06-20)
+
+
+### Bug Fixes
+
+* query params force coercion ([d9347d2](https://github.com/twinfoundation/identity/commit/d9347d29d4a9cc58759f30f5d8526de864ea7522))
+
 ## [0.0.1-next.51](https://github.com/twinfoundation/identity/compare/identity-models-v0.0.1-next.50...identity-models-v0.0.1-next.51) (2025-06-19)
 
 
