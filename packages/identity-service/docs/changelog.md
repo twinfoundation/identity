@@ -1,5 +1,20 @@
 # @twin.org/identity-service - Changelog
 
+## [0.0.1-next.52](https://github.com/twinfoundation/identity/compare/identity-service-v0.0.1-next.51...identity-service-v0.0.1-next.52) (2025-06-20)
+
+
+### Bug Fixes
+
+* query params force coercion ([d9347d2](https://github.com/twinfoundation/identity/commit/d9347d29d4a9cc58759f30f5d8526de864ea7522))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @twin.org/identity-models bumped from 0.0.1-next.51 to 0.0.1-next.52
+    * @twin.org/identity-connector-entity-storage bumped from 0.0.1-next.51 to 0.0.1-next.52
+
 ## [0.0.1-next.51](https://github.com/twinfoundation/identity/compare/identity-service-v0.0.1-next.50...identity-service-v0.0.1-next.51) (2025-06-19)
 
 
