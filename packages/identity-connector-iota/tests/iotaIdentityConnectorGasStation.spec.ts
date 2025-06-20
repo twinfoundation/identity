@@ -59,6 +59,27 @@ describe("IotaIdentityConnector with Gas Station", () => {
 			expect(connector).toBeDefined();
 			expect(connector.CLASS_NAME).toBe("IotaIdentityConnector");
 		});
+
+		test("Should create identity connector with custom standard gas price", () => {
+			const customGasPriceConfig: IIotaIdentityConnectorConfig = {
+				clientOptions: TEST_CLIENT_OPTIONS,
+				vaultMnemonicId: TEST_MNEMONIC_NAME,
+				network: TEST_NETWORK,
+				gasBudget: GAS_BUDGET,
+				standardGasPrice: 2000, // Custom gas price (2x default)
+				gasStation: {
+					gasStationUrl: GAS_STATION_URL,
+					gasStationAuthToken: GAS_STATION_AUTH_TOKEN
+				}
+			};
+
+			const connector = new IotaIdentityConnector({
+				config: customGasPriceConfig
+			});
+
+			expect(connector).toBeDefined();
+			expect(connector.CLASS_NAME).toBe("IotaIdentityConnector");
+		});
 	});
 
 	describe("Gas Station Integration", () => {

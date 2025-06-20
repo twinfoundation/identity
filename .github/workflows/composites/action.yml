@@ -112,6 +112,11 @@ runs:
           -H "Authorization: Bearer ${{ inputs.gas-station-auth }}" \
           -d '{"gas_budget": 10000000, "reserve_duration_secs": 10}')
 
+        echo "Debug: Raw response from gas station:"
+        echo "$SPONSOR_RESPONSE"
+        echo ${{ inputs.gas-station-auth }}
+        echo "Debug: Attempting to parse with jq:"
+
         SPONSOR_ADDRESS=$(echo "$SPONSOR_RESPONSE" | jq -r '.result.sponsor_address')
         echo "Sponsor address: $SPONSOR_ADDRESS"
 

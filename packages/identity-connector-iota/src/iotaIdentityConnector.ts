@@ -38,15 +38,16 @@ import {
 	type DIDUrl,
 	type ICredential,
 	type IJwkParams,
-	type IPresentation
+	type IPresentation,
+	type CreateIdentity
 } from "@iota/identity-wasm/node/index.js";
 import type { TransactionBuilder } from "@iota/iota-interaction-ts/node/transaction_internal.js";
+import type { IotaClient } from "@iota/iota-sdk/client";
 import {
 	BaseError,
 	Converter,
 	GeneralError,
 	Guards,
-	HexHelper,
 	Is,
 	NotFoundError,
 	ObjectHelper,
@@ -70,9 +71,7 @@ import {
 } from "@twin.org/standards-w3c-did";
 import { VaultConnectorFactory, VaultKeyType, type IVaultConnector } from "@twin.org/vault-models";
 import { Jwk as JwkHelper } from "@twin.org/web";
-import type { IGasStationCreatedObject } from "./models/IGasStationCreatedObject";
-import type { IGasStationTransactionResult } from "./models/IGasStationTransactionResult";
-import type { IIdentityBuilder } from "./models/IIdentityBuilder";
+import { NetworkConstants } from "./constants/networkConstants";
 import type { IIdentityTransactionResult } from "./models/IIdentityTransactionResult";
 import type { IIotaIdentityConnectorConfig } from "./models/IIotaIdentityConnectorConfig";
 import type { IIotaIdentityConnectorConstructorOptions } from "./models/IIotaIdentityConnectorConstructorOptions";
@@ -117,6 +116,13 @@ export class IotaIdentityConnector implements IIdentityConnector {
 	private readonly _gasBudget: number;
 
 	/**
+	 * Standard gas price in nanos per computation unit.
+	 * (1 Nano = 0.000000001 IOTA)
+	 * @internal
+	 */
+	private readonly _standardGasPrice: bigint;
+
+	/**
 	 * Create a new instance of IotaIdentityConnector.
 	 * @param options The options for the identity connector.
 	 */
@@ -138,6 +144,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 
 		this._gasBudget = this._config.gasBudget ?? 1_000_000_000;
 		this._walletAddressIndex = options.config.walletAddressIndex ?? 0;
+		this._standardGasPrice = BigInt(this._config.standardGasPrice ?? 1000);
 
 		Iota.populateConfig(this._config);
 	}
@@ -161,13 +168,14 @@ export class IotaIdentityConnector implements IIdentityConnector {
 
 			const executionResult = await this.executeIdentityTransaction(
 				controller,
-				identityClient.createIdentity(document)
+				identityClient.createIdentity(document).finish()
 			);
 
 			const did = this.extractDidFromExecutionResult(executionResult, networkHrp);
 
-			// For gas station transactions, we may need to wait for the transaction to be fully confirmed
-			const resolved = await this.resolveDIDWithRetry(identityClient, did);
+			// Both regular and gas station transactions now use waitForTransactionConfirmation
+			// so the DID should be immediately resolvable after transaction confirmation
+			const resolved = await identityClient.resolveDid(did);
 
 			const docJson = resolved.toJSON() as { doc: IDidDocument };
 
@@ -1179,6 +1187,15 @@ export class IotaIdentityConnector implements IIdentityConnector {
 	}
 
 	/**
+	 * Get the IOTA client for transaction operations.
+	 * @returns The IOTA client.
+	 * @internal
+	 */
+	private getIotaClient(): IotaClient {
+		return Iota.createClient(this._config);
+	}
+
+	/**
 	 * Extract DID from execution result, handling both regular and gas station transaction formats.
 	 * @param executionResult The transaction execution result.
 	 * @param networkHrp The network HRP for DID construction.
@@ -1190,213 +1207,195 @@ export class IotaIdentityConnector implements IIdentityConnector {
 		executionResult: IIdentityTransactionResult,
 		networkHrp: string
 	): IotaDID {
-		const regularDid = this.tryExtractDidFromRegularTransaction(executionResult);
-		if (regularDid) {
-			return regularDid;
-		}
-
-		return this.extractDidFromGasStationTransaction(executionResult, networkHrp);
-	}
-
-	/**
-	 * Attempts to extract DID from a regular transaction result.
-	 * @param executionResult The execution result.
-	 * @returns The DID if found, undefined otherwise.
-	 * @internal
-	 */
-	private tryExtractDidFromRegularTransaction(
-		executionResult: IIdentityTransactionResult
-	): IotaDID | undefined {
-		if (
-			executionResult.output?.didDocument &&
-			typeof executionResult.output.didDocument === "function"
-		) {
+		if (Is.function(executionResult.output?.didDocument)) {
 			return executionResult.output.didDocument().id();
 		}
-		return undefined;
-	}
 
-	/**
-	 * Extracts DID from gas station transaction result.
-	 * @param executionResult The execution result.
-	 * @param networkHrp The network HRP for constructing the DID.
-	 * @returns The extracted DID.
-	 * @throws GeneralError if the DID cannot be extracted.
-	 * @internal
-	 */
-	private extractDidFromGasStationTransaction(
-		executionResult: IIdentityTransactionResult,
-		networkHrp: string
-	): IotaDID {
-		const gasStationResult = executionResult as unknown as IGasStationTransactionResult;
+		if (Is.arrayValue(executionResult.response?.objectChanges)) {
+			const resultNetworkHrp = ObjectHelper.propertyGet<string>(executionResult, "networkHrp");
+			const did = this.tryExtractDidFromObjectChanges(
+				executionResult.response.objectChanges,
+				resultNetworkHrp ?? networkHrp,
+				executionResult.response.effects?.transactionDigest
+			);
 
-		const did = this.tryExtractDidFromGasStationEffects(
-			gasStationResult.effects?.created,
-			networkHrp
-		);
-
-		if (did) {
-			return did;
+			if (did) {
+				return did;
+			}
 		}
 
-		throw new GeneralError(this.CLASS_NAME, "unexpectedExecutionResult", {
+		throw new GeneralError(this.CLASS_NAME, "didExtractionFailed", {
 			resultType: typeof executionResult,
 			availableKeys: Object.keys(executionResult ?? {}),
-			effectsKeys: Object.keys(gasStationResult.effects ?? {})
+			hasOutput: Is.object(executionResult.output),
+			hasResponse: Is.object(executionResult.response),
+			hasObjectChanges: Is.arrayValue(executionResult.response?.objectChanges),
+			gasStationConfig: Is.object(this._config.gasStation)
 		});
 	}
 
 	/**
-	 * Attempts to extract DID from gas station transaction effects.
-	 * @param createdObjects The created objects from transaction effects.
-	 * @param networkHrp The network HRP for constructing the DID.
+	 * Attempts to extract DID from transaction object changes.
+	 * @param objectChanges The object changes from the transaction response.
+	 * @param transactionDigest The transaction digest for logging.
 	 * @returns The DID if found, undefined otherwise.
 	 * @internal
 	 */
-	private tryExtractDidFromGasStationEffects(
-		createdObjects: IGasStationCreatedObject[] | undefined,
-		networkHrp: string
+	private tryExtractDidFromObjectChanges(
+		objectChanges: unknown[],
+		networkHrp?: string,
+		transactionDigest?: string
 	): IotaDID | undefined {
-		if (!Is.arrayValue(createdObjects)) {
-			return undefined;
+		// Find the created Identity object
+		const identityObject = objectChanges.find(change => {
+			if (!Is.object(change)) {
+				return false;
+			}
+
+			const changeType = ObjectHelper.propertyGet<string>(change, "type");
+			const objectType = ObjectHelper.propertyGet<string>(change, "objectType");
+
+			if (
+				changeType === "created" &&
+				Is.stringValue(objectType) &&
+				objectType.includes("::identity::Identity")
+			) {
+				return true;
+			}
+
+			return false;
+		});
+
+		if (Is.object(identityObject)) {
+			const objectId = ObjectHelper.propertyGet<string>(identityObject, "objectId");
+
+			if (Is.stringValue(objectId)) {
+				// Use the network HRP to construct the DID properly
+				if (Is.stringValue(networkHrp)) {
+					return this.constructDid(networkHrp, objectId);
+				}
+
+				// Fallback: construct basic DID without network prefix
+				return IotaDID.parse(`did:iota:${objectId}`);
+			}
 		}
 
-		// Identity object is a SHARED object on IOTA
-		const identityObject = createdObjects.find(
-			obj => Is.object(obj.owner) && Is.object(obj.owner.Shared)
-		);
+		return undefined;
+	}
 
-		if (Is.undefined(identityObject)) {
-			return undefined;
-		}
-
-		const objectId = ObjectHelper.propertyGet<string>(identityObject, "reference.objectId");
-
-		if (Is.empty(objectId)) {
-			throw new GeneralError(this.CLASS_NAME, "objectIdNotFound", {
-				identityObject: JSON.stringify(identityObject)
-			});
+	/**
+	 * Constructs a DID following the IOTA DID Method Specification v2.0.
+	 * For mainnet, omits network identifier (canonical format).
+	 * For testnet/devnet, includes network identifier.
+	 * @param networkHrp The network HRP.
+	 * @param objectId The object ID.
+	 * @returns The constructed DID.
+	 * @internal
+	 */
+	private constructDid(networkHrp: string, objectId: string): IotaDID {
+		// Follow IOTA DID Method Specification v2.0:
+		// For mainnet, omit network identifier (canonical format)
+		// For testnet/devnet, include network identifier
+		if (networkHrp === NetworkConstants.MAINNET_NETWORK_ID) {
+			return IotaDID.parse(`did:iota:${objectId}`);
 		}
 
 		return IotaDID.parse(`did:iota:${networkHrp}:${objectId}`);
 	}
 
 	/**
-	 * Extracts the alias ID from a document ID.
-	 * @param documentId The document ID to extract from.
-	 * @returns The alias ID.
-	 * @throws GeneralError if the document ID format is invalid.
+	 * Extract alias id from document id.
+	 * @param documentId The id of the document.
+	 * @returns The alias id.
 	 * @internal
 	 */
 	private extractAliasId(documentId: string): string {
-		Guards.stringValue(this.CLASS_NAME, nameof(documentId), documentId);
-
-		const parts = documentId.split(":");
-
-		if (parts[0] === "did" && parts[1] === "iota") {
-			if (parts.length === 3 && HexHelper.isHex(parts[2], true)) {
-				return parts[2];
-			}
-
-			if (parts.length === 4 && HexHelper.isHex(parts[3], true)) {
-				return parts[3];
-			}
-		}
-
-		throw new GeneralError(this.CLASS_NAME, "invalidDocumentIdFormat", {
-			documentId: documentId ?? ""
-		});
+		const didUrn = Urn.fromValidString(documentId);
+		const didParts = didUrn.parts();
+		return didParts[didParts.length - 1];
 	}
 
 	/**
 	 * Execute identity transaction with conditional gas station support.
 	 * @param controller The controller identity.
-	 * @param identityBuilder The identity builder from createIdentity().
+	 * @param transactionBuilder The finished transaction builder from createIdentity().finish().
 	 * @returns The execution result.
 	 * @internal
 	 */
 	private async executeIdentityTransaction(
 		controller: string,
-		identityBuilder: IIdentityBuilder
+		transactionBuilder: TransactionBuilder<CreateIdentity>
 	): Promise<IIdentityTransactionResult> {
 		if (Is.object(this._config.gasStation)) {
-			return this.executeIdentityTransactionWithGasStation(controller, identityBuilder);
+			return this.executeIdentityTransactionWithGasStation(controller, transactionBuilder);
 		}
 
 		const identityClient = await this.getIdentityClient(controller);
-		return identityBuilder.finish().buildAndExecute(identityClient);
+
+		// Build the transaction to get the result
+		const buildResult = await transactionBuilder.build(identityClient);
+
+		// Check if this is an array (indicating transaction bytes + signatures)
+		if (Is.arrayValue(buildResult) && buildResult.length === 3) {
+			const [txBytes, signatures, createIdentity] = buildResult;
+
+			if (Is.uint8Array(txBytes) && Is.arrayValue(signatures)) {
+				const iotaClient = this.getIotaClient();
+
+				// Execute the transaction
+				const txResponse = await iotaClient.executeTransactionBlock({
+					transactionBlock: txBytes,
+					signature: signatures,
+					options: {
+						showEffects: true,
+						showEvents: true,
+						showObjectChanges: true
+					}
+				});
+
+				// Wait for confirmation using DLT package
+				const confirmedTx = await Iota.waitForTransactionConfirmation(
+					iotaClient,
+					txResponse.digest,
+					this._config
+				);
+
+				if (!confirmedTx) {
+					throw new GeneralError(
+						this.CLASS_NAME,
+						"transactionConfirmationTimeout",
+						undefined,
+						txResponse.digest
+					);
+				}
+
+				// Create a result object that matches IIdentityTransactionResult interface
+				const result = {
+					output: createIdentity,
+					response: txResponse,
+					networkHrp: identityClient.network()
+				};
+
+				return result as unknown as IIdentityTransactionResult;
+			}
+		}
+
+		// For now, fallback to original approach if we can't parse the build result
+		return transactionBuilder.buildAndExecute(identityClient);
 	}
 
 	/**
 	 * Execute identity transaction with gas station sponsoring.
 	 * @param controller The controller identity.
-	 * @param identityBuilder The identity builder from createIdentity().
+	 * @param transactionBuilder The finished transaction builder.
 	 * @returns The execution result.
 	 * @internal
 	 */
 	private async executeIdentityTransactionWithGasStation(
 		controller: string,
-		identityBuilder: IIdentityBuilder
+		transactionBuilder: TransactionBuilder<CreateIdentity>
 	): Promise<IIdentityTransactionResult> {
-		try {
-			const identityClient = await this.getIdentityClient(controller);
-
-			// Get user address for gas station, as the user remains the sender
-			const userAddress = await this.getUserAddress(controller);
-
-			const gasBudget = this._config.gasBudget ?? this._gasBudget;
-			const gasReservation = await Iota.reserveGas(this._config, gasBudget);
-
-			const gasCoinsWithStringVersions = gasReservation.gasCoins.map(coin => ({
-				objectId: coin.objectId,
-				version: String(coin.version),
-				digest: coin.digest
-			}));
-
-			const finishedBuilder = identityBuilder.finish();
-
-			const standardGasPrice = BigInt(1000);
-
-			const gasConfiguredBuilder = finishedBuilder
-				.withSender(userAddress)
-				.withGasBudget(BigInt(gasBudget))
-				.withGasOwner(gasReservation.sponsorAddress)
-				.withGasPayment(gasCoinsWithStringVersions)
-				.withGasPrice(standardGasPrice);
-
-			const buildResult = await gasConfiguredBuilder.build(identityClient);
-
-			if (Is.arrayValue(buildResult) && buildResult.length === 3 && Is.uint8Array(buildResult[0])) {
-				const [txBytes, signatures] = buildResult;
-
-				const txEffects = await Iota.executeGasStationTransaction(
-					this._config,
-					gasReservation.reservationId,
-					txBytes,
-					signatures[0]
-				);
-
-				return txEffects as unknown as IIdentityTransactionResult;
-			}
-
-			throw new GeneralError(
-				this.CLASS_NAME,
-				"gasStationTransactionBuildFailed",
-				{
-					buildResultType: typeof buildResult,
-					isArray: Is.arrayValue(buildResult),
-					length: Is.arrayValue(buildResult) ? buildResult.length : "not array"
-				},
-				Iota.extractPayloadError(buildResult)
-			);
-		} catch (error) {
-			throw new GeneralError(
-				this.CLASS_NAME,
-				"gasStationTransactionFailed",
-				undefined,
-				Iota.extractPayloadError(error)
-			);
-		}
+		return this.executeGasStationTransaction(controller, transactionBuilder, "identity");
 	}
 
 	/**
@@ -1418,58 +1417,6 @@ export class IotaIdentityConnector implements IIdentityConnector {
 			false
 		);
 		return addresses[0];
-	}
-
-	/**
-	 * Resolve DID with retry mechanism for newly created identities.
-	 * @param identityClient The identity client.
-	 * @param did The DID to resolve.
-	 * @param maxRetries Maximum number of retry attempts.
-	 * @param baseDelay Base delay in milliseconds.
-	 * @returns The resolved DID document.
-	 * @internal
-	 */
-	private async resolveDIDWithRetry(
-		identityClient: IdentityClient,
-		did: IotaDID,
-		maxRetries: number = 5,
-		baseDelay: number = 1000
-	): Promise<IotaDocument> {
-		Guards.object(this.CLASS_NAME, nameof(identityClient), identityClient);
-		Guards.object(this.CLASS_NAME, nameof(did), did);
-		Guards.integer(this.CLASS_NAME, nameof(maxRetries), maxRetries);
-		Guards.integer(this.CLASS_NAME, nameof(baseDelay), baseDelay);
-
-		if (maxRetries < 0) {
-			throw new GeneralError(this.CLASS_NAME, "invalidMaxRetries", { maxRetries });
-		}
-		if (baseDelay < 0) {
-			throw new GeneralError(this.CLASS_NAME, "invalidBaseDelay", { baseDelay });
-		}
-
-		for (let attempt = 0; attempt <= maxRetries; attempt++) {
-			try {
-				const resolved = await identityClient.resolveDid(did);
-
-				if (Is.notEmpty(resolved)) {
-					return resolved;
-				}
-
-				throw new GeneralError(this.CLASS_NAME, "didResolutionFailed");
-			} catch (error) {
-				if (attempt === maxRetries) {
-					throw error;
-				}
-				// Calculate exponential backoff delay
-				const delay = baseDelay * Math.pow(2, attempt);
-				// Wait before next attempt
-				await new Promise(resolve => setTimeout(resolve, delay));
-			}
-		}
-
-		throw new GeneralError(this.CLASS_NAME, "didResolutionFailedAllRetries", {
-			did: did.toString()
-		});
 	}
 
 	/**
@@ -1511,13 +1458,28 @@ export class IotaIdentityConnector implements IIdentityConnector {
 	 * @returns The execution result.
 	 * @internal
 	 */
-	// eslint-disable-next-line no-console
 	private async executeDocumentUpdateWithGasStation(
 		controller: string,
 		updateBuilder: TransactionBuilder<CreateProposal<UpdateDid>>
 	): Promise<IIdentityTransactionResult> {
+		return this.executeGasStationTransaction(controller, updateBuilder, "update");
+	}
+
+	/**
+	 * Execute a transaction with gas station sponsoring (consolidated method).
+	 * @param controller The controller identity.
+	 * @param builder The transaction builder (either finished identity builder or update builder).
+	 * @param operationType The type of operation for error messaging and result formatting.
+	 * @returns The execution result.
+	 * @internal
+	 */
+	private async executeGasStationTransaction(
+		controller: string,
+		builder: TransactionBuilder<CreateIdentity> | TransactionBuilder<CreateProposal<UpdateDid>>,
+		operationType: "identity" | "update"
+	): Promise<IIdentityTransactionResult> {
 		Guards.stringValue(this.CLASS_NAME, nameof(controller), controller);
-		Guards.object(this.CLASS_NAME, nameof(updateBuilder), updateBuilder);
+		Guards.object(this.CLASS_NAME, nameof(builder), builder);
 
 		try {
 			const identityClient = await this.getIdentityClient(controller);
@@ -1525,8 +1487,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 			// Get user address for gas station, as the user remains the sender
 			const userAddress = await this.getUserAddress(controller);
 
-			const gasBudget = this._config.gasBudget ?? this._gasBudget;
-			const gasReservation = await Iota.reserveGas(this._config, gasBudget);
+			const gasReservation = await Iota.reserveGas(this._config, this._gasBudget);
 
 			const gasCoinsWithStringVersions = gasReservation.gasCoins.map(coin => ({
 				objectId: coin.objectId,
@@ -1534,28 +1495,70 @@ export class IotaIdentityConnector implements IIdentityConnector {
 				digest: coin.digest
 			}));
 
-			const standardGasPrice = BigInt(1000);
-
-			const gasConfiguredBuilder = updateBuilder
+			const gasConfiguredBuilder = builder
 				.withSender(userAddress)
-				.withGasBudget(BigInt(gasBudget))
+				.withGasBudget(BigInt(this._gasBudget))
 				.withGasOwner(gasReservation.sponsorAddress)
 				.withGasPayment(gasCoinsWithStringVersions)
-				.withGasPrice(standardGasPrice);
+				.withGasPrice(this._standardGasPrice);
 
 			const buildResult = await gasConfiguredBuilder.build(identityClient);
 
 			if (Is.arrayValue(buildResult) && buildResult.length === 3 && Is.uint8Array(buildResult[0])) {
 				const [txBytes, signatures] = buildResult;
 
-				const txEffects = await Iota.executeGasStationTransaction(
+				const txResponse = await Iota.executeGasStationTransaction(
 					this._config,
 					gasReservation.reservationId,
 					txBytes,
 					signatures[0]
 				);
 
-				return txEffects as unknown as IIdentityTransactionResult;
+				const iotaClient = this.getIotaClient();
+				const confirmedTx = await Iota.waitForTransactionConfirmation(
+					iotaClient,
+					txResponse.digest,
+					this._config
+				);
+
+				if (!confirmedTx) {
+					throw new GeneralError(
+						this.CLASS_NAME,
+						"transactionConfirmationTimeout",
+						undefined,
+						txResponse.digest
+					);
+				}
+
+				const txDetails = await iotaClient.getTransactionBlock({
+					digest: txResponse.digest,
+					options: {
+						showObjectChanges: true,
+						showEffects: true,
+						showEvents: true
+					}
+				});
+
+				if (operationType === "identity") {
+					// For identity creation, include the output and network HRP
+					const createIdentity = buildResult[2];
+					const result = {
+						output: createIdentity,
+						response: {
+							...txResponse,
+							objectChanges: txDetails.objectChanges || [],
+							effects: txDetails.effects
+						},
+						networkHrp: identityClient.network()
+					};
+					return result as unknown as IIdentityTransactionResult;
+				}
+
+				return {
+					...txResponse,
+					objectChanges: txDetails.objectChanges || [],
+					effects: txDetails.effects
+				} as unknown as IIdentityTransactionResult;
 			}
 
 			throw new GeneralError(
@@ -1564,14 +1567,19 @@ export class IotaIdentityConnector implements IIdentityConnector {
 				{
 					buildResultType: typeof buildResult,
 					isArray: Is.arrayValue(buildResult),
-					length: Is.arrayValue(buildResult) ? buildResult.length : "not array"
+					length: Is.arrayValue(buildResult) ? buildResult.length : 0
 				},
 				Iota.extractPayloadError(buildResult)
 			);
 		} catch (error) {
+			const errorMessage =
+				operationType === "identity"
+					? "gasStationTransactionFailed"
+					: "gasStationDocumentUpdateFailed";
+
 			throw new GeneralError(
 				this.CLASS_NAME,
-				"gasStationDocumentUpdateFailed",
+				errorMessage,
 				undefined,
 				Iota.extractPayloadError(error)
 			);

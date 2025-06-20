@@ -9,7 +9,6 @@
 
 - [IGasStationCreatedObject](interfaces/IGasStationCreatedObject.md)
 - [IGasStationTransactionResult](interfaces/IGasStationTransactionResult.md)
-- [IIdentityBuilder](interfaces/IIdentityBuilder.md)
 - [IIotaIdentityConnectorConfig](interfaces/IIotaIdentityConnectorConfig.md)
 - [IIotaIdentityConnectorConstructorOptions](interfaces/IIotaIdentityConnectorConstructorOptions.md)
 - [IIotaIdentityResolverConnectorConfig](interfaces/IIotaIdentityResolverConnectorConfig.md)

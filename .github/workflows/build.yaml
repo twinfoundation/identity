@@ -41,7 +41,7 @@ jobs:
           test-mnemonic: ${{ secrets.TEST_MNEMONIC }}
           test-node-endpoint: ${{ env.TEST_NODE_ENDPOINT }}
           test-faucet-endpoint: ${{ env.TEST_FAUCET_ENDPOINT }}
-          gas-station-auth: ${{ secrets.GAS_STATION_AUTH_TOKEN }}
+          gas-station-auth: 'qEyCL6d9BKKFl/tfDGAKeGFkhUlf7FkqiGV7Xw4JUsI='
           package-name: 'all'
 
       # Run Lint and Dist
