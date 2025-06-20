@@ -1246,7 +1246,6 @@ export class IotaIdentityConnector implements IIdentityConnector {
 		networkHrp?: string,
 		transactionDigest?: string
 	): IotaDID | undefined {
-		// Find the created Identity object
 		const identityObject = objectChanges.find(change => {
 			if (!Is.object(change)) {
 				return false;
@@ -1270,12 +1269,10 @@ export class IotaIdentityConnector implements IIdentityConnector {
 			const objectId = ObjectHelper.propertyGet<string>(identityObject, "objectId");
 
 			if (Is.stringValue(objectId)) {
-				// Use the network HRP to construct the DID properly
 				if (Is.stringValue(networkHrp)) {
 					return this.constructDid(networkHrp, objectId);
 				}
 
-				// Fallback: construct basic DID without network prefix
 				return IotaDID.parse(`did:iota:${objectId}`);
 			}
 		}
@@ -1293,9 +1290,6 @@ export class IotaIdentityConnector implements IIdentityConnector {
 	 * @internal
 	 */
 	private constructDid(networkHrp: string, objectId: string): IotaDID {
-		// Follow IOTA DID Method Specification v2.0:
-		// For mainnet, omit network identifier (canonical format)
-		// For testnet/devnet, include network identifier
 		if (networkHrp === NetworkConstants.MAINNET_NETWORK_ID) {
 			return IotaDID.parse(`did:iota:${objectId}`);
 		}
@@ -1332,17 +1326,14 @@ export class IotaIdentityConnector implements IIdentityConnector {
 
 		const identityClient = await this.getIdentityClient(controller);
 
-		// Build the transaction to get the result
 		const buildResult = await transactionBuilder.build(identityClient);
 
-		// Check if this is an array (indicating transaction bytes + signatures)
-		if (Is.arrayValue(buildResult) && buildResult.length === 3) {
+		if (Is.arrayValue(buildResult) && buildResult.length === 3 && Is.uint8Array(buildResult[0])) {
 			const [txBytes, signatures, createIdentity] = buildResult;
 
-			if (Is.uint8Array(txBytes) && Is.arrayValue(signatures)) {
+			if (Is.arrayValue(signatures)) {
 				const iotaClient = this.getIotaClient();
 
-				// Execute the transaction
 				const txResponse = await iotaClient.executeTransactionBlock({
 					transactionBlock: txBytes,
 					signature: signatures,
@@ -1353,7 +1344,6 @@ export class IotaIdentityConnector implements IIdentityConnector {
 					}
 				});
 
-				// Wait for confirmation using DLT package
 				const confirmedTx = await Iota.waitForTransactionConfirmation(
 					iotaClient,
 					txResponse.digest,
@@ -1369,7 +1359,6 @@ export class IotaIdentityConnector implements IIdentityConnector {
 					);
 				}
 
-				// Create a result object that matches IIdentityTransactionResult interface
 				const result = {
 					output: createIdentity,
 					response: txResponse,
@@ -1380,8 +1369,17 @@ export class IotaIdentityConnector implements IIdentityConnector {
 			}
 		}
 
-		// For now, fallback to original approach if we can't parse the build result
-		return transactionBuilder.buildAndExecute(identityClient);
+		throw new GeneralError(
+			this.CLASS_NAME,
+			"transactionBuildFailed",
+			{
+				buildResultType: typeof buildResult,
+				isArray: Is.arrayValue(buildResult),
+				length: Is.arrayValue(buildResult) ? buildResult.length : 0,
+				hasUint8Array: Is.arrayValue(buildResult) && Is.uint8Array(buildResult[0])
+			},
+			Iota.extractPayloadError(buildResult)
+		);
 	}
 
 	/**
@@ -1506,22 +1504,16 @@ export class IotaIdentityConnector implements IIdentityConnector {
 
 			if (Is.arrayValue(buildResult) && buildResult.length === 3 && Is.uint8Array(buildResult[0])) {
 				const [txBytes, signatures] = buildResult;
-
-				const txResponse = await Iota.executeGasStationTransaction(
-					this._config,
-					gasReservation.reservationId,
-					txBytes,
-					signatures[0]
-				);
-
 				const iotaClient = this.getIotaClient();
 
-				// Use DLT's new waitForTransactionConfirmation with built-in timeout and options
-				const confirmedTx = await Iota.waitForTransactionConfirmation(
-					iotaClient,
-					txResponse.digest,
+				const confirmedResponse = await Iota.executePreBuiltGasStationTransaction(
 					this._config,
+					iotaClient,
+					gasReservation.reservationId,
+					txBytes,
+					signatures[0],
 					{
+						waitForConfirmation: true,
 						showEffects: true,
 						showEvents: true,
 						showObjectChanges: true
@@ -1533,13 +1525,13 @@ export class IotaIdentityConnector implements IIdentityConnector {
 					const createIdentity = buildResult[2];
 					const result = {
 						output: createIdentity,
-						response: confirmedTx,
+						response: confirmedResponse,
 						networkHrp: identityClient.network()
 					};
 					return result as unknown as IIdentityTransactionResult;
 				}
 
-				return confirmedTx as unknown as IIdentityTransactionResult;
+				return confirmedResponse as unknown as IIdentityTransactionResult;
 			}
 
 			throw new GeneralError(
