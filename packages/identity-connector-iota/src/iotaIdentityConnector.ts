@@ -1515,50 +1515,31 @@ export class IotaIdentityConnector implements IIdentityConnector {
 				);
 
 				const iotaClient = this.getIotaClient();
+
+				// Use DLT's new waitForTransactionConfirmation with built-in timeout and options
 				const confirmedTx = await Iota.waitForTransactionConfirmation(
 					iotaClient,
 					txResponse.digest,
-					this._config
-				);
-
-				if (!confirmedTx) {
-					throw new GeneralError(
-						this.CLASS_NAME,
-						"transactionConfirmationTimeout",
-						undefined,
-						txResponse.digest
-					);
-				}
-
-				const txDetails = await iotaClient.getTransactionBlock({
-					digest: txResponse.digest,
-					options: {
-						showObjectChanges: true,
+					this._config,
+					{
 						showEffects: true,
-						showEvents: true
+						showEvents: true,
+						showObjectChanges: true
 					}
-				});
+				);
 
 				if (operationType === "identity") {
 					// For identity creation, include the output and network HRP
 					const createIdentity = buildResult[2];
 					const result = {
 						output: createIdentity,
-						response: {
-							...txResponse,
-							objectChanges: txDetails.objectChanges || [],
-							effects: txDetails.effects
-						},
+						response: confirmedTx,
 						networkHrp: identityClient.network()
 					};
 					return result as unknown as IIdentityTransactionResult;
 				}
 
-				return {
-					...txResponse,
-					objectChanges: txDetails.objectChanges || [],
-					effects: txDetails.effects
-				} as unknown as IIdentityTransactionResult;
+				return confirmedTx as unknown as IIdentityTransactionResult;
 			}
 
 			throw new GeneralError(
