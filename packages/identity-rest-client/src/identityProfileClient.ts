@@ -1,7 +1,7 @@
 // Copyright 2024 IOTA Stiftung.
 // SPDX-License-Identifier: Apache-2.0.
 import { BaseRestClient } from "@twin.org/api-core";
-import type { IBaseRestClientConfig } from "@twin.org/api-models";
+import { HttpParameterHelper, type IBaseRestClientConfig } from "@twin.org/api-models";
 import { Guards } from "@twin.org/core";
 import type { IJsonLdDocument } from "@twin.org/data-json-ld";
 import type {
@@ -74,8 +74,8 @@ export class IdentityProfileClient<
 			"GET",
 			{
 				query: {
-					publicPropertyNames: publicPropertyNames?.join(","),
-					privatePropertyNames: privatePropertyNames?.join(",")
+					publicPropertyNames: HttpParameterHelper.arrayToString(publicPropertyNames),
+					privatePropertyNames: HttpParameterHelper.arrayToString(privatePropertyNames)
 				}
 			}
 		);
@@ -104,7 +104,7 @@ export class IdentityProfileClient<
 				identity
 			},
 			query: {
-				propertyNames: propertyNames?.join(",")
+				propertyNames: HttpParameterHelper.arrayToString(propertyNames)
 			}
 		});
 
@@ -168,8 +168,10 @@ export class IdentityProfileClient<
 			"GET",
 			{
 				query: {
-					publicFilters: publicFilters?.map(f => `${f.propertyName}:${f.propertyValue}`).join(","),
-					publicPropertyNames: publicPropertyNames?.join(","),
+					publicFilters: HttpParameterHelper.arrayToString(
+						publicFilters?.map(f => `${f.propertyName}:${f.propertyValue}`)
+					),
+					publicPropertyNames: HttpParameterHelper.arrayToString(publicPropertyNames),
 					cursor,
 					pageSize
 				}

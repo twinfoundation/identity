@@ -1,13 +1,14 @@
 // Copyright 2024 IOTA Stiftung.
 // SPDX-License-Identifier: Apache-2.0.
-import type {
-	IConflictResponse,
-	IHttpRequestContext,
-	INoContentRequest,
-	INoContentResponse,
-	INotFoundResponse,
-	IRestRoute,
-	ITag
+import {
+	HttpParameterHelper,
+	type IConflictResponse,
+	type IHttpRequestContext,
+	type INoContentRequest,
+	type INoContentResponse,
+	type INotFoundResponse,
+	type IRestRoute,
+	type ITag
 } from "@twin.org/api-models";
 import { Coerce, ComponentFactory, Guards } from "@twin.org/core";
 import type { IJsonLdDocument } from "@twin.org/data-json-ld";
@@ -379,8 +380,10 @@ export async function identityGet(
 	const component = ComponentFactory.get<IIdentityProfileComponent>(componentName);
 
 	const result = await component.get(
-		request?.query?.publicPropertyNames?.split(",") as (keyof IJsonLdDocument)[],
-		request?.query?.privatePropertyNames?.split(",") as (keyof IJsonLdDocument)[],
+		HttpParameterHelper.arrayFromString<keyof IJsonLdDocument>(request?.query?.publicPropertyNames),
+		HttpParameterHelper.arrayFromString<keyof IJsonLdDocument>(
+			request?.query?.privatePropertyNames
+		),
 		httpRequestContext.userIdentity
 	);
 
@@ -412,7 +415,7 @@ export async function identityGetPublic(
 
 	const result = await component.getPublic(
 		request?.pathParams.identity,
-		request?.query?.propertyNames?.split(",") as (keyof IJsonLdDocument)[]
+		HttpParameterHelper.arrayFromString<keyof IJsonLdDocument>(request?.query?.propertyNames)
 	);
 
 	return {
@@ -490,8 +493,8 @@ export async function identitiesList(
 ): Promise<IIdentityProfileListResponse> {
 	const component = ComponentFactory.get<IIdentityProfileComponent>(componentName);
 
-	const publicFilterPairs = request?.query?.publicFilters?.split(",") ?? [];
-	const publicFilters = publicFilterPairs.map(pair => {
+	const publicFilterPairs = HttpParameterHelper.arrayFromString(request?.query?.publicFilters);
+	const publicFilters = publicFilterPairs?.map(pair => {
 		const parts = pair.split(":");
 		return {
 			propertyName: parts[0],
@@ -502,9 +505,11 @@ export async function identitiesList(
 	return {
 		body: await component.list(
 			publicFilters,
-			request?.query?.publicPropertyNames?.split(",") as (keyof IJsonLdDocument)[],
+			HttpParameterHelper.arrayFromString<keyof IJsonLdDocument>(
+				request?.query?.publicPropertyNames
+			),
 			request?.query?.cursor,
-			Coerce.number(request.query?.pageSize)
+			Coerce.integer(request.query?.pageSize)
 		)
 	};
 }
