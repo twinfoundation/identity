@@ -30,7 +30,8 @@
 		"openapi",
 		"Stiftung",
 		"unrevoke",
-		"Unrevoking"
+		"Unrevoking",
+		"nanos"
 	],
 	"ignoreRegExpList": [
 		"/from\\s+(['\"]).*\\1/",

@@ -31,7 +31,20 @@
 			"integerNegative": "The value must be a positive integer, it is currently {value}",
 			"invalidDocumentIdFormat": "The document ID format is invalid, it is currently {documentId}",
 			"invalidSubjectId": "The subject id format is invalid it must be a Url or Urn, it is \"{subjectId}\"",
-			"missingControllerToken": "The controller token is missing"
+			"missingControllerToken": "The controller token is missing",
+			"unexpectedExecutionResult": "Could not extract DID from transaction result",
+			"objectIdNotFound": "The object ID was not found in the created object",
+			"gasStationError": "Gas station transaction execution failed",
+			"gasStationTransactionBuildFailed": "Gas station transaction build failed",
+			"gasStationTransactionFailed": "Gas station transaction failed",
+			"gasStationDocumentUpdateFailed": "Gas station document update failed",
+			"didExtractionFailed": "Failed to extract DID from transaction execution result",
+			"transactionConfirmationTimeout": "Transaction confirmation timed out",
+			"transactionBuildFailed": "Transaction build failed - unexpected build result format",
+			"didResolutionFailed": "DID resolution failed",
+			"didResolutionFailedAllRetries": "DID resolution failed after all retries",
+			"invalidMaxRetries": "The maximum number of retries must be a positive integer, it is currently {maxRetries}",
+			"invalidBaseDelay": "The base delay must be a positive integer, it is currently {baseDelay}"
 		}
 	}
 }
