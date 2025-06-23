@@ -1,5 +1,19 @@
 # @twin.org/identity-connector-iota - Changelog
 
+## [0.0.1-next.53](https://github.com/twinfoundation/identity/compare/identity-connector-iota-v0.0.1-next.52...identity-connector-iota-v0.0.1-next.53) (2025-06-23)
+
+
+### Features
+
+* gas station integration ([#39](https://github.com/twinfoundation/identity/issues/39)) ([fc579cf](https://github.com/twinfoundation/identity/commit/fc579cf33519455f2cd6423a5153fb052bddc231))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @twin.org/identity-models bumped from 0.0.1-next.52 to 0.0.1-next.53
+
 ## [0.0.1-next.52](https://github.com/twinfoundation/identity/compare/identity-connector-iota-v0.0.1-next.51...identity-connector-iota-v0.0.1-next.52) (2025-06-20)
 
 
