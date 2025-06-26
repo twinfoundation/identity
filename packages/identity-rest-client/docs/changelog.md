@@ -1,5 +1,27 @@
 # @twin.org/identity-rest-client - Changelog
 
+## [0.0.1-next.55](https://github.com/twinfoundation/identity/compare/identity-rest-client-v0.0.1-next.54...identity-rest-client-v0.0.1-next.55) (2025-06-26)
+
+
+### Features
+
+* identity key separator use slash ([1319d0d](https://github.com/twinfoundation/identity/commit/1319d0d07164a36b3ec279e6421b8835ffefc3d3))
+* use shared store mechanism ([#27](https://github.com/twinfoundation/identity/issues/27)) ([ce41f3f](https://github.com/twinfoundation/identity/commit/ce41f3fc3da1b206ec06da7ea5b2c968f788804d))
+
+
+### Bug Fixes
+
+* Import path and bump version ([#21](https://github.com/twinfoundation/identity/issues/21)) ([ccea845](https://github.com/twinfoundation/identity/commit/ccea845bf32562267280bc1b3dde1c9af1a00360))
+* Install sdk-wasm ([#20](https://github.com/twinfoundation/identity/issues/20)) ([75ec14e](https://github.com/twinfoundation/identity/commit/75ec14e072f8c219863a1c028a3b0783802086e9))
+* query params force coercion ([d9347d2](https://github.com/twinfoundation/identity/commit/d9347d29d4a9cc58759f30f5d8526de864ea7522))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @twin.org/identity-models bumped from 0.0.1-next.54 to 0.0.1-next.55
+
 ## [0.0.1-next.54](https://github.com/twinfoundation/identity/compare/identity-rest-client-v0.0.1-next.53...identity-rest-client-v0.0.1-next.54) (2025-06-26)
 
 
