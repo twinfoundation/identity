@@ -506,7 +506,7 @@ describe("IotaIdentityConnector", () => {
 				source: "IotaIdentityConnector",
 				inner: expect.objectContaining({
 					message: "iotaIdentityConnector.serviceNotFound",
-					name: "IOTA"
+					name: "NotFoundError"
 				})
 			})
 		);

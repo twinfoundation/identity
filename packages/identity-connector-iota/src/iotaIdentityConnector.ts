@@ -3,16 +3,25 @@
 import {
 	Credential,
 	Duration,
+	EdDSAJwsVerifier,
+	FailFast,
 	IdentityClient,
+	IdentityClientReadOnly,
 	IotaDID,
 	IotaDocument,
+	Jwk,
 	JwkMemStore,
+	JwkType,
 	JwsAlgorithm,
 	JwsSignatureOptions,
+	Jwt,
+	JwtCredentialValidationOptions,
+	JwtCredentialValidator,
 	JwtPresentationOptions,
 	JwtPresentationValidationOptions,
 	JwtPresentationValidator,
 	KeyIdMemStore,
+	MethodDigest,
 	MethodScope,
 	Presentation,
 	Resolver,
@@ -22,27 +31,19 @@ import {
 	StorageSigner,
 	SubjectHolderRelationship,
 	Timestamp,
-	JwtCredentialValidator,
-	JwtCredentialValidationOptions,
-	FailFast,
-	Jwk,
-	MethodDigest,
-	EdDSAJwsVerifier,
-	JwkType,
-	Jwt,
-	type CreateProposal,
-	type UpdateDid,
-	type OnChainIdentity,
-	type ControllerToken,
 	VerificationMethod,
+	type ControllerToken,
+	type CreateIdentity,
+	type CreateProposal,
 	type DIDUrl,
 	type ICredential,
 	type IJwkParams,
 	type IPresentation,
-	type CreateIdentity
+	type OnChainIdentity,
+	type UpdateDid
 } from "@iota/identity-wasm/node/index.js";
 import type { TransactionBuilder } from "@iota/iota-interaction-ts/node/transaction_internal.js";
-import type { IotaClient } from "@iota/iota-sdk/client";
+import { IotaClient } from "@iota/iota-sdk/client";
 import {
 	BaseError,
 	Converter,
@@ -75,7 +76,6 @@ import { NetworkConstants } from "./constants/networkConstants";
 import type { IIdentityTransactionResult } from "./models/IIdentityTransactionResult";
 import type { IIotaIdentityConnectorConfig } from "./models/IIotaIdentityConnectorConfig";
 import type { IIotaIdentityConnectorConstructorOptions } from "./models/IIotaIdentityConnectorConstructorOptions";
-import { IotaIdentityUtils } from "./utils/iotaIdentityUtils";
 
 /**
  * Class for performing identity operations on IOTA.
@@ -608,7 +608,9 @@ export class IotaIdentityConnector implements IIdentityConnector {
 		Guards.stringValue(this.CLASS_NAME, nameof(credentialJwt), credentialJwt);
 
 		try {
-			const identityClientReadOnly = await IotaIdentityUtils.createClient(this._config);
+			const identityClientReadOnly = await IdentityClientReadOnly.create(
+				new IotaClient(this._config.clientOptions)
+			);
 			const resolver = new Resolver({ client: identityClientReadOnly });
 			const jwt = new Jwt(credentialJwt);
 			const issuerDocumentId = JwtCredentialValidator.extractIssuerFromJwt(jwt);
@@ -919,7 +921,9 @@ export class IotaIdentityConnector implements IIdentityConnector {
 		Guards.stringValue(this.CLASS_NAME, nameof(presentationJwt), presentationJwt);
 
 		try {
-			const identityClientReadOnly = await IotaIdentityUtils.createClient(this._config);
+			const identityClientReadOnly = await IdentityClientReadOnly.create(
+				new IotaClient(this._config.clientOptions)
+			);
 			const resolver = new Resolver<IotaDocument>({ client: identityClientReadOnly });
 			const jwt = new Jwt(presentationJwt);
 			const holderId = JwtPresentationValidator.extractHolder(jwt);
@@ -1132,8 +1136,9 @@ export class IotaIdentityConnector implements IIdentityConnector {
 	 * @internal
 	 */
 	private async getIdentityClient(controller?: string): Promise<IdentityClient> {
-		const identityClientReadOnly = await IotaIdentityUtils.createClient(this._config);
-
+		const identityClientReadOnly = await IdentityClientReadOnly.create(
+			new IotaClient(this._config.clientOptions)
+		);
 		if (Is.undefined(controller)) {
 			const jwkMemStore = new JwkMemStore();
 			const keyIdMemStore = new KeyIdMemStore();
@@ -1215,8 +1220,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 			const resultNetworkHrp = ObjectHelper.propertyGet<string>(executionResult, "networkHrp");
 			const did = this.tryExtractDidFromObjectChanges(
 				executionResult.response.objectChanges,
-				resultNetworkHrp ?? networkHrp,
-				executionResult.response.effects?.transactionDigest
+				resultNetworkHrp ?? networkHrp
 			);
 
 			if (did) {
@@ -1243,8 +1247,7 @@ export class IotaIdentityConnector implements IIdentityConnector {
 	 */
 	private tryExtractDidFromObjectChanges(
 		objectChanges: unknown[],
-		networkHrp?: string,
-		transactionDigest?: string
+		networkHrp?: string
 	): IotaDID | undefined {
 		const identityObject = objectChanges.find(change => {
 			if (!Is.object(change)) {
