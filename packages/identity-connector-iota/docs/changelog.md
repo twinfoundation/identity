@@ -1,5 +1,19 @@
 # @twin.org/identity-connector-iota - Changelog
 
+## [0.0.1-next.54](https://github.com/twinfoundation/identity/compare/identity-connector-iota-v0.0.1-next.53...identity-connector-iota-v0.0.1-next.54) (2025-06-26)
+
+
+### Features
+
+* remove hardcoded package ids ([e5f4ce7](https://github.com/twinfoundation/identity/commit/e5f4ce7e7b9be62d993c5df5466e292bbc3e899f))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @twin.org/identity-models bumped from 0.0.1-next.53 to 0.0.1-next.54
+
 ## [0.0.1-next.53](https://github.com/twinfoundation/identity/compare/identity-connector-iota-v0.0.1-next.52...identity-connector-iota-v0.0.1-next.53) (2025-06-23)
 
 
