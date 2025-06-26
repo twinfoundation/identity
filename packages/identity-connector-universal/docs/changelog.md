@@ -1,5 +1,28 @@
 # @twin.org/identity-connector-Universal - Changelog
 
+## [0.0.1-next.55](https://github.com/twinfoundation/identity/compare/identity-connector-universal-v0.0.1-next.54...identity-connector-universal-v0.0.1-next.55) (2025-06-26)
+
+
+### Features
+
+* add mainnet support ([af56a38](https://github.com/twinfoundation/identity/commit/af56a382837896cd4e13d5814c0924c46658b99c))
+* identity key separator use slash ([1319d0d](https://github.com/twinfoundation/identity/commit/1319d0d07164a36b3ec279e6421b8835ffefc3d3))
+* update comment ([436e030](https://github.com/twinfoundation/identity/commit/436e030e9480bdc4e35b44ad7199a5ccc7a7b31e))
+* use shared store mechanism ([#27](https://github.com/twinfoundation/identity/issues/27)) ([ce41f3f](https://github.com/twinfoundation/identity/commit/ce41f3fc3da1b206ec06da7ea5b2c968f788804d))
+
+
+### Bug Fixes
+
+* Import path and bump version ([#21](https://github.com/twinfoundation/identity/issues/21)) ([ccea845](https://github.com/twinfoundation/identity/commit/ccea845bf32562267280bc1b3dde1c9af1a00360))
+* Install sdk-wasm ([#20](https://github.com/twinfoundation/identity/issues/20)) ([75ec14e](https://github.com/twinfoundation/identity/commit/75ec14e072f8c219863a1c028a3b0783802086e9))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @twin.org/identity-models bumped from 0.0.1-next.54 to 0.0.1-next.55
+
 ## [0.0.1-next.54](https://github.com/twinfoundation/identity/compare/identity-connector-universal-v0.0.1-next.53...identity-connector-universal-v0.0.1-next.54) (2025-06-26)
 
 

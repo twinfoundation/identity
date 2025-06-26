@@ -1,5 +1,34 @@
 # @twin.org/identity-connector-iota - Changelog
 
+## [0.0.1-next.55](https://github.com/twinfoundation/identity/compare/identity-connector-iota-v0.0.1-next.54...identity-connector-iota-v0.0.1-next.55) (2025-06-26)
+
+
+### Features
+
+* add mainnet support ([af56a38](https://github.com/twinfoundation/identity/commit/af56a382837896cd4e13d5814c0924c46658b99c))
+* create vc validate subject id ([#30](https://github.com/twinfoundation/identity/issues/30)) ([6dccee9](https://github.com/twinfoundation/identity/commit/6dccee94cc83e537d46814f4051d3f30a0c1b509))
+* gas station integration ([#39](https://github.com/twinfoundation/identity/issues/39)) ([fc579cf](https://github.com/twinfoundation/identity/commit/fc579cf33519455f2cd6423a5153fb052bddc231))
+* identity key separator use slash ([1319d0d](https://github.com/twinfoundation/identity/commit/1319d0d07164a36b3ec279e6421b8835ffefc3d3))
+* improve vc data quality ([c9f52ff](https://github.com/twinfoundation/identity/commit/c9f52ffb8cca903c066773a2921ebd308f67ed72))
+* iota rebased release ([5d14674](https://github.com/twinfoundation/identity/commit/5d146744ca9eed622ef7eb34a7fa935216f9e975))
+* remove hardcoded package ids ([e5f4ce7](https://github.com/twinfoundation/identity/commit/e5f4ce7e7b9be62d993c5df5466e292bbc3e899f))
+* support mainnet for alias extraction ([1114e0f](https://github.com/twinfoundation/identity/commit/1114e0f518070ef930d7d6ed73a616cce647206c))
+* use new generateKid method ([f0fe779](https://github.com/twinfoundation/identity/commit/f0fe779323b675575bb9f80aa74f1957dc57a094))
+* use shared store mechanism ([#27](https://github.com/twinfoundation/identity/issues/27)) ([ce41f3f](https://github.com/twinfoundation/identity/commit/ce41f3fc3da1b206ec06da7ea5b2c968f788804d))
+
+
+### Bug Fixes
+
+* Import path and bump version ([#21](https://github.com/twinfoundation/identity/issues/21)) ([ccea845](https://github.com/twinfoundation/identity/commit/ccea845bf32562267280bc1b3dde1c9af1a00360))
+* Install sdk-wasm ([#20](https://github.com/twinfoundation/identity/issues/20)) ([75ec14e](https://github.com/twinfoundation/identity/commit/75ec14e072f8c219863a1c028a3b0783802086e9))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @twin.org/identity-models bumped from 0.0.1-next.54 to 0.0.1-next.55
+
 ## [0.0.1-next.54](https://github.com/twinfoundation/identity/compare/identity-connector-iota-v0.0.1-next.53...identity-connector-iota-v0.0.1-next.54) (2025-06-26)
 
 
