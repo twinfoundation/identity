@@ -1,6 +1,6 @@
 // Copyright 2024 IOTA Stiftung.
 // SPDX-License-Identifier: Apache-2.0.
-import { GeneralError, Guards } from "@twin.org/core";
+import { GeneralError, Guards, StringHelper } from "@twin.org/core";
 import type { IIdentityResolverConnector } from "@twin.org/identity-models";
 import { nameof } from "@twin.org/nameof";
 import type { IDidDocument } from "@twin.org/standards-w3c-did";
@@ -55,7 +55,7 @@ export class UniversalResolverConnector implements IIdentityResolverConnector {
 		try {
 			const result = await FetchHelper.fetchJson<never, IUniversalResolverResult>(
 				this.CLASS_NAME,
-				`${this._resolverEndpoint}/1.0/identifiers/${encodeURIComponent(documentId)}`,
+				`${StringHelper.trimTrailingSlashes(this._resolverEndpoint)}1.0/identifiers/${encodeURIComponent(documentId)}`,
 				HttpMethod.GET
 			);
 
