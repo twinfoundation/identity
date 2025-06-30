@@ -1,5 +1,20 @@
 # @twin.org/identity-connector-Universal - Changelog
 
+## [0.0.1-next.56](https://github.com/twinfoundation/identity/compare/identity-connector-universal-v0.0.1-next.55...identity-connector-universal-v0.0.1-next.56) (2025-06-30)
+
+
+### Features
+
+* improve url construction ([544a435](https://github.com/twinfoundation/identity/commit/544a435dadb90b9e29533f4a4ce09725268d04bd))
+* re-use vault keys if available ([5a848d7](https://github.com/twinfoundation/identity/commit/5a848d7520829d9c891ec889fd773fbc0ee77ba5))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @twin.org/identity-models bumped from 0.0.1-next.55 to 0.0.1-next.56
+
 ## [0.0.1-next.55](https://github.com/twinfoundation/identity/compare/identity-connector-universal-v0.0.1-next.54...identity-connector-universal-v0.0.1-next.55) (2025-06-26)
 
 

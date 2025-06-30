@@ -1,5 +1,19 @@
 # @twin.org/identity-connector-entity-storage- Changelog
 
+## [0.0.1-next.56](https://github.com/twinfoundation/identity/compare/identity-connector-entity-storage-v0.0.1-next.55...identity-connector-entity-storage-v0.0.1-next.56) (2025-06-30)
+
+
+### Features
+
+* re-use vault keys if available ([5a848d7](https://github.com/twinfoundation/identity/commit/5a848d7520829d9c891ec889fd773fbc0ee77ba5))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @twin.org/identity-models bumped from 0.0.1-next.55 to 0.0.1-next.56
+
 ## [0.0.1-next.55](https://github.com/twinfoundation/identity/compare/identity-connector-entity-storage-v0.0.1-next.54...identity-connector-entity-storage-v0.0.1-next.55) (2025-06-26)
 
 
