@@ -192,6 +192,7 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 			Object.values(DidVerificationMethodType)
 		);
 
+		let tempKeyId;
 		try {
 			const didIdentityDocument = await this._didDocumentEntityStorage.get(documentId);
 			if (Is.undefined(didIdentityDocument)) {
@@ -204,27 +205,45 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 
 			const didDocument = didIdentityDocument.document;
 
-			const tempKeyId = `temp-vm-${Converter.bytesToBase64Url(RandomHelper.generate(16))}`;
-			const verificationPublicKey = await this._vaultConnector.createKey(
-				EntityStorageIdentityConnector.buildVaultKey(didDocument.id, tempKeyId),
-				VaultKeyType.Ed25519
-			);
+			let methodKeyPublic;
+			if (Is.stringValue(verificationMethodId)) {
+				// If there is a verification method id, we will try to get the key from the vault.
+				try {
+					const defaultMethodId = `${controller}/${verificationMethodId}`;
+					// If there is an existing key, we will use it.
+					const existingKey = await this._vaultConnector.getKey(defaultMethodId);
+					methodKeyPublic = existingKey.publicKey;
+				} catch {}
+			}
+
+			if (Is.empty(methodKeyPublic)) {
+				// If there is no existing key, we will create a new one with a temporary name.
+				tempKeyId = `temp-vm-${Converter.bytesToBase64Url(RandomHelper.generate(16))}`;
+				methodKeyPublic = await this._vaultConnector.createKey(
+					EntityStorageIdentityConnector.buildVaultKey(didDocument.id, tempKeyId),
+					VaultKeyType.Ed25519
+				);
+			}
 
 			const jwkParams: IJwk = {
 				alg: "EdDSA",
 				kty: "OKP",
 				crv: "Ed25519",
-				x: Converter.bytesToBase64Url(verificationPublicKey)
+				x: Converter.bytesToBase64Url(methodKeyPublic)
 			};
 
 			const kid = await Jwk.generateKid(jwkParams);
 
 			const methodId = `${documentId}#${verificationMethodId ?? kid}`;
 
-			await this._vaultConnector.renameKey(
-				EntityStorageIdentityConnector.buildVaultKey(didDocument.id, tempKeyId),
-				EntityStorageIdentityConnector.buildVaultKey(didDocument.id, verificationMethodId ?? kid)
-			);
+			if (Is.stringValue(tempKeyId)) {
+				// If we created a temporary key, we will rename it to the final method id.
+				await this._vaultConnector.renameKey(
+					EntityStorageIdentityConnector.buildVaultKey(didDocument.id, tempKeyId),
+					EntityStorageIdentityConnector.buildVaultKey(didDocument.id, verificationMethodId ?? kid)
+				);
+				tempKeyId = undefined;
+			}
 
 			const methods = this.getAllMethods(didDocument);
 			const existingMethodIndex = methods.findIndex(m => {
@@ -261,6 +280,13 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 			return didVerificationMethod;
 		} catch (error) {
 			throw new GeneralError(this.CLASS_NAME, "addVerificationMethodFailed", undefined, error);
+		} finally {
+			if (Is.stringValue(tempKeyId)) {
+				// If we created a temporary key and it is still in use, we will remove it from the vault.
+				try {
+					await this._vaultConnector.removeKey(tempKeyId);
+				} catch {}
+			}
 		}
 	}
 

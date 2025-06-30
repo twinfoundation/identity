@@ -214,6 +214,8 @@ export class IotaIdentityConnector implements IIdentityConnector {
 			verificationMethodType,
 			Object.values(DidVerificationMethodType)
 		);
+
+		let tempKeyId;
 		try {
 			const identityClient = await this.getIdentityClient(controller);
 			const document = await identityClient.resolveDid(IotaDID.parse(documentId));
@@ -227,18 +229,33 @@ export class IotaIdentityConnector implements IIdentityConnector {
 				throw new NotFoundError(this.CLASS_NAME, "identityNotFound", identityOnChain);
 			}
 
-			const tempKeyId = `${controller}/temp-vm-${Date.now()}`;
-			const verificationPublicKey = await this._vaultConnector.createKey(
-				tempKeyId,
-				VaultKeyType.Ed25519
-			);
+			let methodKeyPublic;
+			if (Is.stringValue(verificationMethodId)) {
+				// If there is a verification method id, we will try to get the key from the vault.
+				try {
+					const defaultMethodId = `${controller}/${verificationMethodId}`;
+					// If there is an existing key, we will use it.
+					const existingKey = await this._vaultConnector.getKey(defaultMethodId);
+					methodKeyPublic = existingKey.publicKey;
+				} catch {}
+			}
 
-			const jwkParams = await JwkHelper.fromEd25519Public(verificationPublicKey);
+			if (Is.empty(methodKeyPublic)) {
+				// If there is no existing key, we will create a new one with a temporary name.
+				tempKeyId = `${controller}/temp-vm-${Date.now()}`;
+				methodKeyPublic = await this._vaultConnector.createKey(tempKeyId, VaultKeyType.Ed25519);
+			}
+
+			const jwkParams = await JwkHelper.fromEd25519Public(methodKeyPublic);
 			const jwk = new Jwk(jwkParams as IJwkParams);
 
 			const methodId = `#${verificationMethodId ?? (await JwkHelper.generateKid(jwkParams))}`;
 
-			await this._vaultConnector.renameKey(tempKeyId, `${controller}/${methodId.slice(1)}`);
+			if (Is.stringValue(tempKeyId)) {
+				// If we created a temporary key, we will rename it to the final method id.
+				await this._vaultConnector.renameKey(tempKeyId, `${controller}/${methodId.slice(1)}`);
+				tempKeyId = undefined;
+			}
 
 			const method = VerificationMethod.newFromJwk(document.id(), jwk, methodId);
 			const methods = document.methods();
@@ -277,6 +294,13 @@ export class IotaIdentityConnector implements IIdentityConnector {
 				undefined,
 				Iota.extractPayloadError(error)
 			);
+		} finally {
+			if (Is.stringValue(tempKeyId)) {
+				// If we created a temporary key and it is still in use, we will remove it from the vault.
+				try {
+					await this._vaultConnector.removeKey(tempKeyId);
+				} catch {}
+			}
 		}
 	}
 

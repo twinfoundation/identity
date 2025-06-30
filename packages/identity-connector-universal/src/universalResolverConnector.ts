@@ -55,7 +55,7 @@ export class UniversalResolverConnector implements IIdentityResolverConnector {
 		try {
 			const result = await FetchHelper.fetchJson<never, IUniversalResolverResult>(
 				this.CLASS_NAME,
-				`${StringHelper.trimTrailingSlashes(this._resolverEndpoint)}1.0/identifiers/${encodeURIComponent(documentId)}`,
+				`${StringHelper.trimTrailingSlashes(this._resolverEndpoint)}/1.0/identifiers/${encodeURIComponent(documentId)}`,
 				HttpMethod.GET
 			);
 
