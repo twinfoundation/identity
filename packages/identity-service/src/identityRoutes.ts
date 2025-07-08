@@ -9,6 +9,7 @@ import type {
 import { Coerce, ComponentFactory, Guards } from "@twin.org/core";
 import {
 	DocumentHelper,
+	type IIdentityRemoveRequest,
 	type IIdentityComponent,
 	type IIdentityCreateRequest,
 	type IIdentityCreateResponse,
@@ -100,6 +101,35 @@ export function generateRestRoutesIdentity(
 						}
 					}
 				]
+			}
+		]
+	};
+
+	const identityRemoveRoute: IRestRoute<IIdentityRemoveRequest, INoContentResponse> = {
+		operationId: "identityRemove",
+		summary: "Remove an identity",
+		tag: tagsIdentity[0].name,
+		method: "DELETE",
+		path: `${baseRouteName}/:identity`,
+		handler: async (httpRequestContext, request) =>
+			identityRemove(httpRequestContext, componentName, request),
+		requestType: {
+			type: nameof<IIdentityRemoveRequest>(),
+			examples: [
+				{
+					id: "identityRemoveRequestExample",
+					request: {
+						pathParams: {
+							identity:
+								"did:iota:tst:0xe3088ba9aa8c28e1d139708a14e8c0fdff11ee8223baac4aa5bcf3321e4bfc6a"
+						}
+					}
+				}
+			]
+		},
+		responseType: [
+			{
+				type: nameof<INoContentResponse>()
 			}
 		]
 	};
@@ -748,6 +778,7 @@ export function generateRestRoutesIdentity(
 
 	return [
 		identityCreateRoute,
+		identityRemoveRoute,
 		identityVerificationMethodCreateRoute,
 		identityVerificationMethodRemoveRoute,
 		identityServiceCreateRoute,
@@ -791,6 +822,39 @@ export async function identityCreate(
 
 	return {
 		body: result
+	};
+}
+
+/**
+ * Remove an identity.
+ * @param httpRequestContext The request context for the API.
+ * @param componentName The name of the component to use in the routes stored in the ComponentFactory.
+ * @param request The request.
+ * @returns The response object with additional http response properties.
+ */
+export async function identityRemove(
+	httpRequestContext: IHttpRequestContext,
+	componentName: string,
+	request: IIdentityRemoveRequest
+): Promise<INoContentResponse> {
+	Guards.object<IIdentityRemoveRequest>(ROUTES_SOURCE, nameof(request), request);
+	Guards.object<IIdentityRemoveRequest["pathParams"]>(
+		ROUTES_SOURCE,
+		nameof(request.pathParams),
+		request.pathParams
+	);
+	Guards.stringValue(
+		ROUTES_SOURCE,
+		nameof(httpRequestContext.userIdentity),
+		httpRequestContext.userIdentity
+	);
+
+	const component = ComponentFactory.get<IIdentityComponent>(componentName);
+
+	await component.identityRemove(request.pathParams.identity, httpRequestContext.userIdentity);
+
+	return {
+		statusCode: HttpStatusCode.noContent
 	};
 }
 

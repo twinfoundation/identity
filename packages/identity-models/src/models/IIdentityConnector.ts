@@ -25,6 +25,14 @@ export interface IIdentityConnector extends IComponent {
 	createDocument(controller: string): Promise<IDidDocument>;
 
 	/**
+	 * Remove a document.
+	 * @param controller The controller of the identity who can make changes.
+	 * @param documentId The id of the document to remove.
+	 * @returns Nothing.
+	 */
+	removeDocument(controller: string, documentId: string): Promise<void>;
+
+	/**
 	 * Add a verification method to the document in JSON Web key Format.
 	 * @param controller The controller of the identity who can make changes.
 	 * @param documentId The id of the document to add the verification method to.

@@ -9,6 +9,7 @@ export * from "./models/api/identity/IIdentityProofCreateRequest";
 export * from "./models/api/identity/IIdentityProofCreateResponse";
 export * from "./models/api/identity/IIdentityProofVerifyRequest";
 export * from "./models/api/identity/IIdentityProofVerifyResponse";
+export * from "./models/api/identity/IIdentityRemoveRequest";
 export * from "./models/api/identity/IIdentityServiceCreateRequest";
 export * from "./models/api/identity/IIdentityServiceCreateResponse";
 export * from "./models/api/identity/IIdentityServiceRemoveRequest";

@@ -26,6 +26,13 @@ Guards.stringValue("TestEnv", "TEST_FAUCET_ENDPOINT", process.env.TEST_FAUCET_EN
 Guards.stringValue("TestEnv", "TEST_COIN_TYPE", process.env.TEST_COIN_TYPE);
 Guards.stringValue("TestEnv", "TEST_EXPLORER_URL", process.env.TEST_EXPLORER_URL);
 Guards.stringValue("TestEnv", "TEST_NETWORK", process.env.TEST_NETWORK);
+Guards.stringValue(
+	"TestEnv",
+	"TEST_GAS_STATION_AUTH_TOKEN",
+	process.env.TEST_GAS_STATION_AUTH_TOKEN
+);
+Guards.stringValue("TestEnv", "TEST_GAS_STATION_URL", process.env.TEST_GAS_STATION_URL);
+Guards.stringValue("TestEnv", "TEST_GAS_BUDGET", process.env.TEST_GAS_BUDGET);
 
 if (!Is.stringValue(process.env.TEST_MNEMONIC)) {
 	// eslint-disable-next-line no-restricted-syntax
@@ -67,10 +74,9 @@ export const TEST_SEED = Bip39.mnemonicToSeed(process.env.TEST_MNEMONIC);
 export const TEST_COIN_TYPE = Number.parseInt(process.env.TEST_COIN_TYPE, 10);
 
 // Gas station environment variables for testing
-export const GAS_STATION_URL = process.env.GAS_STATION_URL ?? "http://localhost:9527";
-export const GAS_STATION_AUTH_TOKEN =
-	process.env.GAS_STATION_AUTH_TOKEN ?? "qEyCL6d9BKKFl/tfDGAKeGFkhUlf7FkqiGV7Xw4JUsI=";
-export const GAS_BUDGET = 50000000;
+export const TEST_GAS_STATION_URL = process.env.TEST_GAS_STATION_URL;
+export const TEST_GAS_STATION_AUTH_TOKEN = process.env.TEST_GAS_STATION_AUTH_TOKEN;
+export const TEST_GAS_BUDGET = process.env.TEST_GAS_BUDGET;
 
 export const TEST_FAUCET_CONNECTOR = new IotaFaucetConnector({
 	config: {

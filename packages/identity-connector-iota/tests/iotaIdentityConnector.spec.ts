@@ -21,9 +21,7 @@ import {
 	TEST_CLIENT_OPTIONS,
 	TEST_IDENTITY_ID,
 	TEST_MNEMONIC_NAME,
-	TEST_NETWORK,
-	GAS_STATION_URL,
-	GAS_STATION_AUTH_TOKEN
+	TEST_NETWORK
 } from "./setupTestEnv";
 import { IotaIdentityConnector } from "../src/iotaIdentityConnector";
 import { IotaIdentityResolverConnector } from "../src/iotaIdentityResolverConnector";
@@ -133,6 +131,32 @@ describe("IotaIdentityConnector", () => {
 			"DID Document",
 			`${process.env.TEST_EXPLORER_URL}object/${objectId}?network=${TEST_NETWORK}`
 		);
+	});
+
+	test("can delete a document", async () => {
+		const testDocument = await identityConnector.createDocument(TEST_IDENTITY_ID);
+
+		// Check that the document ID starts with did:iota
+		expect(testDocument.id.startsWith("did:iota")).toBeTruthy();
+
+		const didUrn = Urn.fromValidString(testDocument.id);
+		const didParts = didUrn.parts();
+		const objectId = didParts[3];
+
+		console.debug(
+			"DID Document (Deleted)",
+			`${process.env.TEST_EXPLORER_URL}object/${objectId}?network=${TEST_NETWORK}`
+		);
+
+		await identityConnector.removeDocument(TEST_IDENTITY_ID, testDocument.id);
+
+		await expect(identityResolverConnector.resolveDocument(testDocument.id)).rejects.toMatchObject({
+			name: "GeneralError",
+			message: "iotaIdentityResolverConnector.resolveDocumentFailed",
+			properties: {
+				documentId: testDocument.id
+			}
+		});
 	});
 
 	test("should follow IOTA DID Method Specification v2.0 format", async () => {
@@ -1127,39 +1151,5 @@ describe("IotaIdentityConnector", () => {
 		expect(checkResult).toBeDefined();
 		expect(checkResult.revoked).toBeFalsy();
 		expect(checkResult.verifiableCredential).toBeDefined();
-	});
-
-	describe("Gas Station Integration", () => {
-		test("Should create identity connector with gas station configuration", () => {
-			const gasStationConfig: IIotaIdentityConnectorConfig = {
-				clientOptions: TEST_CLIENT_OPTIONS,
-				network: TEST_NETWORK,
-				gasStation: {
-					gasStationUrl: GAS_STATION_URL,
-					gasStationAuthToken: GAS_STATION_AUTH_TOKEN
-				}
-			};
-
-			const connector = new IotaIdentityConnector({
-				config: gasStationConfig
-			});
-
-			expect(connector).toBeDefined();
-			expect(connector.CLASS_NAME).toBe("IotaIdentityConnector");
-		});
-
-		test("Should create identity connector without gas station configuration", () => {
-			const regularConfig: IIotaIdentityConnectorConfig = {
-				clientOptions: TEST_CLIENT_OPTIONS,
-				network: TEST_NETWORK
-			};
-
-			const connector = new IotaIdentityConnector({
-				config: regularConfig
-			});
-
-			expect(connector).toBeDefined();
-			expect(connector.CLASS_NAME).toBe("IotaIdentityConnector");
-		});
 	});
 });

@@ -6,6 +6,7 @@
 			"connectorNotFound": "There is no connector with the namespace \"{namespace}\" registered with the identity factory",
 			"jwtDecodeFailed": "Decoding the JWT failed",
 			"identityCreateFailed": "Creating the identity failed",
+			"identityRemoveFailed": "Removing the identity failed \"{identity}\"",
 			"verificationMethodCreateFailed": "Creating the verification method failed for identity \"{identity}\"",
 			"verificationMethodRemoveFailed": "Removing the verification method failed \"{verificationMethodId}\"",
 			"serviceCreateFailed": "Creating the service failed for identity \"{identity}\", service \"{serviceId}\"",

@@ -168,6 +168,28 @@ export class EntityStorageIdentityConnector implements IIdentityConnector {
 	}
 
 	/**
+	 * Remove a document.
+	 * @param controller The controller of the identity who can make changes.
+	 * @param documentId The id of the document to remove.
+	 * @returns Nothing.
+	 */
+	public async removeDocument(controller: string, documentId: string): Promise<void> {
+		Guards.stringValue(this.CLASS_NAME, nameof(controller), controller);
+		Guards.stringValue(this.CLASS_NAME, nameof(documentId), documentId);
+
+		try {
+			const didDocument = await this._didDocumentEntityStorage.get(documentId);
+			if (Is.empty(didDocument)) {
+				throw new NotFoundError(this.CLASS_NAME, "documentNotFound", documentId);
+			}
+
+			await this._didDocumentEntityStorage.remove(documentId);
+		} catch (error) {
+			throw new GeneralError(this.CLASS_NAME, "removeDocumentFailed", undefined, error);
+		}
+	}
+
+	/**
 	 * Add a verification method to the document in JSON Web key Format.
 	 * @param controller The controller of the identity who can make changes.
 	 * @param documentId The id of the document to add the verification method to.

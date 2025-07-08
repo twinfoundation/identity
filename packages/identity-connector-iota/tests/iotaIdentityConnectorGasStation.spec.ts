@@ -9,8 +9,8 @@ import {
 	TEST_IDENTITY_ID,
 	TEST_MNEMONIC_NAME,
 	TEST_NETWORK,
-	GAS_STATION_URL,
-	GAS_STATION_AUTH_TOKEN,
+	TEST_GAS_STATION_URL,
+	TEST_GAS_STATION_AUTH_TOKEN,
 	GAS_BUDGET
 } from "./setupTestEnv";
 import { IotaIdentityConnector } from "../src/iotaIdentityConnector";
@@ -29,8 +29,8 @@ describe("IotaIdentityConnector with Gas Station", () => {
 			network: TEST_NETWORK,
 			gasBudget: GAS_BUDGET,
 			gasStation: {
-				gasStationUrl: GAS_STATION_URL,
-				gasStationAuthToken: GAS_STATION_AUTH_TOKEN
+				gasStationUrl: TEST_GAS_STATION_URL,
+				gasStationAuthToken: TEST_GAS_STATION_AUTH_TOKEN
 			}
 		};
 
@@ -68,8 +68,8 @@ describe("IotaIdentityConnector with Gas Station", () => {
 				gasBudget: GAS_BUDGET,
 				standardGasPrice: 2000, // Custom gas price (2x default)
 				gasStation: {
-					gasStationUrl: GAS_STATION_URL,
-					gasStationAuthToken: GAS_STATION_AUTH_TOKEN
+					gasStationUrl: TEST_GAS_STATION_URL,
+					gasStationAuthToken: TEST_GAS_STATION_AUTH_TOKEN
 				}
 			};
 
@@ -84,7 +84,7 @@ describe("IotaIdentityConnector with Gas Station", () => {
 
 	describe("Gas Station Integration", () => {
 		test("Should test gas station connectivity before attempting identity operations", async () => {
-			await expect(fetch(GAS_STATION_URL, { method: "GET" })).resolves.toMatchObject({
+			await expect(fetch(TEST_GAS_STATION_URL, { method: "GET" })).resolves.toMatchObject({
 				ok: true
 			});
 		}, 10000);
@@ -231,7 +231,7 @@ describe("IotaIdentityConnector with Gas Station", () => {
 				network: TEST_NETWORK,
 				gasStation: {
 					gasStationUrl: "http://localhost:9999", // Invalid port
-					gasStationAuthToken: GAS_STATION_AUTH_TOKEN
+					gasStationAuthToken: TEST_GAS_STATION_AUTH_TOKEN
 				}
 			};
 
@@ -251,7 +251,7 @@ describe("IotaIdentityConnector with Gas Station", () => {
 				vaultMnemonicId: TEST_MNEMONIC_NAME,
 				network: TEST_NETWORK,
 				gasStation: {
-					gasStationUrl: GAS_STATION_URL,
+					gasStationUrl: TEST_GAS_STATION_URL,
 					gasStationAuthToken: "invalid-token"
 				}
 			};

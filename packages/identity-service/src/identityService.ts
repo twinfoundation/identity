@@ -73,6 +73,24 @@ export class IdentityService implements IIdentityComponent {
 	}
 
 	/**
+	 * Remove an identity.
+	 * @param identity The id of the document to remove.
+	 * @param controller The controller of the identity who can make changes.
+	 * @returns Nothing.
+	 */
+	public async identityRemove(identity: string, controller?: string): Promise<void> {
+		Guards.stringValue(this.CLASS_NAME, nameof(identity), identity);
+		Guards.stringValue(this.CLASS_NAME, nameof(controller), controller);
+
+		try {
+			const identityConnector = this.getConnectorByUri(identity);
+			return identityConnector.removeDocument(controller, identity);
+		} catch (error) {
+			throw new GeneralError(this.CLASS_NAME, "identityRemoveFailed", { identity }, error);
+		}
+	}
+
+	/**
 	 * Add a verification method to the document in JSON Web key Format.
 	 * @param identity The id of the document to add the verification method to.
 	 * @param verificationMethodType The type of the verification method to add.

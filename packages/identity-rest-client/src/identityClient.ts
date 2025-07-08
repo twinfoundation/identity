@@ -6,6 +6,7 @@ import { Guards, Is } from "@twin.org/core";
 import type { IJsonLdContextDefinitionRoot, IJsonLdNodeObject } from "@twin.org/data-json-ld";
 import {
 	DocumentHelper,
+	type IIdentityRemoveRequest,
 	type IIdentityComponent,
 	type IIdentityCreateRequest,
 	type IIdentityCreateResponse,
@@ -76,6 +77,20 @@ export class IdentityClient extends BaseRestClient implements IIdentityComponent
 		);
 
 		return response.body;
+	}
+
+	/**
+	 * Remove an identity.
+	 * @param identity The id of the document to remove.
+	 * @returns Nothing.
+	 */
+	public async identityRemove(identity: string): Promise<void> {
+		Guards.stringValue(this.CLASS_NAME, nameof(identity), identity);
+		await this.fetch<IIdentityRemoveRequest, INoContentResponse>("/:identity", "DELETE", {
+			pathParams: {
+				identity
+			}
+		});
 	}
 
 	/**

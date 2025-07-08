@@ -23,6 +23,7 @@ import {
 	KeyIdMemStore,
 	MethodDigest,
 	MethodScope,
+	OnChainIdentity,
 	Presentation,
 	Resolver,
 	RevocationBitmap,
@@ -39,7 +40,6 @@ import {
 	type ICredential,
 	type IJwkParams,
 	type IPresentation,
-	type OnChainIdentity,
 	type UpdateDid
 } from "@iota/identity-wasm/node/index.js";
 import type { TransactionBuilder } from "@iota/iota-interaction-ts/node/transaction_internal.js";
@@ -187,6 +187,47 @@ export class IotaIdentityConnector implements IIdentityConnector {
 				undefined,
 				Iota.extractPayloadError(error)
 			);
+		}
+	}
+
+	/**
+	 * Remove a document.
+	 * @param controller The controller of the identity who can make changes.
+	 * @param documentId The id of the document to remove.
+	 * @returns Nothing.
+	 */
+	public async removeDocument(controller: string, documentId: string): Promise<void> {
+		Guards.stringValue(this.CLASS_NAME, nameof(controller), controller);
+		Guards.stringValue(this.CLASS_NAME, nameof(documentId), documentId);
+
+		try {
+			const identityClient = await this.getIdentityClient(controller);
+
+			const idParts = DocumentHelper.parseId(documentId).id.split(":");
+			const onChain = await OnChainIdentity.getById(
+				`0x${idParts[idParts.length - 1]}`,
+				identityClient
+			);
+			if (Is.undefined(onChain)) {
+				throw new NotFoundError(this.CLASS_NAME, "documentNotFound", documentId);
+			}
+
+			const controllerToken = await onChain.getControllerToken(identityClient);
+			if (Is.undefined(controllerToken)) {
+				throw new NotFoundError(this.CLASS_NAME, "documentNotFound", documentId);
+			}
+
+			const deleteBuilder = await onChain
+				.deleteDid(controllerToken)
+				.withGasBudget(BigInt(this._gasBudget));
+
+			if (Is.object(this._config.gasStation)) {
+				await this.executeDocumentUpdateWithGasStation(controller, deleteBuilder);
+			}
+
+			await deleteBuilder.buildAndExecute(identityClient);
+		} catch (error) {
+			throw new GeneralError(this.CLASS_NAME, "removeDocumentFailed", undefined, error);
 		}
 	}
 
