@@ -1,5 +1,12 @@
 # @twin.org/identity-service-models - Changelog
 
+## [0.0.1-next.57](https://github.com/twinfoundation/identity/compare/identity-models-v0.0.1-next.56...identity-models-v0.0.1-next.57) (2025-07-08)
+
+
+### Features
+
+* add identity remove ([eebc13f](https://github.com/twinfoundation/identity/commit/eebc13f4c2cd994d2d9cce4da2128fb346c80ba7))
+
 ## [0.0.1-next.56](https://github.com/twinfoundation/identity/compare/identity-models-v0.0.1-next.55...identity-models-v0.0.1-next.56) (2025-06-30)
 
 
