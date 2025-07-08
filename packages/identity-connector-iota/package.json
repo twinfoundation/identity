@@ -1,6 +1,6 @@
 {
 	"name": "@twin.org/identity-connector-iota",
-	"version": "0.0.0",
+	"version": "0.0.1",
 	"description": "Identity connector implementation using IOTA",
 	"repository": {
 		"type": "git",
@@ -37,7 +37,7 @@
 		"@twin.org/data-json-ld": "^0.0.1",
 		"@twin.org/dlt-iota": "^0.0.1",
 		"@twin.org/entity": "^0.0.1",
-		"@twin.org/identity-models": "^0.0.0",
+		"@twin.org/identity-models": "^0.0.1",
 		"@twin.org/nameof": "^0.0.1",
 		"@twin.org/standards-w3c-did": "^0.0.1",
 		"@twin.org/vault-models": "^0.0.1",

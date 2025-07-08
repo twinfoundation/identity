@@ -1,6 +1,6 @@
 {
 	"name": "@twin.org/identity-rest-client",
-	"version": "0.0.0",
+	"version": "0.0.1",
 	"description": "Identity contract implementation which can connect to REST endpoints",
 	"repository": {
 		"type": "git",
@@ -38,7 +38,7 @@
 		"@twin.org/entity": "^0.0.1",
 		"@twin.org/nameof": "^0.0.1",
 		"@twin.org/standards-w3c-did": "^0.0.1",
-		"@twin.org/identity-models": "^0.0.0"
+		"@twin.org/identity-models": "^0.0.1"
 	},
 	"devDependencies": {
 		"@twin.org/nameof-transformer": "^0.0.1",
