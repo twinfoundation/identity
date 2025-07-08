@@ -1,0 +1,47 @@
+{
+	"error": {
+		"entityStorageIdentityResolverConnector": {
+			"documentNotFound": "The document could not be found",
+			"resolveDocumentFailed": "Resolving the document failed"
+		},
+		"entityStorageIdentityConnector": {
+			"createDocumentFailed": "Creating the document failed",
+			"removeDocumentFailed": "Removing the document failed",
+			"signatureVerificationFailed": "The document integrity check failed",
+			"missingDid": "The full id including DID is required",
+			"addVerificationMethodFailed": "Adding the verification method failed",
+			"removeVerificationMethodFailed": "Removing the verification method failed",
+			"addServiceFailed": "Adding the service failed",
+			"removeServiceFailed": "Removing the service failed",
+			"documentNotFound": "The document could not be found \"{notFoundId}\"",
+			"documentPrivateKeyNotFound": "The private key for document could not be found in the vault",
+			"verificationMethodNotFound": "The verification method could not be found",
+			"verificationPrivateKeyNotFound": "The private key for the verification method could not be found in the vault",
+			"serviceNotFound": "The service could not be found",
+			"publicKeyJwkMissing": "The verification method contains no publicKeyJwk in method \"{method}\"",
+			"jwkSignatureFailed": "The signature on the JWK failed verification",
+			"createVerifiableCredentialFailed": "Creating the verifiable credential failed",
+			"checkingVerifiableCredentialFailed": "Checking the verifiable credential failed",
+			"createVerifiablePresentationFailed": "Creating the verifiable presentation failed",
+			"checkingVerifiablePresentationFailed": "Checking the verifiable presentation failed",
+			"expectingJwtCredential": "Expecting JWT credential in the presentation",
+			"keyIndexOutOfRange": "The supplied keyIndex is not in the range of the key list",
+			"createProofFailed": "Creating the signature for the data failed",
+			"methodMissing": "The verification method specified does not exist \"{method}\"",
+			"verifyProofFailed": "Verifying the signature for the data failed",
+			"revokeVerifiableCredentialsFailed": "Revoking verifiable credentials failed",
+			"unrevokeVerifiableCredentialsFailed": "Unrevoking verifiable credentials failed",
+			"proofType": "The proof type must be DataIntegrityProof, it is currently {proofType}",
+			"cryptosuite": "The proof cryptosuite must be eddsa-jcs-2022, it is currently {cryptosuite}"
+		},
+		"entityStorageIdentityProfileConnector": {
+			"alreadyExists": "The identity profile already exists for the identity \"{existingId}\"",
+			"createFailed": "Creating the identity profile failed \"{identity}\"",
+			"getFailed": "Getting the identity profile failed \"{notFoundId}\"",
+			"updateFailed": "Updating the identity profile failed \"{identity}\"",
+			"notFound": "The identity profile failed \"{notFoundId}\"",
+			"removeFailed": "Removing the identity profile failed \"{identity}\"",
+			"listFailed": "Failed listing identities"
+		}
+	}
+}

@@ -1,0 +1,51 @@
+name: Build
+
+on:
+  workflow_dispatch:
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  dist-all-packages:
+    runs-on: ubuntu-latest
+
+    # Add env vars for tests
+    env:
+      TEST_MNEMONIC: ${{ secrets.TEST_MNEMONIC }}
+      TEST_NODE_ENDPOINT: https://api.testnet.iota.cafe
+      TEST_FAUCET_ENDPOINT: https://faucet.testnet.iota.cafe/gas
+      TEST_NETWORK: testnet
+
+    steps:
+      # Get the code
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Setup Node
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # Install dependencies
+      - name: Install dependencies
+        run: npm ci
+
+      # Setup Identity infrastructure for tests using composite action
+      - name: Setup Identity Testing Environment
+        uses: ./.github/workflows/composites
+        with:
+          test-mnemonic: ${{ secrets.TEST_MNEMONIC }}
+          test-node-endpoint: ${{ env.TEST_NODE_ENDPOINT }}
+          test-faucet-endpoint: ${{ env.TEST_FAUCET_ENDPOINT }}
+          gas-station-auth: 'qEyCL6d9BKKFl/tfDGAKeGFkhUlf7FkqiGV7Xw4JUsI='
+          package-name: 'all'
+
+      # Run Lint and Dist
+      - name: Run Lint and Dist
+        run: |
+          npm run lint
+          npm run dist

@@ -1,0 +1,8 @@
+{
+	"error": {
+		"universalResolverConnector": {
+			"documentNotFound": "The document could not be found",
+			"resolveDocumentFailed": "Resolving the document failed \"{documentId}\""
+		}
+	}
+}

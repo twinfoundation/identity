@@ -1,0 +1,51 @@
+{
+	"error": {
+		"iotaIdentityResolverConnector": {
+			"documentNotFound": "The document could not be found",
+			"resolveDocumentFailed": "Resolving the document failed \"{documentId}\""
+		},
+		"iotaIdentityConnector": {
+			"createDocumentFailed": "Creating the document failed",
+			"removeDocumentFailed": "Removing the document failed",
+			"missingDid": "The full id including DID is required",
+			"addVerificationMethodFailed": "Adding the verification method failed",
+			"removeVerificationMethodFailed": "Removing the verification method failed",
+			"addServiceFailed": "Adding the service failed",
+			"removeServiceFailed": "Removing the service failed",
+			"documentNotFound": "The document could not be found",
+			"verificationMethodNotFound": "The verification method could not be found",
+			"serviceNotFound": "The service could not be found",
+			"publicKeyJwkMissing": "The verification method contains no publicKeyJwk in JWK \"{jwk}\"",
+			"publicKeyJwkMethodMissing": "The verification method contains no publicKeyJwk in method \"{method}\"",
+			"privateKeyMissing": "The verification method contains no privateKey \"{keyId}\"",
+			"verificationKeyMissing": "The verification key is missing from the vault for method \"{method}\"",
+			"createVerifiableCredentialFailed": "Creating the verifiable credential failed",
+			"checkingVerifiableCredentialFailed": "Checking the verifiable credential failed",
+			"createVerifiablePresentationFailed": "Creating the verifiable presentation failed",
+			"checkingVerifiablePresentationFailed": "Checking the verifiable presentation failed",
+			"createProofFailed": "Creating the signature for the data failed",
+			"methodMissing": "The verification method specified does not exist \"{method}\"",
+			"verifyProofFailed": "Verifying the signature for the data failed",
+			"revokeVerifiableCredentialsFailed": "Revoking verifiable credentials failed",
+			"unrevokeVerifiableCredentialsFailed": "Unrevoking verifiable credentials failed",
+			"proofType": "The proof type must be DataIntegrityProof, it is currently {proofType}",
+			"integerNegative": "The value must be a positive integer, it is currently {value}",
+			"invalidDocumentIdFormat": "The document ID format is invalid, it is currently {documentId}",
+			"invalidSubjectId": "The subject id format is invalid it must be a Url or Urn, it is \"{subjectId}\"",
+			"missingControllerToken": "The controller token is missing",
+			"unexpectedExecutionResult": "Could not extract DID from transaction result",
+			"objectIdNotFound": "The object ID was not found in the created object",
+			"gasStationError": "Gas station transaction execution failed",
+			"gasStationTransactionBuildFailed": "Gas station transaction build failed",
+			"gasStationTransactionFailed": "Gas station transaction failed",
+			"gasStationDocumentUpdateFailed": "Gas station document update failed",
+			"didExtractionFailed": "Failed to extract DID from transaction execution result",
+			"transactionConfirmationTimeout": "Transaction confirmation timed out",
+			"transactionBuildFailed": "Transaction build failed - unexpected build result format",
+			"didResolutionFailed": "DID resolution failed",
+			"didResolutionFailedAllRetries": "DID resolution failed after all retries",
+			"invalidMaxRetries": "The maximum number of retries must be a positive integer, it is currently {maxRetries}",
+			"invalidBaseDelay": "The base delay must be a positive integer, it is currently {baseDelay}"
+		}
+	}
+}

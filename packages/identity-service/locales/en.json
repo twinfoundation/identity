@@ -1,0 +1,41 @@
+{
+	"error": {
+		"identityService": {
+			"noConnectors": "There are no connectors registered with the identity factory",
+			"namespaceMismatch": "The namespace in the urn \"{id}\" does not match the namespace of the identity service \"{namespace}\"",
+			"connectorNotFound": "There is no connector with the namespace \"{namespace}\" registered with the identity factory",
+			"jwtDecodeFailed": "Decoding the JWT failed",
+			"identityCreateFailed": "Creating the identity failed",
+			"identityRemoveFailed": "Removing the identity failed \"{identity}\"",
+			"verificationMethodCreateFailed": "Creating the verification method failed for identity \"{identity}\"",
+			"verificationMethodRemoveFailed": "Removing the verification method failed \"{verificationMethodId}\"",
+			"serviceCreateFailed": "Creating the service failed for identity \"{identity}\", service \"{serviceId}\"",
+			"serviceRemoveFailed": "Removing the service failed \"{serviceId}\"",
+			"verifiableCredentialCreateFailed": "Creating the verifiable credential failed for method \"{verificationMethodId}\"",
+			"verifiableCredentialVerifyFailed": "Verifying the verifiable credential failed",
+			"verifiableCredentialRevokeFailed": "Revoking the verifiable credential failed for document \"{issuerIdentity}\" with index \"{credentialIndex}\"",
+			"verifiableCredentialUnrevokeFailed": "Unrevoking the verifiable credential failed for document \"{issuerIdentity}\" with index \"{credentialIndex}\"",
+			"verifiablePresentationCreateFailed": "Creating the verifiable presentation failed for method \"{verificationMethodId}\"",
+			"verifiablePresentationVerifyFailed": "Verifying the verifiable presentation failed",
+			"proofCreateFailed": "Creating the proof failed for method \"{verificationMethodId}\"",
+			"proofVerifyFailed": "Verifying the proof failed"
+		},
+		"identityResolverService": {
+			"noConnectors": "There are no connectors registered with the identity resolver factory",
+			"namespaceMismatch": "The namespace in the urn \"{id}\" does not match the namespace of the identity service \"{namespace}\"",
+			"connectorNotFound": "There is no connector with the namespace \"{namespace}\" registered with the identity factory",
+			"identityResolveFailed": "Resolving the identity failed \"{identity}\""
+		},
+		"identityProfileService": {
+			"noConnectors": "There are no connectors registered with the identity profile factory",
+			"alreadyExists": "The identity profile already exists for the identity \"{existingId}\"",
+			"createFailed": "Creating the identity profile failed \"{identity}\"",
+			"getFailed": "Getting the identity profile failed",
+			"getPublicFailed": "Getting the public identity profile failed",
+			"updateFailed": "Updating the identity profile failed \"{identity}\"",
+			"notFound": "The identity profile could not be found \"{notFoundId}\"",
+			"removeFailed": "Removing the identity profile failed \"{identity}\"",
+			"listFailed": "Failed listing identities"
+		}
+	}
+}

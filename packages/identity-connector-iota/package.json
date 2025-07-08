@@ -1,0 +1,84 @@
+{
+	"name": "@twin.org/identity-connector-iota",
+	"version": "0.0.0",
+	"description": "Identity connector implementation using IOTA",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/twinfoundation/identity.git",
+		"directory": "packages/identity-connector-iota"
+	},
+	"author": "cornel.filip@iota.org; adrian.sanchez.sequeira@iota.org; martyn.janes@iota.org",
+	"license": "Apache-2.0",
+	"type": "module",
+	"engines": {
+		"node": ">=20.0.0"
+	},
+	"scripts": {
+		"clean": "rimraf dist coverage docs/reference",
+		"build": "tsc",
+		"dev": "nodemon --watch src --ext ts --exec \"npm run build && npm run bundle:esm\"",
+		"test": "vitest --run --config ./vitest.config.ts --no-cache",
+		"coverage": "vitest --run --coverage --config ./vitest.config.ts --no-cache",
+		"bundle:esm": "rollup --config rollup.config.mjs --environment MODULE:esm",
+		"bundle:cjs": "rollup --config rollup.config.mjs --environment MODULE:cjs",
+		"bundle": "npm run bundle:esm && npm run bundle:cjs",
+		"docs:clean": "rimraf docs/reference",
+		"docs:generate": "typedoc",
+		"docs": "npm run docs:clean && npm run docs:generate",
+		"dist": "npm run clean && npm run build && npm run test && npm run bundle && npm run docs",
+		"dist:no-test": "npm run clean && npm run build && npm run bundle && npm run docs",
+		"prepare": "ts-patch install -s"
+	},
+	"dependencies": {
+		"@iota/identity-wasm": "1.6.0-beta.4",
+		"@iota/iota-sdk": "1.2.0",
+		"@twin.org/core": "^0.0.1",
+		"@twin.org/crypto": "^0.0.1",
+		"@twin.org/data-json-ld": "^0.0.1",
+		"@twin.org/dlt-iota": "^0.0.1",
+		"@twin.org/entity": "^0.0.1",
+		"@twin.org/identity-models": "^0.0.0",
+		"@twin.org/nameof": "^0.0.1",
+		"@twin.org/standards-w3c-did": "^0.0.1",
+		"@twin.org/vault-models": "^0.0.1",
+		"@twin.org/wallet-models": "^0.0.1",
+		"@twin.org/web": "^0.0.1"
+	},
+	"devDependencies": {
+		"@twin.org/entity-storage-connector-memory": "^0.0.1",
+		"@twin.org/nameof-transformer": "^0.0.1",
+		"@twin.org/nameof-vitest-plugin": "^0.0.1",
+		"@twin.org/vault-connector-entity-storage": "^0.0.1",
+		"@twin.org/wallet-connector-iota": "^0.0.1",
+		"@vitest/coverage-v8": "3.2.3",
+		"copyfiles": "2.4.1",
+		"dotenv": "16.5.0",
+		"nodemon": "3.1.10",
+		"rimraf": "6.0.1",
+		"rollup": "4.43.0",
+		"rollup-plugin-copy": "3.5.0",
+		"ts-patch": "3.3.0",
+		"typedoc": "0.28.5",
+		"typedoc-plugin-markdown": "4.6.4",
+		"typescript": "5.8.3",
+		"vitest": "3.2.3"
+	},
+	"main": "./dist/cjs/index.cjs",
+	"module": "./dist/esm/index.mjs",
+	"types": "./dist/types/index.d.ts",
+	"exports": {
+		".": {
+			"types": "./dist/types/index.d.ts",
+			"require": "./dist/cjs/index.cjs",
+			"import": "./dist/esm/index.mjs"
+		},
+		"./locales/*.json": "./locales/*.json"
+	},
+	"files": [
+		"dist/cjs",
+		"dist/esm",
+		"dist/types",
+		"locales",
+		"docs"
+	]
+}
