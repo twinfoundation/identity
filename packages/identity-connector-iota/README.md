@@ -10,7 +10,7 @@ npm install @twin.org/identity-connector-iota
 
 ## Testing
 
-The tests developed are functional tests and need instances of the IOTA Gas Station, Redis, and Universal Resolver up and running. To run these services locally using Docker:
+The tests developed are functional tests and need instances of the Test IOTA Gas Station, and Universal Resolver up and running. To run these services locally using Docker:
 
 ### Prerequisites
 
