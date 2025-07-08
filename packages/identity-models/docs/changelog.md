@@ -1,5 +1,12 @@
 # @twin.org/identity-service-models - Changelog
 
+## 0.0.1 (2025-07-08)
+
+
+### Features
+
+* release to production ([8450ad7](https://github.com/twinfoundation/identity/commit/8450ad727e0c4d665f2ce483e41798c2ff5b7d55))
+
 ## [0.0.1-next.57](https://github.com/twinfoundation/identity/compare/identity-models-v0.0.1-next.56...identity-models-v0.0.1-next.57) (2025-07-08)
 
 
