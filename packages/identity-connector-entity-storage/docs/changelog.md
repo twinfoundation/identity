@@ -1,5 +1,19 @@
 # @twin.org/identity-connector-entity-storage- Changelog
 
+## [0.0.1-next.57](https://github.com/twinfoundation/identity/compare/identity-connector-entity-storage-v0.0.1-next.56...identity-connector-entity-storage-v0.0.1-next.57) (2025-07-08)
+
+
+### Features
+
+* add identity remove ([eebc13f](https://github.com/twinfoundation/identity/commit/eebc13f4c2cd994d2d9cce4da2128fb346c80ba7))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @twin.org/identity-models bumped from 0.0.1-next.56 to 0.0.1-next.57
+
 ## [0.0.1-next.56](https://github.com/twinfoundation/identity/compare/identity-connector-entity-storage-v0.0.1-next.55...identity-connector-entity-storage-v0.0.1-next.56) (2025-06-30)
 
 
