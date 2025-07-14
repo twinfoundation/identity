@@ -13,10 +13,10 @@
 	],
 	"externalReferences": {
 		"IJsonLd(.*)": "https://schema.twindev.org/json-ld/JsonLd$1",
-		"Did(.*?)": "https://schema.twindev.org/did/Did$1",
-		"ProofTypes": "https://schema.twindev.org/did/ProofTypes",
-		"Proof": "https://schema.twindev.org/did/Proof",
-		"DataIntegrityProof": "https://schema.twindev.org/did/DataIntegrityProof",
-		"JsonWebSignature2020Proof": "https://schema.twindev.org/did/JsonWebSignature2020Proof"
+		"Did(.*?)": "https://schema.twindev.org/w3c-did/Did$1",
+		"ProofTypes": "https://schema.twindev.org/w3c-did/ProofTypes",
+		"Proof": "https://schema.twindev.org/w3c-did/Proof",
+		"DataIntegrityProof": "https://schema.twindev.org/w3c-did/DataIntegrityProof",
+		"JsonWebSignature2020Proof": "https://schema.twindev.org/w3c-did/JsonWebSignature2020Proof"
 	}
 }
