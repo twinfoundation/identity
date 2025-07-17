@@ -5,7 +5,7 @@ import { UniversalResolverConnector } from "../src/universalResolverConnector";
 describe("UniversalResolverConnector", () => {
 	test("can construct and resolve an identity", async () => {
 		const resolver = new UniversalResolverConnector({
-			config: { endpoint: "http://localhost:8080" }
+			config: { endpoint: "http://localhost:8180" }
 		});
 
 		// We will need to create an identity to check for once the iota connector is ready

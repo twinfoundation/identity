@@ -103,7 +103,7 @@ runs:
       if: inputs.package == 'packages/identity-connector-universal' || inputs.package == 'all'
       shell: bash
       run: |
-        docker run -d --name twin-identity-universal-resolver -p 8080:8080 -e NETWORK=testnet \
+        docker run -d --name twin-identity-universal-resolver -p 8180:8080 -e NETWORK=testnet \
           iotaledger/uni-resolver-driver-iota:v0.2.0-alpha
         # Wait for the service to be ready
         sleep 5
