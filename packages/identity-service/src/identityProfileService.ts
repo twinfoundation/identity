@@ -19,11 +19,6 @@ export class IdentityProfileService<
 > implements IIdentityProfileComponent<T, U>
 {
 	/**
-	 * The namespace supported by the identity profile service.
-	 */
-	public static readonly NAMESPACE: string = "identity-profile";
-
-	/**
 	 * Runtime name for the class.
 	 */
 	public readonly CLASS_NAME: string = nameof<IdentityProfileService>();

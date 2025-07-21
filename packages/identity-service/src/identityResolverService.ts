@@ -15,11 +15,6 @@ import type { IIdentityResolverServiceConstructorOptions } from "./models/IIdent
  */
 export class IdentityResolverService implements IIdentityResolverComponent {
 	/**
-	 * The namespace supported by the identity service.
-	 */
-	public static readonly NAMESPACE: string = "identity-resolver";
-
-	/**
 	 * Runtime name for the class.
 	 */
 	public readonly CLASS_NAME: string = nameof<IdentityResolverService>();

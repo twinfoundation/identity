@@ -27,11 +27,6 @@ import type { IIdentityServiceConstructorOptions } from "./models/IIdentityServi
  */
 export class IdentityService implements IIdentityComponent {
 	/**
-	 * The namespace supported by the identity service.
-	 */
-	public static readonly NAMESPACE: string = "identity";
-
-	/**
 	 * Runtime name for the class.
 	 */
 	public readonly CLASS_NAME: string = nameof<IdentityService>();
