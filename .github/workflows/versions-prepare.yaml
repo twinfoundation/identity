@@ -59,7 +59,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }} # Using GITHUB_TOKEN makes actions run as github-actions bot
-          ref: ${{ needs.read-workspaces.outputs.branch }} # Checkout the calculated branch
+          ref: ${{ steps.set-branch.outputs.branch }} # Checkout the calculated branch
           fetch-depth: 0 # Needed for merge operations
 
       # Import GPG key for signing commits
@@ -91,7 +91,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20' # Use Node.js 20.x
+          node-version: 22
 
       # Create a new branch for the version update
       - name: Create Version Update Branch
